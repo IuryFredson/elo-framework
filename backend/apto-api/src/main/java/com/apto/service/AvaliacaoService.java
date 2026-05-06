@@ -31,15 +31,17 @@ public class AvaliacaoService {
     private final UsuarioUniversitarioRepository universitarioRepository;
     private final LocadorRepository locadorRepository;
     private final AnuncioService anuncioService;
+    private final ReputacaoCalculoService reputacaoCalculoService;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             UsuarioUniversitarioRepository universitarioRepository,
                             LocadorRepository locadorRepository,
-                            AnuncioService anuncioService) {
+                            AnuncioService anuncioService, ReputacaoCalculoService reputacaoCalculoService) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.universitarioRepository = universitarioRepository;
         this.locadorRepository = locadorRepository;
         this.anuncioService = anuncioService;
+        this.reputacaoCalculoService = reputacaoCalculoService;
     }
 
     public AvaliacaoResponseDTO criar(CriarAvaliacaoRequestDTO dto) {
@@ -85,7 +87,9 @@ public class AvaliacaoService {
         avaliacao.setDataCriacao(LocalDateTime.now());
         avaliacao.setAtiva(true);
 
-        return toResponseDTO(avaliacaoRepository.save(avaliacao));
+        Avaliacao avaliacaoSalva = avaliacaoRepository.save(avaliacao);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(locador.getId());
+        return toResponseDTO(avaliacaoSalva);
     }
 
     public AvaliacaoResponseDTO buscarPorId(UUID id) {
@@ -133,7 +137,9 @@ public class AvaliacaoService {
         avaliacao.setNotaCustoBeneficio(dto.notaCustoBeneficio());
         avaliacao.setComentario(dto.comentario());
 
-        return toResponseDTO(avaliacaoRepository.save(avaliacao));
+        Avaliacao avaliacaoSalva = avaliacaoRepository.save(avaliacao);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(avaliacao.getLocadorAvaliado().getId());
+        return toResponseDTO(avaliacaoSalva);
     }
 
     public void desativar(UUID id, UUID avaliadorId) {
@@ -141,6 +147,7 @@ public class AvaliacaoService {
         validarDonoDaAvaliacao(avaliacao, avaliadorId);
         avaliacao.setAtiva(false);
         avaliacaoRepository.save(avaliacao);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(avaliacao.getLocadorAvaliado().getId());
     }
 
     public ResumoAvaliacoesLocadorResponseDTO resumoPorLocador(UUID locadorId) {
