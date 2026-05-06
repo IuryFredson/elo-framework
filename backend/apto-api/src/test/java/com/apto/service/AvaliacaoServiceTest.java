@@ -60,6 +60,9 @@ class AvaliacaoServiceTest {
     @Mock
     private AnuncioService anuncioService;
 
+    @Mock
+    private ReputacaoCalculoService reputacaoCalculoService;
+
     @InjectMocks
     private AvaliacaoService avaliacaoService;
 
@@ -174,6 +177,7 @@ class AvaliacaoServiceTest {
         assertEquals(locadorId, response.locadorAvaliadoId());
         assertEquals(moradiaId, response.moradiaId());
         verify(avaliacaoRepository).save(any(Avaliacao.class));
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(locadorId);
     }
 
     @Test
@@ -293,6 +297,7 @@ class AvaliacaoServiceTest {
         assertEquals(4, response.notaGeral());
         assertEquals("Comentário atualizado", response.comentario());
         verify(avaliacaoRepository).save(avaliacao);
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(locadorId);
     }
 
     @Test
@@ -314,6 +319,7 @@ class AvaliacaoServiceTest {
         ArgumentCaptor<Avaliacao> captor = ArgumentCaptor.forClass(Avaliacao.class);
         verify(avaliacaoRepository).save(captor.capture());
         assertFalse(captor.getValue().getAtiva());
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(locadorId);
     }
 
     @Test
