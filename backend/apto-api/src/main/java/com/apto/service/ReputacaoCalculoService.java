@@ -55,7 +55,7 @@ public class ReputacaoCalculoService {
         Locador locador = locadorRepository.findById(locadorId)
                 .orElseThrow(() -> new LocadorNaoEncontradoException("Locador não encontrado com id " + locadorId));
 
-        List<Avaliacao> avaliacoes = avaliacaoRepository.findByLocadorAvaliadoAndAtivaTrue(locador);
+        List<Avaliacao> avaliacoes = avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId);
 
         ReputacaoLocador reputacao = reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador)
                 .orElseGet(() -> {
