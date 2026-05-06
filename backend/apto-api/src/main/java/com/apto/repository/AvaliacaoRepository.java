@@ -1,6 +1,7 @@
 package com.apto.repository;
 
 import com.apto.model.entity.Avaliacao;
+import com.apto.model.entity.Locador;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,4 +16,6 @@ public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
     List<Avaliacao> findByMoradia_IdAndAtivaTrue(UUID moradiaId);
 
     List<Avaliacao> findByAvaliador_IdAndAtivaTrue(UUID avaliadorId);
+
+    List<Avaliacao> findByLocadorAvaliadoAndAtivaTrue(Locador locador);
 }
