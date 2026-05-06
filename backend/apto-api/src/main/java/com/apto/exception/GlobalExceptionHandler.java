@@ -154,4 +154,25 @@ public class GlobalExceptionHandler {
         erro.put("erro", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(erro);
     }
+
+    @ExceptionHandler(AvaliacaoNaoEncontradaException.class)
+    public ResponseEntity<Map<String, String>> handleAvaliacaoNaoEncontrada(AvaliacaoNaoEncontradaException ex) {
+        Map<String, String> erro = new HashMap<>();
+        erro.put("erro", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+    }
+
+    @ExceptionHandler(AvaliacaoDuplicadaException.class)
+    public ResponseEntity<Map<String, String>> handleAvaliacaoDuplicada(AvaliacaoDuplicadaException ex) {
+        Map<String, String> erro = new HashMap<>();
+        erro.put("erro", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(erro);
+    }
+
+    @ExceptionHandler(AvaliacaoInvalidaException.class)
+    public ResponseEntity<Map<String, String>> handleAvaliacaoInvalida(AvaliacaoInvalidaException ex) {
+        Map<String, String> erro = new HashMap<>();
+        erro.put("erro", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
+    }
 }
