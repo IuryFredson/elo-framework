@@ -1,6 +1,7 @@
 package com.apto.repository;
 
 import com.apto.model.entity.Avaliacao;
+import com.apto.model.entity.Locador;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
