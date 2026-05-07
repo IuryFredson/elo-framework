@@ -1,178 +1,369 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Compass, Plus, Search, Sparkles } from "lucide-react";
+import { Avatar } from "../components/ui/Avatar";
+import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { anunciosApi } from "../api/anuncios";
+import { matchmakingApi } from "../api/matchmaking";
+import { manifestacoesApi } from "../api/manifestacoes";
+import { useAuth } from "../auth/useAuth";
+import { ApiError } from "../api/client";
+import {
+  formatBRL,
+  generoLabel,
+  statusAnuncioLabel,
+  statusManifestacaoLabel,
+  tipoMoradiaLabel,
+} from "../lib/format";
+import type {
+  AnuncioResponse,
+  BuscaAnuncioResponse,
+  ManifestacaoInteresseResponse,
+  MatchColegaResponse,
+} from "../api/types";
 
 export default function Home() {
+  const { sessao } = useAuth();
+  if (!sessao) return null;
+
+  return sessao.tipo === "UNIVERSITARIO" ? (
+    <HomeUniversitario />
+  ) : (
+    <HomeLocador />
+  );
+}
+
+function HomeUniversitario() {
+  const { sessao } = useAuth();
+  const [anuncios, setAnuncios] = useState<BuscaAnuncioResponse[]>([]);
+  const [matches, setMatches] = useState<MatchColegaResponse[]>([]);
+  const [perfilOk, setPerfilOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!sessao) return;
+    anunciosApi
+      .buscar({ size: 6 })
+      .then((p) => setAnuncios(p.conteudo))
+      .catch(() => {});
+    matchmakingApi
+      .buscarColegas(sessao.id, 3)
+      .then((r) => {
+        setMatches(r.candidatos);
+        setPerfilOk(true);
+      })
+      .catch((e: unknown) => {
+        if (e instanceof ApiError && e.status === 400) {
+          setPerfilOk(false);
+        } else {
+          setPerfilOk(true);
+        }
+      });
+  }, [sessao]);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_280px] gap-6 p-6 max-w-[1440px] mx-auto h-[calc(100vh-64px)]">
-      {/* Left Sidebar */}
-      <aside className="sidebar-section hidden lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-apto-primary to-blue-400 flex-shrink-0" />
-          <div>
-            <div className="font-bold text-apto-text-main">Lucas Silva</div>
-            <div className="text-[12px] text-apto-text-muted">
-              Eng. Software @ USP
-            </div>
-          </div>
-        </div>
-
+    <div className="max-w-6xl mx-auto px-4 py-8 pb-20 space-y-8">
+      <header className="flex items-center justify-between">
         <div>
-          <div className="section-title mb-3">Minhas Preferências</div>
-          <div className="flex flex-wrap gap-1.5">
-            {["Silencioso", "Sem fumantes", "Notívago", "Visitas ok"].map(
-              (tag) => (
-                <span
-                  key={tag}
-                  className="px-2.5 py-1 bg-apto-primary-light text-apto-primary rounded-[6px] text-[12px] font-semibold"
-                >
-                  {tag}
-                </span>
-              ),
-            )}
+          <h1 className="text-3xl font-bold text-apto-text-main">
+            Olá, {sessao?.nome.split(" ")[0]}
+          </h1>
+          <p className="text-apto-text-muted">
+            Encontre uma moradia ou um colega compatível.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/buscar">
+            <Button variant="secondary" className="flex items-center gap-2">
+              <Search size={16} />
+              Buscar
+            </Button>
+          </Link>
+          <Link to="/matchmaking">
+            <Button className="flex items-center gap-2">
+              <Compass size={16} />
+              Matchmaking
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {perfilOk === false && (
+        <div className="bg-amber-50 border border-amber-200 rounded-apto-section p-5 flex items-start gap-3">
+          <Sparkles className="text-amber-600 flex-shrink-0" size={20} />
+          <div className="flex-1">
+            <p className="font-bold text-apto-text-main">
+              Complete seu perfil de convivência
+            </p>
+            <p className="text-sm text-apto-text-muted">
+              Sem ele, o matchmaking não consegue calcular candidatos
+              compatíveis.
+            </p>
           </div>
+          <Link to="/profile/convivencia">
+            <Button size="sm">Preencher</Button>
+          </Link>
         </div>
+      )}
 
-        <div>
-          <div className="section-title mb-3">Filtros Rápidos</div>
-          <div className="flex flex-col gap-2 text-sm text-apto-text-main">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="rounded border-apto-border text-apto-primary focus:ring-apto-primary"
-              />
-              <span>Próximo ao Campus</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded border-apto-border text-apto-primary focus:ring-apto-primary"
-              />
-              <span>Até R$ 1.200,00</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="rounded border-apto-border text-apto-primary focus:ring-apto-primary"
-              />
-              <span>Garagem inclusa</span>
-            </label>
-          </div>
-        </div>
-
-        <Button className="mt-auto w-full py-2.5 bg-apto-primary rounded-[10px] font-semibold">
-          Publicar Vaga
-        </Button>
-      </aside>
-
-      {/* Main Feed */}
-      <section className="flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[22px] font-extrabold text-apto-text-main">
-            Sugestões da IA para você
-          </h2>
-          <span className="text-[12px] text-apto-text-muted">
-            Ordenado por compatibilidade
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            {
-              id: 1,
-              title: "Quarto Suíte - Butantã",
-              type: "Vaga em República",
-              price: "1.150",
-              match: "98%",
-              justification:
-                "Ambos preferem silêncio após as 22h e dividem rotina de estudos pesada na Poli.",
-              img: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400",
-            },
-            {
-              id: 2,
-              title: "Studio Moderno - Pinheiros",
-              type: "Imóvel Inteiro",
-              price: "2.400",
-              match: "92%",
-              justification:
-                "Localização estratégica para seu trajeto de ônibus e perfil de locador verificado.",
-              img: "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=400",
-            },
-          ].map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-apto-card border border-apto-border overflow-hidden flex flex-col group cursor-pointer hover:shadow-lg transition-shadow"
+      {matches.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-apto-text-main">
+              Top matches
+            </h2>
+            <Link
+              to="/matchmaking"
+              className="text-sm font-medium text-apto-primary hover:underline"
             >
-              <div className="h-40 bg-gray-100 relative overflow-hidden">
-                <img
-                  src={item.img}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute top-3 right-3 bg-apto-success text-white px-3 py-1.5 rounded-full text-[12px] font-bold shadow-lg shadow-green-500/30">
-                  {item.match} Match
-                </div>
-              </div>
-              <div className="p-4 space-y-3">
-                <div>
-                  <h3 className="text-lg font-bold text-apto-text-main leading-tight">
-                    {item.title}
-                  </h3>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-apto-text-muted">{item.type}</span>
-                    <div className="flex items-center gap-1 font-bold text-amber-400">
-                      ★ 4.9
-                    </div>
+              Ver todos
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {matches.map((m) => (
+              <div
+                key={m.id}
+                className="bg-white rounded-apto-section border border-apto-border p-4 space-y-3"
+              >
+                <div className="flex items-center gap-3">
+                  <Avatar nome={m.nome} size="md" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-apto-text-main truncate">
+                      {m.nome}
+                    </p>
+                    <p className="text-xs text-apto-text-muted">
+                      {m.curso} · {generoLabel[m.genero]}
+                    </p>
                   </div>
                 </div>
-
-                <div className="p-3 bg-red-50 rounded-[10px] border-l-4 border-red-500 text-[12px] leading-[1.4] text-red-900">
-                  <span className="font-bold">Por que o match?</span>{" "}
-                  {item.justification}
-                </div>
-
-                <div className="text-lg font-bold text-apto-primary">
-                  R$ {item.price} / mês
+                <div className="flex items-center justify-between">
+                  <Badge tone={m.origem === "LLM" ? "primary" : "info"}>
+                    {m.origem === "LLM" ? "IA" : "Cálculo direto"}
+                  </Badge>
+                  <p className="text-2xl font-bold text-apto-text-main">
+                    {m.percentualCompatibilidade}%
+                  </p>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-apto-text-main">
+            Anúncios recentes
+          </h2>
+          <Link
+            to="/buscar"
+            className="text-sm font-medium text-apto-primary hover:underline"
+          >
+            Ver todos
+          </Link>
         </div>
+        {anuncios.length === 0 ? (
+          <div className="bg-white rounded-apto-section border border-apto-border p-8 text-center text-apto-text-muted">
+            Nenhum anúncio disponível.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {anuncios.map((a) => (
+              <Link
+                key={a.id}
+                to={`/anuncios/${a.id}`}
+                className="bg-white rounded-apto-card border border-apto-border overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="aspect-video bg-gradient-to-br from-apto-primary-light to-apto-primary/10 flex items-center justify-center text-apto-primary/40 font-bold tracking-widest text-sm">
+                  {tipoMoradiaLabel[a.tipoMoradia].toUpperCase()}
+                </div>
+                <div className="p-4">
+                  <p className="font-bold text-apto-text-main line-clamp-1">
+                    {a.titulo}
+                  </p>
+                  <p className="text-xs text-apto-text-muted">{a.bairro}</p>
+                  <p className="font-bold text-apto-text-main mt-2">
+                    {formatBRL(a.valorMensal)}/mês
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function HomeLocador() {
+  const { sessao } = useAuth();
+  const [anuncios, setAnuncios] = useState<AnuncioResponse[]>([]);
+  const [interessesPendentes, setInteressesPendentes] = useState<
+    ManifestacaoInteresseResponse[]
+  >([]);
+
+  useEffect(() => {
+    if (!sessao) return;
+    anunciosApi.listar().then(async (todos) => {
+      const meus = todos.filter((a) => a.anuncianteId === sessao.id);
+      setAnuncios(meus);
+      const pendentes: ManifestacaoInteresseResponse[] = [];
+      for (const a of meus) {
+        try {
+          const lista = await manifestacoesApi.porAnuncio(a.id, sessao.id);
+          pendentes.push(...lista.filter((m) => m.status === "PENDENTE"));
+        } catch {
+          // ignora — falha de uma manifestacao não deve quebrar a home
+        }
+      }
+      setInteressesPendentes(pendentes);
+    });
+  }, [sessao]);
+
+  const ativos = anuncios.filter((a) => a.status === "ATIVO").length;
+  const pausados = anuncios.filter((a) => a.status === "PAUSADO").length;
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8 pb-20 space-y-8">
+      <header className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-apto-text-main">
+            Olá, {sessao?.nome.split(" ")[0]}
+          </h1>
+          <p className="text-apto-text-muted">Painel do anunciante</p>
+        </div>
+        <Link to="/anuncios/novo">
+          <Button className="flex items-center gap-2">
+            <Plus size={16} />
+            Publicar anúncio
+          </Button>
+        </Link>
+      </header>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Stat label="Anúncios ativos" valor={ativos} tone="success" />
+        <Stat label="Pausados" valor={pausados} tone="warning" />
+        <Stat
+          label="Interesses pendentes"
+          valor={interessesPendentes.length}
+          tone="primary"
+        />
+      </div>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-apto-text-main">
+            Interesses pendentes
+          </h2>
+          <Link
+            to="/interesses-recebidos"
+            className="text-sm font-medium text-apto-primary hover:underline"
+          >
+            Ver todos
+          </Link>
+        </div>
+        {interessesPendentes.length === 0 ? (
+          <div className="bg-white rounded-apto-section border border-apto-border p-8 text-center text-apto-text-muted">
+            Nenhum interesse pendente no momento.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {interessesPendentes.slice(0, 5).map((m) => (
+              <Link
+                key={m.id}
+                to={`/anuncios/${m.anuncioId}/interesses`}
+                className="bg-white rounded-apto-section border border-apto-border p-4 flex items-center gap-3 hover:border-apto-primary"
+              >
+                <Avatar nome={m.interessadoNome} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-apto-text-main truncate">
+                    {m.interessadoNome}
+                  </p>
+                  <p className="text-xs text-apto-text-muted truncate">
+                    Em "{m.anuncioTitulo}"
+                  </p>
+                </div>
+                <Badge tone="warning">
+                  {statusManifestacaoLabel[m.status]}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Right Sidebar */}
-      <aside className="sidebar-section hidden xl:flex">
-        <div className="section-title">Atividade Recente</div>
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-3 text-[13px] leading-tight text-apto-text-main">
-            <div className="w-2 h-2 rounded-full bg-apto-success shrink-0 mt-1" />
-            <div>
-              <span className="font-bold">Marina</span> demonstrou interesse na
-              sua vaga em 'República das Artes'.
-            </div>
-          </div>
-          <div className="flex gap-3 text-[13px] leading-tight text-apto-text-main">
-            <div className="w-2 h-2 rounded-full bg-apto-primary shrink-0 mt-1" />
-            <div>
-              Sua reputação subiu para <span className="font-bold">4.8</span>{" "}
-              após a última avaliação.
-            </div>
-          </div>
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-apto-text-main">
+            Meus anúncios
+          </h2>
+          <Link
+            to="/meus-anuncios"
+            className="text-sm font-medium text-apto-primary hover:underline"
+          >
+            Gerenciar
+          </Link>
         </div>
+        {anuncios.length === 0 ? (
+          <div className="bg-white rounded-apto-section border border-apto-border p-8 text-center text-apto-text-muted">
+            Você ainda não publicou nenhum anúncio.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {anuncios.slice(0, 5).map((a) => (
+              <Link
+                key={a.id}
+                to={`/anuncios/${a.id}`}
+                className="bg-white rounded-apto-section border border-apto-border p-4 flex items-center justify-between gap-3 hover:border-apto-primary"
+              >
+                <div className="min-w-0">
+                  <p className="font-bold text-apto-text-main truncate">
+                    {a.titulo}
+                  </p>
+                  <p className="text-xs text-apto-text-muted">
+                    {formatBRL(a.valorMensal)}/mês
+                  </p>
+                </div>
+                <Badge
+                  tone={
+                    a.status === "ATIVO"
+                      ? "success"
+                      : a.status === "PAUSADO"
+                        ? "warning"
+                        : "neutral"
+                  }
+                >
+                  {statusAnuncioLabel[a.status]}
+                </Badge>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
 
-        <div className="mt-8">
-          <div className="section-title mb-3">Dicas de Segurança</div>
-          <div className="p-3 bg-amber-50 rounded-[10px] text-[12px] text-amber-800 leading-relaxed">
-            Nunca realize depósitos antes de visitar o local e verificar o
-            contrato no campus.
-          </div>
-        </div>
-
-        <div className="mt-auto text-center text-[10px] text-apto-text-muted">
-          Apto v1.0.4 - Sistema de Reputação Ativo
-        </div>
-      </aside>
+function Stat({
+  label,
+  valor,
+  tone,
+}: {
+  label: string;
+  valor: number;
+  tone: "success" | "warning" | "primary";
+}) {
+  const colors = {
+    success: "text-emerald-600",
+    warning: "text-amber-600",
+    primary: "text-apto-primary",
+  };
+  return (
+    <div className="bg-white rounded-apto-section border border-apto-border p-5">
+      <p className="text-[11px] uppercase font-bold text-apto-text-muted tracking-wider">
+        {label}
+      </p>
+      <p className={`text-3xl font-bold mt-1 ${colors[tone]}`}>{valor}</p>
     </div>
   );
 }
