@@ -2,16 +2,17 @@ package com.apto.dto.request;
 
 import com.apto.model.enums.StatusDenuncia;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
 public record CriarDenunciaRequestDTO(
 
-    @NotBlank
+    @NotNull
     UUID denuncianteId,
 
-    @NotBlank
+    @NotNull
     UUID anuncioId,
 
     @Size(min = 2, max = 255)
