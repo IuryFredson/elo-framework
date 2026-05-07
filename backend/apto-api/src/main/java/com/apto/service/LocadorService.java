@@ -9,6 +9,7 @@ import com.apto.exception.EmailJaCadastradoException;
 import com.apto.exception.LocadorNaoEncontradoException;
 import com.apto.model.entity.Locador;
 import com.apto.repository.LocadorRepository;
+import com.apto.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,9 +19,12 @@ import java.util.UUID;
 public class LocadorService {
 
     private final LocadorRepository repository;
+    private final UsuarioRepository usuarioRepository;
 
-    public LocadorService(LocadorRepository repository) {
+    public LocadorService(LocadorRepository repository,
+                          UsuarioRepository usuarioRepository) {
         this.repository = repository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public LocadorResponseDTO criar(CriarLocadorRequestDTO dto) {
@@ -54,7 +58,7 @@ public class LocadorService {
     public LocadorResponseDTO atualizar(UUID id, AtualizarLocadorRequestDTO dto) {
         Locador locador = buscarEntidadePorId(id);
 
-        if (!locador.getEmail().equals(dto.email()) && repository.existsByEmail(dto.email())) {
+        if (!locador.getEmail().equals(dto.email()) && usuarioRepository.existsByEmail(dto.email())) {
             throw new EmailJaCadastradoException("Já existe locador com o email: " + dto.email());
         }
 
@@ -96,7 +100,7 @@ public class LocadorService {
     }
 
     private void validarDuplicidadeEmail(String email) {
-        if (repository.existsByEmail(email)) {
+        if (usuarioRepository.existsByEmail(email)) {
             throw new EmailJaCadastradoException("Já existe locador com o email: " + email);
         }
     }

@@ -8,6 +8,7 @@ import com.apto.exception.EmailInstitucionalJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
 import com.apto.model.entity.UsuarioUniversitario;
+import com.apto.repository.UsuarioRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +19,12 @@ import java.util.UUID;
 public class UsuarioUniversitarioService {
 
     private final UsuarioUniversitarioRepository repository;
+    private final UsuarioRepository usuarioRepository;
 
-    public UsuarioUniversitarioService(UsuarioUniversitarioRepository repository) {
+    public UsuarioUniversitarioService(UsuarioUniversitarioRepository repository,
+                                       UsuarioRepository usuarioRepository) {
         this.repository = repository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public UsuarioUniversitarioResponseDTO criar(CriarUsuarioUniversitarioRequestDTO dto) {
@@ -56,7 +60,7 @@ public class UsuarioUniversitarioService {
     public UsuarioUniversitarioResponseDTO atualizar(UUID id, AtualizarUsuarioUniversitarioRequestDTO dto) {
         UsuarioUniversitario usuario = buscarEntidadePorId(id);
 
-        if (!usuario.getEmail().equals(dto.email()) && repository.existsByEmail(dto.email())) {
+        if (!usuario.getEmail().equals(dto.email()) && usuarioRepository.existsByEmail(dto.email())) {
             throw new EmailJaCadastradoException("Já existe usuário com o email: " + dto.email());
         }
 
@@ -100,7 +104,7 @@ public class UsuarioUniversitarioService {
     }
 
     private void validarDuplicidadeEmail(String email) {
-        if (repository.existsByEmail(email)) {
+        if (usuarioRepository.existsByEmail(email)) {
             throw new EmailJaCadastradoException("Já existe usuário com o email: " + email);
         }
     }

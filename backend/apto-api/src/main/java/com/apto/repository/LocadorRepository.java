@@ -7,7 +7,5 @@ import java.util.UUID;
 
 public interface LocadorRepository extends JpaRepository<Locador, UUID> {
 
-    boolean existsByEmail(String email);
-
     boolean existsByDocumentoIdentificacao(String documentoIdentificacao);
 }
