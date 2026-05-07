@@ -2,9 +2,12 @@ package com.apto.service;
 
 import com.apto.dto.request.AtualizarPerfilRequestDTO;
 import com.apto.dto.response.PerfilResponseDTO;
+import com.apto.exception.EmailInstitucionalJaCadastradoException;
+import com.apto.exception.EmailJaCadastradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
 import com.apto.model.entity.PerfilConvivencia;
 import com.apto.model.entity.UsuarioUniversitario;
+import com.apto.repository.UsuarioRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +17,12 @@ import java.util.UUID;
 public class PerfilService {
 
     private final UsuarioUniversitarioRepository repository;
+    private final UsuarioRepository usuarioRepository;
 
-    public PerfilService(UsuarioUniversitarioRepository repository) {
+    public PerfilService(UsuarioUniversitarioRepository repository,
+                         UsuarioRepository usuarioRepository) {
         this.repository = repository;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public PerfilResponseDTO buscarPerfil(UUID id) {
@@ -26,6 +32,17 @@ public class PerfilService {
 
     public PerfilResponseDTO atualizarPerfil(UUID id, AtualizarPerfilRequestDTO dto) {
         UsuarioUniversitario usuario = buscarUsuarioPorId(id);
+
+        if (!usuario.getEmail().equals(dto.email()) && usuarioRepository.existsByEmail(dto.email())) {
+            throw new EmailJaCadastradoException("Já existe usuário com o email: " + dto.email());
+        }
+
+        if (!usuario.getEmailInstitucional().equals(dto.emailInstitucional())
+                && repository.existsByEmailInstitucional(dto.emailInstitucional())) {
+            throw new EmailInstitucionalJaCadastradoException(
+                    "Já existe usuário com o email institucional: " + dto.emailInstitucional()
+            );
+        }
 
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());

@@ -10,8 +10,6 @@ import java.util.UUID;
 
 public interface UsuarioUniversitarioRepository extends JpaRepository<UsuarioUniversitario, UUID> {
 
-    boolean existsByEmail(String email);
-
     boolean existsByEmailInstitucional(String emailInstitucional);
 
     @Query("""
