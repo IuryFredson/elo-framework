@@ -11,7 +11,7 @@ public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
 
     boolean existsByAvaliador_IdAndAnuncio_IdAndAtivaTrue(UUID avaliadorId, UUID anuncioId);
 
-    List<Avaliacao> findByLocadorAvaliado_IdAndAtivaTrue(UUID locadorId);
+    List<Avaliacao> findByAnuncianteAvaliado_IdAndAtivaTrue(UUID perfilAnuncianteId);
 
     List<Avaliacao> findByMoradia_IdAndAtivaTrue(UUID moradiaId);
 
