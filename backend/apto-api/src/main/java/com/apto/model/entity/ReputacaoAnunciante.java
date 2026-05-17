@@ -1,5 +1,6 @@
 package com.apto.model.entity;
 
+import com.apto.model.PerfilAnunciante;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,21 +11,21 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "reputacao_locador")
+@Table(name = "reputacao_anunciante")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ReputacaoLocador {
+public class ReputacaoAnunciante {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @OneToOne
-    @JoinColumn(name="locador_id", nullable = false, unique = true)
-    private Locador locador;
+    @OneToOne(optional = false)
+    @JoinColumn(name="perfil_anunciante_id", nullable = false, unique = true)
+    private PerfilAnunciante perfilAnunciante;
 
     @Column(name="reputacao_score", nullable = false)
     private Double reputacaoScore;
