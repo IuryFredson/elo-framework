@@ -6,8 +6,9 @@ import com.apto.model.entity.Denuncia;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.Moradia;
+import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.PerfilConvivencia;
-import com.apto.model.entity.ReputacaoLocador;
+import com.apto.model.entity.ReputacaoAnunciante;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.FrequenciaVisitas;
 import com.apto.model.enums.Genero;
@@ -27,7 +28,8 @@ import com.apto.repository.DenunciaRepository;
 import com.apto.repository.LocadorRepository;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.MoradiaRepository;
-import com.apto.repository.ReputacaoLocadorRepository;
+import com.apto.repository.PerfilAnuncianteRepository;
+import com.apto.repository.ReputacaoAnuncianteRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +56,8 @@ public class DevDataSeeder implements CommandLineRunner {
     private final AvaliacaoRepository avaliacaoRepository;
     private final ManifestacaoInteresseRepository manifestacaoRepository;
     private final DenunciaRepository denunciaRepository;
-    private final ReputacaoLocadorRepository reputacaoRepository;
+    private final PerfilAnuncianteRepository perfilAnuncianteRepository;
+    private final ReputacaoAnuncianteRepository reputacaoRepository;
 
     @Override
     @Transactional
@@ -62,10 +65,12 @@ public class DevDataSeeder implements CommandLineRunner {
         log.info("[DevDataSeeder] populando banco de desenvolvimento...");
 
         var locadores = seedLocadores();
+        var perfisLocadores = perfilAnuncianteRepository.findAll();
+
         var moradias = seedMoradias();
-        var anuncios = seedAnuncios(locadores, moradias);
+        var anuncios = seedAnuncios(perfisLocadores, moradias);
         var universitarios = seedUniversitarios();
-        seedAvaliacoesEReputacao(universitarios, locadores, moradias, anuncios);
+        seedAvaliacoesEReputacao(universitarios, perfisLocadores, moradias, anuncios);
         seedManifestacoes(universitarios, anuncios);
         seedDenuncias(universitarios, anuncios);
 
@@ -95,7 +100,16 @@ public class DevDataSeeder implements CommandLineRunner {
         beto.setDocumentoIdentificacao("34567890122");
         beto.setNomeExibicaoOuRazao("Beto Aluga");
 
-        return locadorRepository.saveAll(List.of(rita, joao, beto));
+        List<Locador> salvos = locadorRepository.saveAll(List.of(rita, joao, beto));
+
+        salvos.forEach(locador -> {
+            PerfilAnunciante perfil = new PerfilAnunciante();
+            perfil.setUsuario(locador);
+            perfil.setAtivo(true);
+            perfilAnuncianteRepository.save(perfil);
+        });
+
+        return salvos;
     }
 
     private List<Moradia> seedMoradias() {
@@ -138,7 +152,7 @@ public class DevDataSeeder implements CommandLineRunner {
         return moradiaRepository.saveAll(List.of(republicaCentro, aptoVilaUni, casaJardim, quartoCentro));
     }
 
-    private List<Anuncio> seedAnuncios(List<Locador> locadores, List<Moradia> moradias) {
+    private List<Anuncio> seedAnuncios(List<PerfilAnunciante> perfis, List<Moradia> moradias) {
         Anuncio republicaAtivo = new Anuncio();
         republicaAtivo.setTitulo("Vaga em república perto do campus");
         republicaAtivo.setDescricao("República com 4 estudantes, ambiente tranquilo, mobiliada.");
@@ -146,7 +160,7 @@ public class DevDataSeeder implements CommandLineRunner {
         republicaAtivo.setTipoAnuncio(TipoAnuncio.VAGA_COMPARTILHADA);
         republicaAtivo.setStatus(StatusAnuncio.ATIVO);
         republicaAtivo.setDataPublicacao(LocalDate.now().minusDays(10));
-        republicaAtivo.setAnunciante(locadores.get(0));
+        republicaAtivo.setAnunciante(perfis.get(0)); // Rita
         republicaAtivo.setMoradia(moradias.get(0));
 
         Anuncio aptoAtivo = new Anuncio();
@@ -156,7 +170,7 @@ public class DevDataSeeder implements CommandLineRunner {
         aptoAtivo.setTipoAnuncio(TipoAnuncio.IMOVEL_COMPLETO);
         aptoAtivo.setStatus(StatusAnuncio.ATIVO);
         aptoAtivo.setDataPublicacao(LocalDate.now().minusDays(3));
-        aptoAtivo.setAnunciante(locadores.get(1));
+        aptoAtivo.setAnunciante(perfis.get(1)); // João
         aptoAtivo.setMoradia(moradias.get(1));
 
         Anuncio casaAtivo = new Anuncio();
@@ -166,7 +180,7 @@ public class DevDataSeeder implements CommandLineRunner {
         casaAtivo.setTipoAnuncio(TipoAnuncio.VAGA_COMPARTILHADA);
         casaAtivo.setStatus(StatusAnuncio.ATIVO);
         casaAtivo.setDataPublicacao(LocalDate.now().minusDays(20));
-        casaAtivo.setAnunciante(locadores.get(2));
+        casaAtivo.setAnunciante(perfis.get(2)); // Beto
         casaAtivo.setMoradia(moradias.get(2));
 
         Anuncio quartoPausado = new Anuncio();
@@ -176,14 +190,13 @@ public class DevDataSeeder implements CommandLineRunner {
         quartoPausado.setTipoAnuncio(TipoAnuncio.IMOVEL_COMPLETO);
         quartoPausado.setStatus(StatusAnuncio.PAUSADO);
         quartoPausado.setDataPublicacao(LocalDate.now().minusDays(40));
-        quartoPausado.setAnunciante(locadores.get(0));
+        quartoPausado.setAnunciante(perfis.get(0)); // Rita (segundo anúncio dela)
         quartoPausado.setMoradia(moradias.get(3));
 
         return anuncioRepository.saveAll(List.of(republicaAtivo, aptoAtivo, casaAtivo, quartoPausado));
     }
 
     private List<UsuarioUniversitario> seedUniversitarios() {
-        // 1. Ana — perfil "tranquilo": dorme cedo, organizada, estuda em casa, com descrição livre rica.
         UsuarioUniversitario ana = montarUniversitario(
                 "Ana Lima", "ana.lima@usuario.com", "ana.lima@univ.edu.br",
                 "Engenharia de Software", LocalDate.of(2002, 4, 12), Genero.FEMININO,
@@ -194,7 +207,6 @@ public class DevDataSeeder implements CommandLineRunner {
                         "Cozinho com frequência e prefiro ambientes silenciosos para estudar à noite. " +
                         "Não fumo, não bebo e não tenho animais.");
 
-        // 2. Bruno — perfil quase igual ao da Ana (caso de match alto).
         UsuarioUniversitario bruno = montarUniversitario(
                 "Bruno Santos", "bruno.santos@usuario.com", "bruno.santos@univ.edu.br",
                 "Ciência da Computação", LocalDate.of(2001, 9, 3), Genero.MASCULINO,
@@ -204,7 +216,6 @@ public class DevDataSeeder implements CommandLineRunner {
                 "Estudo bastante em casa, prefiro silêncio à noite e gosto de cozinhar. " +
                         "Sou metódico com limpeza compartilhada.");
 
-        // 3. Carla — oposta da Ana em quase tudo (caso de match baixo).
         UsuarioUniversitario carla = montarUniversitario(
                 "Carla Mendes", "carla.mendes@usuario.com", "carla.mendes@univ.edu.br",
                 "Artes Cênicas", LocalDate.of(2003, 1, 25), Genero.FEMININO,
@@ -214,7 +225,6 @@ public class DevDataSeeder implements CommandLineRunner {
                 "Vida social agitada, recebo amigos com frequência e adoro festas em casa. " +
                         "Tenho um cachorro e durmo tarde.");
 
-        // 4. Daniel — perfil intermediário, sem descrição livre (testa o caminho null).
         UsuarioUniversitario daniel = montarUniversitario(
                 "Daniel Rocha", "daniel.rocha@usuario.com", "daniel.rocha@univ.edu.br",
                 "Direito", LocalDate.of(2000, 7, 18), Genero.MASCULINO,
@@ -223,7 +233,6 @@ public class DevDataSeeder implements CommandLineRunner {
                 true, false, false, PreferenciaGeneroConvivencia.SEM_PREFERENCIA,
                 null);
 
-        // 5. Eduarda — preferência APENAS_MULHERES (filtra Bruno e Daniel).
         UsuarioUniversitario eduarda = montarUniversitario(
                 "Eduarda Prado", "eduarda.prado@usuario.com", "eduarda.prado@univ.edu.br",
                 "Medicina", LocalDate.of(2002, 11, 7), Genero.FEMININO,
@@ -233,7 +242,6 @@ public class DevDataSeeder implements CommandLineRunner {
                 "Estudo bastante e prefiro morar com outras mulheres por questão de conforto. " +
                         "Sou organizada e gosto de manter rotina.");
 
-        // 6. Felipe — preferência A_COMBINAR (aciona penalidade de -5).
         UsuarioUniversitario felipe = montarUniversitario(
                 "Felipe Andrade", "felipe.andrade@usuario.com", "felipe.andrade@univ.edu.br",
                 "Arquitetura", LocalDate.of(2001, 2, 15), Genero.MASCULINO,
@@ -279,43 +287,55 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     private void seedAvaliacoesEReputacao(
-            List<UsuarioUniversitario> universitarios, List<Locador> locadores,
-            List<Moradia> moradias, List<Anuncio> anuncios) {
+            List<UsuarioUniversitario> universitarios,
+            List<PerfilAnunciante> perfis,
+            List<Moradia> moradias,
+            List<Anuncio> anuncios) {
 
-        // Avaliações para Rita (locador 0) — 2 ativas com notas altas, 1 inativa com nota baixa.
-        Avaliacao a1 = montarAvaliacao(universitarios.get(0), locadores.get(0), moradias.get(0), anuncios.get(0),
+        // Avaliações para o perfil da Rita (perfis.get(0))
+        Avaliacao a1 = montarAvaliacao(
+                universitarios.get(0), perfis.get(0), moradias.get(0), anuncios.get(0),
                 5, 5, 5, 4, 5, "Rita é super atenciosa e a república é bem cuidada.", true);
-        Avaliacao a2 = montarAvaliacao(universitarios.get(1), locadores.get(0), moradias.get(0), anuncios.get(0),
+        Avaliacao a2 = montarAvaliacao(
+                universitarios.get(1), perfis.get(0), moradias.get(0), anuncios.get(0),
                 4, 5, 4, 4, 5, "Boa experiência, ambiente tranquilo.", true);
-        Avaliacao a3 = montarAvaliacao(universitarios.get(2), locadores.get(0), moradias.get(3), anuncios.get(3),
+        Avaliacao a3 = montarAvaliacao(
+                universitarios.get(2), perfis.get(0), moradias.get(3), anuncios.get(3),
                 2, 3, 2, 2, 3, "Avaliação retirada após resolução do problema.", false);
 
-        // Avaliações para João (locador 1) — 1 ativa com nota média.
-        Avaliacao a4 = montarAvaliacao(universitarios.get(3), locadores.get(1), moradias.get(1), anuncios.get(1),
+        // Avaliação para o perfil do João (perfis.get(1))
+        Avaliacao a4 = montarAvaliacao(
+                universitarios.get(3), perfis.get(1), moradias.get(1), anuncios.get(1),
                 3, 3, 4, 3, 3, "Apartamento ok, comunicação podia ser mais ágil.", true);
 
-        // Avaliações para Beto (locador 2) — 2 ativas com notas baixas.
-        Avaliacao a5 = montarAvaliacao(universitarios.get(4), locadores.get(2), moradias.get(2), anuncios.get(2),
+        // Avaliações para o perfil do Beto (perfis.get(2))
+        Avaliacao a5 = montarAvaliacao(
+                universitarios.get(4), perfis.get(2), moradias.get(2), anuncios.get(2),
                 2, 2, 2, 2, 3, "Casa precisa de manutenção.", true);
-        Avaliacao a6 = montarAvaliacao(universitarios.get(5), locadores.get(2), moradias.get(2), anuncios.get(2),
+        Avaliacao a6 = montarAvaliacao(
+                universitarios.get(5), perfis.get(2), moradias.get(2), anuncios.get(2),
                 3, 2, 3, 2, 3, "Atende, mas com ressalvas.", true);
 
         avaliacaoRepository.saveAll(List.of(a1, a2, a3, a4, a5, a6));
 
         reputacaoRepository.saveAll(List.of(
-                montarReputacao(locadores.get(0), 4.5, 2, 4.5, 5.0, 4.5, 4.0, 5.0),
-                montarReputacao(locadores.get(1), 3.2, 1, 3.0, 3.0, 4.0, 3.0, 3.0),
-                montarReputacao(locadores.get(2), 2.4, 2, 2.5, 2.0, 2.5, 2.0, 3.0)
+                montarReputacao(perfis.get(0), 4.5, 2, 4.5, 5.0, 4.5, 4.0, 5.0),
+                montarReputacao(perfis.get(1), 3.2, 1, 3.0, 3.0, 4.0, 3.0, 3.0),
+                montarReputacao(perfis.get(2), 2.4, 2, 2.5, 2.0, 2.5, 2.0, 3.0)
         ));
     }
 
+    // locador → perfilAnunciante
     private Avaliacao montarAvaliacao(
-            UsuarioUniversitario avaliador, Locador locador, Moradia moradia, Anuncio anuncio,
-            int notaGeral, int notaComunicacao, int notaFidelidade, int notaEstado, int notaCusto,
+            UsuarioUniversitario avaliador, PerfilAnunciante anuncianteAvaliado,
+            Moradia moradia, Anuncio anuncio,
+            int notaGeral, int notaComunicacao, int notaFidelidade,
+            int notaEstado, int notaCusto,
             String comentario, boolean ativa) {
+
         Avaliacao a = new Avaliacao();
         a.setAvaliador(avaliador);
-        a.setLocadorAvaliado(locador);
+        a.setAnuncianteAvaliado(anuncianteAvaliado);
         a.setMoradia(moradia);
         a.setAnuncio(anuncio);
         a.setNotaGeral(notaGeral);
@@ -329,12 +349,14 @@ public class DevDataSeeder implements CommandLineRunner {
         return a;
     }
 
-    private ReputacaoLocador montarReputacao(
-            Locador locador, double score, int total,
+    // locador → perfilAnunciante
+    private ReputacaoAnunciante montarReputacao(
+            PerfilAnunciante perfilAnunciante, double score, int total,
             double mediaGeral, double mediaComunicacao, double mediaFidelidade,
             double mediaEstado, double mediaCusto) {
-        ReputacaoLocador r = new ReputacaoLocador();
-        r.setLocador(locador);
+
+        ReputacaoAnunciante r = new ReputacaoAnunciante();
+        r.setPerfilAnunciante(perfilAnunciante);
         r.setReputacaoScore(score);
         r.setTotalAvaliacoes(total);
         r.setMediaGeral(mediaGeral);

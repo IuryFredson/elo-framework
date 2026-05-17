@@ -1,6 +1,5 @@
 package com.apto.model.entity;
 
-import com.apto.model.PerfilAnunciante;
 import com.apto.model.enums.Genero;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

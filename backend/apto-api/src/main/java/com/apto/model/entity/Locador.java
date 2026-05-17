@@ -1,6 +1,5 @@
 package com.apto.model.entity;
 
-import com.apto.model.PerfilAnunciante;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

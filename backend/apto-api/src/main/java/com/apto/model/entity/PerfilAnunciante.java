@@ -1,6 +1,5 @@
-package com.apto.model;
+package com.apto.model.entity;
 
-import com.apto.model.entity.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
 
