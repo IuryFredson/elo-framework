@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @Repository
 public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
-    Optional<Anuncio> getAnuncioByAnunciante_Id(UUID usuarioId);
+    Optional<Anuncio> findByAnunciante_Usuario_Id(UUID usuarioId);
     Boolean existsByMoradia(Moradia moradia);
     Page<Anuncio> findByStatus(StatusAnuncio status, Pageable pageable);
 

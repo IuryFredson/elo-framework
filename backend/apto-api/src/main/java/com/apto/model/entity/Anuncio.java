@@ -45,11 +45,23 @@ public class Anuncio {
     @Column(name = "data_publicacao", nullable = false)
     private LocalDate dataPublicacao;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id", nullable = false)
-    private Usuario anunciante;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "perfil_anunciante_id", nullable = false)
+    private PerfilAnunciante anunciante;
 
     @OneToOne
     @JoinColumn(name = "moradia_id", nullable = false, unique = true)
     private Moradia moradia;
+
+    public UUID getAnuncianteUsuarioId() {
+        return anunciante.getUsuario().getId();
+    }
+
+    public String getAnuncianteNome() {
+        Usuario usuario = anunciante.getUsuario();
+        if (usuario instanceof Locador locador) {
+            return locador.getNomeExibicaoOuRazao();
+        }
+        return usuario.getNome();
+    }
 }
