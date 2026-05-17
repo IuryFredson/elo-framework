@@ -8,14 +8,14 @@ import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AvaliacaoDuplicadaException;
 import com.apto.exception.AvaliacaoInvalidaException;
 import com.apto.exception.AvaliacaoNaoEncontradaException;
-import com.apto.exception.LocadorNaoEncontradoException;
+import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Avaliacao;
-import com.apto.model.entity.Locador;
+import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.AvaliacaoRepository;
-import com.apto.repository.LocadorRepository;
+import com.apto.repository.PerfilAnuncianteRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import org.springframework.stereotype.Service;
 
@@ -29,17 +29,18 @@ public class AvaliacaoService {
 
     private final AvaliacaoRepository avaliacaoRepository;
     private final UsuarioUniversitarioRepository universitarioRepository;
-    private final LocadorRepository locadorRepository;
+    private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final AnuncioService anuncioService;
     private final ReputacaoCalculoService reputacaoCalculoService;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             UsuarioUniversitarioRepository universitarioRepository,
-                            LocadorRepository locadorRepository,
-                            AnuncioService anuncioService, ReputacaoCalculoService reputacaoCalculoService) {
+                            PerfilAnuncianteRepository perfilAnuncianteRepository,
+                            AnuncioService anuncioService,
+                            ReputacaoCalculoService reputacaoCalculoService) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.universitarioRepository = universitarioRepository;
-        this.locadorRepository = locadorRepository;
+        this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.anuncioService = anuncioService;
         this.reputacaoCalculoService = reputacaoCalculoService;
     }
@@ -50,15 +51,14 @@ public class AvaliacaoService {
                         "Usuário universitário não encontrado com id: " + dto.avaliadorId()));
 
         Anuncio anuncio = anuncioService.buscarEntidadePorId(dto.anuncioId());
+        PerfilAnunciante anuncianteAvaliado = anuncio.getAnunciante();
 
-        if (anuncio.getAnunciante().getId().equals(avaliador.getId())) {
+        // Universitário não pode avaliar anúncio que ele mesmo publicou
+        if (anuncianteAvaliado.getUsuario().getId().equals(avaliador.getId())) {
             throw new AvaliacaoInvalidaException("Não é possível avaliar o próprio anúncio.");
         }
 
-        if (!(anuncio.getAnunciante() instanceof Locador locador)) {
-            throw new AvaliacaoInvalidaException("Só é possível avaliar anúncios de locadores.");
-        }
-
+        // Não precisa mais de instanceof — qualquer anunciante pode ser avaliado
         if (avaliacaoRepository.existsByAvaliador_IdAndAnuncio_IdAndAtivaTrue(
                 avaliador.getId(), anuncio.getId())) {
             throw new AvaliacaoDuplicadaException(
@@ -70,12 +70,11 @@ public class AvaliacaoService {
                 dto.notaComunicacao(),
                 dto.notaFidelidadeAnuncio(),
                 dto.notaEstadoMoradia(),
-                dto.notaCustoBeneficio()
-        );
+                dto.notaCustoBeneficio());
 
         Avaliacao avaliacao = new Avaliacao();
         avaliacao.setAvaliador(avaliador);
-        avaliacao.setLocadorAvaliado(locador);
+        avaliacao.setAnuncianteAvaliado(anuncianteAvaliado);
         avaliacao.setAnuncio(anuncio);
         avaliacao.setMoradia(anuncio.getMoradia());
         avaliacao.setNotaGeral(dto.notaGeral());
@@ -87,18 +86,21 @@ public class AvaliacaoService {
         avaliacao.setDataCriacao(LocalDateTime.now());
         avaliacao.setAtiva(true);
 
-        Avaliacao avaliacaoSalva = avaliacaoRepository.save(avaliacao);
-        reputacaoCalculoService.calcularReputacaoEAtualizar(locador.getId());
-        return toResponseDTO(avaliacaoSalva);
+        Avaliacao salva = avaliacaoRepository.save(avaliacao);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(anuncianteAvaliado.getId());
+        return toResponseDTO(salva);
     }
 
     public AvaliacaoResponseDTO buscarPorId(UUID id) {
         return toResponseDTO(buscarEntidadePorId(id));
     }
 
-    public List<AvaliacaoResponseDTO> listarPorLocador(UUID locadorId) {
-        validarLocadorExiste(locadorId);
-        return avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId)
+    public List<AvaliacaoResponseDTO> listarPorAnunciante(UUID perfilAnuncianteId) {
+        if (!perfilAnuncianteRepository.existsById(perfilAnuncianteId)) {
+            throw new AnuncianteNaoEncontradoException(
+                    "Perfil de anunciante não encontrado com id: " + perfilAnuncianteId);
+        }
+        return avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId)
                 .stream()
                 .map(this::toResponseDTO)
                 .toList();
@@ -127,8 +129,7 @@ public class AvaliacaoService {
                 dto.notaComunicacao(),
                 dto.notaFidelidadeAnuncio(),
                 dto.notaEstadoMoradia(),
-                dto.notaCustoBeneficio()
-        );
+                dto.notaCustoBeneficio());
 
         avaliacao.setNotaGeral(dto.notaGeral());
         avaliacao.setNotaComunicacao(dto.notaComunicacao());
@@ -137,9 +138,10 @@ public class AvaliacaoService {
         avaliacao.setNotaCustoBeneficio(dto.notaCustoBeneficio());
         avaliacao.setComentario(dto.comentario());
 
-        Avaliacao avaliacaoSalva = avaliacaoRepository.save(avaliacao);
-        reputacaoCalculoService.calcularReputacaoEAtualizar(avaliacao.getLocadorAvaliado().getId());
-        return toResponseDTO(avaliacaoSalva);
+        Avaliacao salva = avaliacaoRepository.save(avaliacao);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(
+                avaliacao.getAnuncianteAvaliado().getId());
+        return toResponseDTO(salva);
     }
 
     public void desativar(UUID id, UUID avaliadorId) {
@@ -147,26 +149,27 @@ public class AvaliacaoService {
         validarDonoDaAvaliacao(avaliacao, avaliadorId);
         avaliacao.setAtiva(false);
         avaliacaoRepository.save(avaliacao);
-        reputacaoCalculoService.calcularReputacaoEAtualizar(avaliacao.getLocadorAvaliado().getId());
+        reputacaoCalculoService.calcularReputacaoEAtualizar(
+                avaliacao.getAnuncianteAvaliado().getId());
     }
 
-    public ResumoAvaliacoesLocadorResponseDTO resumoPorLocador(UUID locadorId) {
-        Locador locador = locadorRepository.findById(locadorId)
-                .orElseThrow(() -> new LocadorNaoEncontradoException(
-                        "Locador não encontrado com id: " + locadorId));
+    public ResumoAvaliacoesLocadorResponseDTO resumoPorAnunciante(UUID perfilAnuncianteId) {
+        PerfilAnunciante perfil = perfilAnuncianteRepository.findById(perfilAnuncianteId)
+                .orElseThrow(() -> new AnuncianteNaoEncontradoException(
+                        "Perfil de anunciante não encontrado com id: " + perfilAnuncianteId));
 
-        List<Avaliacao> avaliacoes = avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId);
+        List<Avaliacao> avaliacoes =
+                avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId);
 
         return new ResumoAvaliacoesLocadorResponseDTO(
-                locador.getId(),
-                locador.getNome(),
+                perfil.getId(),
+                perfil.getUsuario().getNome(),
                 avaliacoes.size(),
                 media(avaliacoes, Avaliacao::getNotaGeral),
                 media(avaliacoes, Avaliacao::getNotaComunicacao),
                 media(avaliacoes, Avaliacao::getNotaFidelidadeAnuncio),
                 media(avaliacoes, Avaliacao::getNotaEstadoMoradia),
-                media(avaliacoes, Avaliacao::getNotaCustoBeneficio)
-        );
+                media(avaliacoes, Avaliacao::getNotaCustoBeneficio));
     }
 
     private Avaliacao buscarEntidadePorId(UUID id) {
@@ -175,15 +178,10 @@ public class AvaliacaoService {
                         "Avaliação não encontrada com id: " + id));
     }
 
-    private void validarLocadorExiste(UUID locadorId) {
-        if (!locadorRepository.existsById(locadorId)) {
-            throw new LocadorNaoEncontradoException("Locador não encontrado com id: " + locadorId);
-        }
-    }
-
     private void validarDonoDaAvaliacao(Avaliacao avaliacao, UUID avaliadorId) {
         if (!avaliacao.getAvaliador().getId().equals(avaliadorId)) {
-            throw new AcessoNegadoException("Usuário não tem permissão para alterar esta avaliação.");
+            throw new AcessoNegadoException(
+                    "Usuário não tem permissão para alterar esta avaliação.");
         }
     }
 
@@ -196,22 +194,18 @@ public class AvaliacaoService {
     }
 
     private Double media(List<Avaliacao> avaliacoes, ToIntFunction<Avaliacao> campo) {
-        if (avaliacoes.isEmpty()) {
-            return 0.0;
-        }
-        return avaliacoes.stream()
-                .mapToInt(campo)
-                .average()
-                .orElse(0.0);
+        if (avaliacoes.isEmpty()) return 0.0;
+        return avaliacoes.stream().mapToInt(campo).average().orElse(0.0);
     }
 
     private AvaliacaoResponseDTO toResponseDTO(Avaliacao avaliacao) {
+        PerfilAnunciante anunciante = avaliacao.getAnuncianteAvaliado();
         return new AvaliacaoResponseDTO(
                 avaliacao.getId(),
                 avaliacao.getAvaliador().getId(),
                 avaliacao.getAvaliador().getNome(),
-                avaliacao.getLocadorAvaliado().getId(),
-                avaliacao.getLocadorAvaliado().getNome(),
+                anunciante.getId(),
+                anunciante.getUsuario().getNome(),
                 avaliacao.getMoradia().getId(),
                 avaliacao.getAnuncio().getId(),
                 avaliacao.getAnuncio().getTitulo(),
@@ -222,7 +216,6 @@ public class AvaliacaoService {
                 avaliacao.getNotaCustoBeneficio(),
                 avaliacao.getComentario(),
                 avaliacao.getDataCriacao(),
-                avaliacao.getAtiva()
-        );
+                avaliacao.getAtiva());
     }
 }
