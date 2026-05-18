@@ -3,7 +3,7 @@ package com.apto.service;
 import com.apto.dto.request.AtualizarAvaliacaoRequestDTO;
 import com.apto.dto.request.CriarAvaliacaoRequestDTO;
 import com.apto.dto.response.AvaliacaoResponseDTO;
-import com.apto.dto.response.ResumoAvaliacoesLocadorResponseDTO;
+import com.apto.dto.response.ResumoAvaliacoesAnuncianteResponseDTO;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AvaliacaoDuplicadaException;
 import com.apto.exception.AvaliacaoInvalidaException;
@@ -153,7 +153,7 @@ public class AvaliacaoService {
                 avaliacao.getAnuncianteAvaliado().getId());
     }
 
-    public ResumoAvaliacoesLocadorResponseDTO resumoPorAnunciante(UUID perfilAnuncianteId) {
+    public ResumoAvaliacoesAnuncianteResponseDTO resumoPorAnunciante(UUID perfilAnuncianteId) {
         PerfilAnunciante perfil = perfilAnuncianteRepository.findById(perfilAnuncianteId)
                 .orElseThrow(() -> new AnuncianteNaoEncontradoException(
                         "Perfil de anunciante não encontrado com id: " + perfilAnuncianteId));
@@ -161,7 +161,7 @@ public class AvaliacaoService {
         List<Avaliacao> avaliacoes =
                 avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId);
 
-        return new ResumoAvaliacoesLocadorResponseDTO(
+        return new ResumoAvaliacoesAnuncianteResponseDTO(
                 perfil.getId(),
                 perfil.getUsuario().getNome(),
                 avaliacoes.size(),
