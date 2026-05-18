@@ -23,12 +23,8 @@ public class PerfilAnuncianteController {
     }
 
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<PerfilAnuncianteResponseDTO> buscarPorUsuario(
-            @PathVariable UUID usuarioId) {
-
-        return perfilAnuncianteService.buscarPorUsuario(usuarioId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+    public ResponseEntity<PerfilAnuncianteResponseDTO> buscarPorUsuario(@PathVariable UUID usuarioId) {
+        return ResponseEntity.ok(perfilAnuncianteService.buscarPorUsuario(usuarioId));
     }
 
     @PostMapping("/universitarios/{universitarioId}")

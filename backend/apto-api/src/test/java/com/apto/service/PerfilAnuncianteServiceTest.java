@@ -184,17 +184,14 @@ class PerfilAnuncianteServiceTest {
         when(perfilAnuncianteRepository.findByUsuario_Id(universitarioId))
                 .thenReturn(Optional.of(perfilExistente));
 
-        Optional<PerfilAnuncianteResponseDTO> response =
+        PerfilAnuncianteResponseDTO response =
                 perfilAnuncianteService.buscarPorUsuario(universitarioId);
 
-        assertTrue(response.isPresent());
-
-        PerfilAnuncianteResponseDTO dto = response.get();
-
-        assertEquals(perfilId, dto.id());
-        assertEquals(universitarioId, dto.usuarioId());
-        assertEquals("Ana Subloca", dto.nomeUsuario());
-        assertTrue(dto.ativo());
+        assertNotNull(response);
+        assertEquals(perfilId, response.id());
+        assertEquals(universitarioId, response.usuarioId());
+        assertEquals("Ana Subloca", response.nomeUsuario());
+        assertTrue(response.ativo());
     }
 
     @Test
@@ -202,10 +199,8 @@ class PerfilAnuncianteServiceTest {
         when(perfilAnuncianteRepository.findByUsuario_Id(universitarioId))
                 .thenReturn(Optional.empty());
 
-        Optional<PerfilAnuncianteResponseDTO> response =
-                perfilAnuncianteService.buscarPorUsuario(universitarioId);
-
-        assertTrue(response.isEmpty());
+        assertThrows(AnuncianteNaoEncontradoException.class,
+                () -> perfilAnuncianteService.buscarPorUsuario(universitarioId));
     }
 
     @Test
@@ -225,14 +220,11 @@ class PerfilAnuncianteServiceTest {
         when(perfilAnuncianteRepository.findByUsuario_Id(locador.getId()))
                 .thenReturn(Optional.of(perfilLocador));
 
-        Optional<PerfilAnuncianteResponseDTO> response =
+        PerfilAnuncianteResponseDTO response =
                 perfilAnuncianteService.buscarPorUsuario(locador.getId());
 
-        assertTrue(response.isPresent());
-
-        PerfilAnuncianteResponseDTO dto = response.get();
-
-        assertEquals("Carlos Locador", dto.nomeUsuario());
-        assertTrue(dto.ativo());
+        assertNotNull(response);
+        assertEquals("Carlos Locador", response.nomeUsuario());
+        assertTrue(response.ativo());
     }
 }

@@ -54,10 +54,12 @@ public class PerfilAnuncianteService {
         return toResponseDTO(perfilAnuncianteRepository.save(perfil));
     }
 
-    public Optional<PerfilAnuncianteResponseDTO> buscarPorUsuario(UUID usuarioId) {
-        return perfilAnuncianteRepository
+    public PerfilAnuncianteResponseDTO buscarPorUsuario(UUID usuarioId) {
+        PerfilAnunciante perfil = perfilAnuncianteRepository
                 .findByUsuario_Id(usuarioId)
-                .map(this::toResponseDTO);
+                .orElseThrow(() -> new AnuncianteNaoEncontradoException("Anunciante não encontrado com id: " + usuarioId));
+
+        return toResponseDTO(perfil);
     }
 
     private PerfilAnuncianteResponseDTO toResponseDTO(PerfilAnunciante perfil) {
