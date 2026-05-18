@@ -64,8 +64,7 @@ public class DevDataSeeder implements CommandLineRunner {
     public void run(String... args) {
         log.info("[DevDataSeeder] populando banco de desenvolvimento...");
 
-        var locadores = seedLocadores();
-        var perfisLocadores = perfilAnuncianteRepository.findAll();
+        var perfisLocadores = seedLocadores();
 
         var moradias = seedMoradias();
         var anuncios = seedAnuncios(perfisLocadores, moradias);
@@ -74,11 +73,10 @@ public class DevDataSeeder implements CommandLineRunner {
         seedManifestacoes(universitarios, anuncios);
         seedDenuncias(universitarios, anuncios);
 
-        log.info("[DevDataSeeder] seed concluído: {} universitários, {} locadores, {} anúncios",
-                universitarios.size(), locadores.size(), anuncios.size());
+        log.info("[DevDataSeeder] seed concluído.");
     }
 
-    private List<Locador> seedLocadores() {
+    private List<PerfilAnunciante> seedLocadores() {
         Locador rita = new Locador();
         rita.setNome("Rita Albuquerque");
         rita.setEmail("rita.alb@imobiliariaboa.com");
@@ -101,15 +99,14 @@ public class DevDataSeeder implements CommandLineRunner {
         beto.setNomeExibicaoOuRazao("Beto Aluga");
 
         List<Locador> salvos = locadorRepository.saveAll(List.of(rita, joao, beto));
-
-        salvos.forEach(locador -> {
+        List<PerfilAnunciante> perfis = salvos.stream().map(locador -> {
             PerfilAnunciante perfil = new PerfilAnunciante();
             perfil.setUsuario(locador);
             perfil.setAtivo(true);
-            perfilAnuncianteRepository.save(perfil);
-        });
+            return perfilAnuncianteRepository.save(perfil);
+        }).toList();
 
-        return salvos;
+        return perfis;
     }
 
     private List<Moradia> seedMoradias() {
