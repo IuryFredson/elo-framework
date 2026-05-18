@@ -1,13 +1,14 @@
 package com.apto.service;
 
-import com.apto.dto.response.ReputacaoLocadorResponseDTO;
-import com.apto.exception.LocadorNaoEncontradoException;
+import com.apto.dto.response.ReputacaoAnuncianteResponseDTO;
+import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.model.entity.Avaliacao;
 import com.apto.model.entity.Locador;
-import com.apto.model.entity.ReputacaoLocador;
+import com.apto.model.entity.PerfilAnunciante;
+import com.apto.model.entity.ReputacaoAnunciante;
 import com.apto.repository.AvaliacaoRepository;
-import com.apto.repository.LocadorRepository;
-import com.apto.repository.ReputacaoLocadorRepository;
+import com.apto.repository.PerfilAnuncianteRepository;
+import com.apto.repository.ReputacaoAnuncianteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,18 +20,23 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReputacaoCalculoServiceTest {
 
     @Mock
-    private ReputacaoLocadorRepository reputacaoLocadorRepository;
+    private ReputacaoAnuncianteRepository reputacaoRepository;
 
     @Mock
-    private LocadorRepository locadorRepository;
+    private PerfilAnuncianteRepository perfilAnuncianteRepository;
 
     @Mock
     private AvaliacaoRepository avaliacaoRepository;
@@ -38,24 +44,30 @@ class ReputacaoCalculoServiceTest {
     @InjectMocks
     private ReputacaoCalculoService reputacaoCalculoService;
 
-    private UUID locadorId;
+    private UUID perfilAnuncianteId;
     private Locador locador;
-    private ReputacaoLocador reputacaoExistente;
+    private PerfilAnunciante perfilAnunciante;
+    private ReputacaoAnunciante reputacaoExistente;
 
     @BeforeEach
     void setUp() {
-        locadorId = UUID.randomUUID();
+        perfilAnuncianteId = UUID.randomUUID();
 
         locador = new Locador();
-        locador.setId(locadorId);
+        locador.setId(UUID.randomUUID());
         locador.setNome("Carlos Locador");
         locador.setEmail("carlos@email.com");
         locador.setDocumentoIdentificacao("12345678900");
         locador.setNomeExibicaoOuRazao("Carlos Imóveis");
 
-        reputacaoExistente = new ReputacaoLocador();
+        perfilAnunciante = new PerfilAnunciante();
+        perfilAnunciante.setId(perfilAnuncianteId);
+        perfilAnunciante.setUsuario(locador);
+        perfilAnunciante.setAtivo(true);
+
+        reputacaoExistente = new ReputacaoAnunciante();
         reputacaoExistente.setId(UUID.randomUUID());
-        reputacaoExistente.setLocador(locador);
+        reputacaoExistente.setPerfilAnunciante(perfilAnunciante);
         reputacaoExistente.setReputacaoScore(3.5);
         reputacaoExistente.setTotalAvaliacoes(2);
         reputacaoExistente.setMediaGeral(4.0);
@@ -73,30 +85,34 @@ class ReputacaoCalculoServiceTest {
         avaliacao.setNotaEstadoMoradia(estado);
         avaliacao.setNotaCustoBeneficio(custo);
         avaliacao.setAtiva(true);
-        avaliacao.setLocadorAvaliado(locador);
+        avaliacao.setAnuncianteAvaliado(perfilAnunciante); // era: setLocadorAvaliado
         return avaliacao;
     }
 
     @Test
-    void deveBuscarReputacaoExistentePorLocador() {
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+    void deveBuscarReputacaoExistentePorAnunciante() {
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.of(reputacaoExistente));
 
-        ReputacaoLocadorResponseDTO response = reputacaoCalculoService.buscarPorLocador(locadorId);
+        ReputacaoAnuncianteResponseDTO response =
+                reputacaoCalculoService.buscarPorAnunciante(perfilAnuncianteId);
 
         assertNotNull(response);
-        assertEquals(locadorId, response.locadorId());
+        assertEquals(perfilAnuncianteId, response.perfilAnuncianteId());
         assertEquals(3.5, response.reputacaoScore());
     }
 
     @Test
-    void deveRetornarReputacaoPadraoSeLocadorSemReputacao() {
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+    void deveRetornarReputacaoPadraoSeAnuncianteSemReputacao() {
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.empty());
 
-        ReputacaoLocadorResponseDTO response = reputacaoCalculoService.buscarPorLocador(locadorId);
+        ReputacaoAnuncianteResponseDTO response =
+                reputacaoCalculoService.buscarPorAnunciante(perfilAnuncianteId);
 
         assertNotNull(response);
         assertEquals(0.0, response.reputacaoScore());
@@ -104,116 +120,157 @@ class ReputacaoCalculoServiceTest {
     }
 
     @Test
-    void naoDeveBuscarReputacaoSeLocadorNaoExistir() {
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.empty());
+    void naoDeveBuscarReputacaoSeAnuncianteNaoExistir() {
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId)).thenReturn(Optional.empty());
 
-        assertThrows(LocadorNaoEncontradoException.class,
-                () -> reputacaoCalculoService.buscarPorLocador(locadorId));
+        assertThrows(AnuncianteNaoEncontradoException.class,
+                () -> reputacaoCalculoService.buscarPorAnunciante(perfilAnuncianteId));
     }
 
     @Test
-    void deveCalcularECriarReputacaoParaLocadorSemReputacaoPrevia() {
+    void deveCalcularECriarReputacaoParaAnuncianteSemReputacaoPrevia() {
         Avaliacao a1 = criarAvaliacao(5, 5, 5, 5, 5);
         Avaliacao a2 = criarAvaliacao(3, 3, 3, 3, 3);
 
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId))
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId))
                 .thenReturn(List.of(a1, a2));
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.empty());
-        when(reputacaoLocadorRepository.findAll()).thenReturn(List.of());
-        when(reputacaoLocadorRepository.save(any(ReputacaoLocador.class))).thenAnswer(i -> i.getArgument(0));
+        when(reputacaoRepository.findAll()).thenReturn(List.of());
+        when(reputacaoRepository.save(any(ReputacaoAnunciante.class))).thenAnswer(i -> i.getArgument(0));
 
-        reputacaoCalculoService.calcularReputacaoEAtualizar(locadorId);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(perfilAnuncianteId);
 
-        verify(reputacaoLocadorRepository).save(any(ReputacaoLocador.class));
+        verify(reputacaoRepository).save(any(ReputacaoAnunciante.class));
     }
 
     @Test
     void deveAtualizarReputacaoExistente() {
         Avaliacao a1 = criarAvaliacao(5, 5, 5, 5, 5);
 
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId))
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId))
                 .thenReturn(List.of(a1));
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.of(reputacaoExistente));
-        when(reputacaoLocadorRepository.findAll()).thenReturn(List.of(reputacaoExistente));
-        when(reputacaoLocadorRepository.save(any(ReputacaoLocador.class))).thenAnswer(i -> i.getArgument(0));
+        when(reputacaoRepository.findAll()).thenReturn(List.of(reputacaoExistente));
+        when(reputacaoRepository.save(any(ReputacaoAnunciante.class))).thenAnswer(i -> i.getArgument(0));
 
-        reputacaoCalculoService.calcularReputacaoEAtualizar(locadorId);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(perfilAnuncianteId);
 
-        verify(reputacaoLocadorRepository).save(reputacaoExistente);
+        verify(reputacaoRepository).save(reputacaoExistente);
     }
 
     @Test
     void deveZerarReputacaoSeNaoHouverAvaliacoesAtivas() {
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId))
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId))
                 .thenReturn(List.of());
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.of(reputacaoExistente));
 
-        reputacaoCalculoService.calcularReputacaoEAtualizar(locadorId);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(perfilAnuncianteId);
 
-        verify(reputacaoLocadorRepository).save(reputacaoExistente);
+        verify(reputacaoRepository).save(reputacaoExistente);
         assertEquals(0.0, reputacaoExistente.getReputacaoScore());
         assertEquals(0, reputacaoExistente.getTotalAvaliacoes());
     }
 
     @Test
-    void naoDeveCalcularSeLocadorNaoExistir() {
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.empty());
+    void naoDeveCalcularSeAnuncianteNaoExistir() {
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId)).thenReturn(Optional.empty());
 
-        assertThrows(LocadorNaoEncontradoException.class,
-                () -> reputacaoCalculoService.calcularReputacaoEAtualizar(locadorId));
-        verify(reputacaoLocadorRepository, never()).save(any());
+        assertThrows(AnuncianteNaoEncontradoException.class,
+                () -> reputacaoCalculoService.calcularReputacaoEAtualizar(perfilAnuncianteId));
+        verify(reputacaoRepository, never()).save(any());
     }
 
     @Test
-    void deveAplicarPesosCorretamentNoScorePonderado() {
-        // notas todas iguais a 4 entao score ponderado deve ser exatamente 4.0
+    void deveAplicarPesosCorretamenteNoScorePonderado() {
+        // notas todas iguais a 4 → score ponderado deve ser exatamente 4.0
         Avaliacao a1 = criarAvaliacao(4, 4, 4, 4, 4);
 
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId))
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId))
                 .thenReturn(List.of(a1));
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.of(reputacaoExistente));
-        when(reputacaoLocadorRepository.findAll()).thenReturn(List.of());
-        when(reputacaoLocadorRepository.save(any(ReputacaoLocador.class))).thenAnswer(i -> i.getArgument(0));
+        when(reputacaoRepository.findAll()).thenReturn(List.of());
+        when(reputacaoRepository.save(any(ReputacaoAnunciante.class))).thenAnswer(i -> i.getArgument(0));
 
-        reputacaoCalculoService.calcularReputacaoEAtualizar(locadorId);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(perfilAnuncianteId);
 
-        // com mediaGlobal = 3.5 (lista vazia), constanteSuavizacao = 5, total = 1:
-        // reputacaoScore = (1 * 4.0 + 5 * 3.5) / (1 + 5) = 21.5 / 6 aproximadamente 3.583
-        verify(reputacaoLocadorRepository).save(argThat(r ->
+        // mediaGlobal = 3.5 (lista vazia), m = 5, total = 1
+        // reputacaoScore = (1 * 4.0 + 5 * 3.5) / 6 ≈ 3.583
+        verify(reputacaoRepository).save(argThat(r ->
                 r.getReputacaoScore() > 3.5 && r.getReputacaoScore() < 4.0
         ));
     }
 
     @Test
     void deveUsarMediaGlobalNaFormulaBayesiana() {
-        // locador com nota máxima -> com poucos votos o score deve ser puxado para a média global, atendendo a media bayesiana
+        // anunciante com nota máxima mas poucos votos deve ser puxado para a média global
         Avaliacao a1 = criarAvaliacao(5, 5, 5, 5, 5);
 
-        ReputacaoLocador outraReputacao = new ReputacaoLocador();
+        ReputacaoAnunciante outraReputacao = new ReputacaoAnunciante();
         outraReputacao.setReputacaoScore(2.0);
 
-        when(locadorRepository.findById(locadorId)).thenReturn(Optional.of(locador));
-        when(avaliacaoRepository.findByLocadorAvaliado_IdAndAtivaTrue(locadorId))
+        when(perfilAnuncianteRepository.findById(perfilAnuncianteId))
+                .thenReturn(Optional.of(perfilAnunciante));
+        when(avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId))
                 .thenReturn(List.of(a1));
-        when(reputacaoLocadorRepository.findReputacaoLocadorByLocador(locador))
+        when(reputacaoRepository.findByPerfilAnunciante(perfilAnunciante))
                 .thenReturn(Optional.of(reputacaoExistente));
-        when(reputacaoLocadorRepository.findAll()).thenReturn(List.of(outraReputacao));
-        when(reputacaoLocadorRepository.save(any(ReputacaoLocador.class))).thenAnswer(i -> i.getArgument(0));
+        when(reputacaoRepository.findAll()).thenReturn(List.of(outraReputacao));
+        when(reputacaoRepository.save(any(ReputacaoAnunciante.class))).thenAnswer(i -> i.getArgument(0));
 
-        reputacaoCalculoService.calcularReputacaoEAtualizar(locadorId);
+        reputacaoCalculoService.calcularReputacaoEAtualizar(perfilAnuncianteId);
 
         // mediaGlobal = 2.0, scorePonderado = 5.0, total = 1, m = 5
         // reputacaoScore = (1 * 5.0 + 5 * 2.0) / 6 = 15/6 = 2.5
-        verify(reputacaoLocadorRepository).save(argThat(r ->
+        verify(reputacaoRepository).save(argThat(r ->
                 Math.abs(r.getReputacaoScore() - 2.5) < 0.001
         ));
+    }
+
+    @Test
+    void deveCalcularReputacaoParaUniversitarioComPerfilAnunciante() {
+        // garante que o cálculo funciona independente do tipo de Usuario do perfil
+        com.apto.model.entity.UsuarioUniversitario universitario =
+                new com.apto.model.entity.UsuarioUniversitario();
+        universitario.setId(UUID.randomUUID());
+        universitario.setNome("Ana Subloca");
+
+        PerfilAnunciante perfilUniv = new PerfilAnunciante();
+        perfilUniv.setId(UUID.randomUUID());
+        perfilUniv.setUsuario(universitario);
+        perfilUniv.setAtivo(true);
+
+        Avaliacao av = new Avaliacao();
+        av.setNotaGeral(4);
+        av.setNotaComunicacao(4);
+        av.setNotaFidelidadeAnuncio(4);
+        av.setNotaEstadoMoradia(4);
+        av.setNotaCustoBeneficio(4);
+        av.setAtiva(true);
+        av.setAnuncianteAvaliado(perfilUniv);
+
+        when(perfilAnuncianteRepository.findById(perfilUniv.getId()))
+                .thenReturn(Optional.of(perfilUniv));
+        when(avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilUniv.getId()))
+                .thenReturn(List.of(av));
+        when(reputacaoRepository.findByPerfilAnunciante(perfilUniv))
+                .thenReturn(Optional.empty());
+        when(reputacaoRepository.findAll()).thenReturn(List.of());
+        when(reputacaoRepository.save(any(ReputacaoAnunciante.class))).thenAnswer(i -> i.getArgument(0));
+
+        reputacaoCalculoService.calcularReputacaoEAtualizar(perfilUniv.getId());
+
+        verify(reputacaoRepository).save(any(ReputacaoAnunciante.class));
     }
 }
