@@ -13,31 +13,31 @@ import type {
 
 type Tab = "UNIVERSITARIO" | "LOCADOR";
 
-export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("UNIVERSITARIO");
-  const [universitarios, setUniversitarios] = useState<
-    UsuarioUniversitarioResponse[] | null
-  >(null);
-  const [locadores, setLocadores] = useState<LocadorResponse[] | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
+  export default function Login() {
+    const { login } = useAuth();
+    const navigate = useNavigate();
+    const [tab, setTab] = useState<Tab>("UNIVERSITARIO");
+    const [universitarios, setUniversitarios] = useState<
+      UsuarioUniversitarioResponse[] | null
+    >(null);
+    const [locadores, setLocadores] = useState<LocadorResponse[] | null>(null);
+    const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    setErro(null);
-    Promise.all([universitariosApi.listar(), locadoresApi.listar()])
-      .then(([univs, locs]) => {
-        setUniversitarios(univs);
-        setLocadores(locs);
-      })
-      .catch((e: unknown) => {
-        const msg =
-          e instanceof ApiError
-            ? `${e.status}: ${e.message}`
-            : "Não foi possível carregar usuários do backend.";
-        setErro(msg);
-      });
-  }, []);
+    useEffect(() => {
+      setErro(null);
+      Promise.all([universitariosApi.listar(), locadoresApi.listar()])
+        .then(([univs, locs]) => {
+          setUniversitarios(univs);
+          setLocadores(locs);
+        })
+        .catch((e: unknown) => {
+          const msg =
+            e instanceof ApiError
+              ? `${e.status}: ${e.message}`
+              : "Não foi possível carregar usuários do backend.";
+          setErro(msg);
+        });
+    }, []);
 
   function entrarComo(
     tipo: Tab,

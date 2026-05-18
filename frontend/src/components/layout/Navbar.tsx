@@ -12,6 +12,11 @@ export function Navbar() {
   const { sessao, logout } = useAuth();
   const [menuAberto, setMenuAberto] = useState(false);
 
+  // universitário com perfilAnuncianteId ativo é também anunciante
+  const ehAnunciante =
+    sessao?.tipo === "LOCADOR" ||
+    (sessao?.tipo === "UNIVERSITARIO" && !!sessao.perfilAnuncianteId);
+
   const itensUniversitario = [
     { label: "Início", href: "/", icon: HomeIcon },
     { label: "Buscar", href: "/buscar", icon: Search },
@@ -19,25 +24,25 @@ export function Navbar() {
     { label: "Interesses", href: "/interesses", icon: User },
   ];
 
+  // itens extras que aparecem quando universitário também é anunciante
+  const itensAnunciante = [
+    { label: "Meus Anúncios", href: "/meus-anuncios", icon: HomeIcon },
+    { label: "Interesses recebidos", href: "/interesses-recebidos", icon: User },
+  ];
+
   const itensLocador = [
     { label: "Início", href: "/", icon: HomeIcon },
     { label: "Meus Anúncios", href: "/meus-anuncios", icon: HomeIcon },
-    {
-      label: "Interesses recebidos",
-      href: "/interesses-recebidos",
-      icon: User,
-    },
+    { label: "Interesses recebidos", href: "/interesses-recebidos", icon: User },
   ];
 
   const navItems = sessao
     ? sessao.tipo === "UNIVERSITARIO"
-      ? itensUniversitario
+      ? ehAnunciante
+        ? [...itensUniversitario, ...itensAnunciante]
+        : itensUniversitario
       : itensLocador
     : [];
-
-  const ctaHref =
-    sessao?.tipo === "LOCADOR" ? "/anuncios/novo" : "/anuncios/novo";
-  const ctaLabel = sessao?.tipo === "LOCADOR" ? "Publicar vaga" : "Publicar";
 
   return (
     <nav className="fixed top-0 w-full h-16 bg-white border-b border-apto-border px-6 md:px-8 flex items-center justify-between z-50">
@@ -73,13 +78,16 @@ export function Navbar() {
 
         {sessao ? (
           <>
-            <Button
-              size="md"
-              className="hidden sm:flex px-5 bg-apto-primary rounded-[10px]"
-              onClick={() => navigate(ctaHref)}
-            >
-              {ctaLabel}
-            </Button>
+            {/* botão "Publicar" visível apenas para anunciantes */}
+            {ehAnunciante && (
+              <Button
+                size="md"
+                className="hidden sm:flex px-5 bg-apto-primary rounded-[10px]"
+                onClick={() => navigate("/anuncios/novo")}
+              >
+                Publicar vaga
+              </Button>
+            )}
 
             <div className="relative">
               <button
@@ -109,7 +117,9 @@ export function Navbar() {
                       </p>
                       <p className="text-xs text-apto-text-muted">
                         {sessao.tipo === "UNIVERSITARIO"
-                          ? "Universitário"
+                          ? ehAnunciante
+                            ? "Universitário · Anunciante"
+                            : "Universitário"
                           : "Locador"}
                       </p>
                     </div>

@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String,String>> handleAcessoNegado(AcessoNegadoException ex) {
         Map<String, String> erro = new HashMap<>();
         erro.put("erro", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(erro);
     }
 
     @ExceptionHandler(MoradiaAssociadaComAnuncioException.class)

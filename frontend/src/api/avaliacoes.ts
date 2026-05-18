@@ -2,19 +2,24 @@ import { api } from "./client";
 import type {
   AvaliacaoResponse,
   CriarAvaliacaoRequest,
-  ResumoAvaliacoesLocadorResponse,
+  ResumoAvaliacoesAnuncianteResponse,
   UUID,
 } from "./types";
 
 export const avaliacoesApi = {
   criar: (body: CriarAvaliacaoRequest) =>
     api.post<AvaliacaoResponse>("/avaliacoes", body),
-  porLocador: (locadorId: UUID) =>
-    api.get<AvaliacaoResponse[]>(`/avaliacoes/locador/${locadorId}`),
-  resumoLocador: (locadorId: UUID) =>
-    api.get<ResumoAvaliacoesLocadorResponse>(
-      `/avaliacoes/locador/${locadorId}/resumo`,
+
+  porAnunciante: (perfilAnuncianteId: UUID) =>
+    api.get<AvaliacaoResponse[]>(
+      `/avaliacoes/anunciante/${perfilAnuncianteId}`,
     ),
+
+  resumoAnunciante: (perfilAnuncianteId: UUID) =>
+    api.get<ResumoAvaliacoesAnuncianteResponse>(
+      `/avaliacoes/anunciante/${perfilAnuncianteId}/resumo`,
+    ),
+
   porAvaliador: (avaliadorId: UUID) =>
     api.get<AvaliacaoResponse[]>(`/avaliacoes/avaliador/${avaliadorId}`),
 };

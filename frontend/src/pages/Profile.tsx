@@ -8,6 +8,7 @@ import {
   Phone,
   Settings,
   Sparkles,
+  Store,
   Users2,
   Volume2,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { perfilApi } from "../api/usuarios";
+import { perfilAnuncianteApi } from "../api/reputacao";
 import { useAuth } from "../auth/useAuth";
 import { ApiError } from "../api/client";
 import {
@@ -27,11 +29,13 @@ import {
   preferenciaGeneroConvivenciaLabel,
   rotinaEstudosLabel,
 } from "../lib/format";
-import type { PerfilResponse } from "../api/types";
+import type { PerfilAnuncianteResponse, PerfilResponse } from "../api/types";
 
 export default function Profile() {
-  const { sessao } = useAuth();
+  const { sessao, atualizarPerfilAnunciante } = useAuth();
   const [perfil, setPerfil] = useState<PerfilResponse | null>(null);
+  const [perfilAnunciante, setPerfilAnunciante] =
+    useState<PerfilAnuncianteResponse | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -41,20 +45,22 @@ export default function Profile() {
       return;
     }
     setCarregando(true);
-    perfilApi
-      .obter(sessao.id)
-      .then(setPerfil)
-      .catch((e: unknown) => {
-        if (e instanceof ApiError && e.status === 404) {
-          setPerfil(null);
-        } else {
-          setErro(
-            e instanceof ApiError
-              ? e.message
-              : "Erro ao carregar perfil.",
-          );
-        }
+
+    Promise.all([
+      perfilApi.obter(sessao.id).catch((e: unknown) => {
+        if (e instanceof ApiError && e.status === 404) return null;
+        throw e;
+      }),
+      // verifica se já tem PerfilAnunciante — 404 significa que não tem ainda
+      perfilAnuncianteApi.porUsuario(sessao.id).catch(() => null),
+    ])
+      .then(([p, pa]) => {
+        setPerfil(p);
+        setPerfilAnunciante(pa);
       })
+      .catch((e: unknown) =>
+        setErro(e instanceof ApiError ? e.message : "Erro ao carregar perfil."),
+      )
       .finally(() => setCarregando(false));
   }, [sessao]);
 
@@ -70,8 +76,8 @@ export default function Profile() {
           </h1>
           <Badge tone="primary">Locador</Badge>
           <p className="text-apto-text-muted">
-            Locadores publicam anúncios e recebem manifestações de interesse.
-            O perfil de convivência é exclusivo de universitários.
+            Locadores publicam anúncios e recebem manifestações de interesse. O
+            perfil de convivência é exclusivo de universitários.
           </p>
           <Link to="/meus-anuncios">
             <Button>Ver meus anúncios</Button>
@@ -155,9 +161,7 @@ export default function Profile() {
     {
       label: "Convivência preferida",
       value: perfil.preferenciaGeneroConvivencia
-        ? preferenciaGeneroConvivenciaLabel[
-            perfil.preferenciaGeneroConvivencia
-          ]
+        ? preferenciaGeneroConvivenciaLabel[perfil.preferenciaGeneroConvivencia]
         : "—",
       icon: Users2,
     },
@@ -207,6 +211,17 @@ export default function Profile() {
               </span>
             </div>
           </div>
+
+          {/*  parte do anunciante */}
+          <SecaoAnunciante
+            sessaoId={sessao.id}
+            perfilAnunciante={perfilAnunciante}
+            onAtualizar={(pa) => {
+              setPerfilAnunciante(pa);
+              // propaga para a sessão para que a Navbar atualize imediatamente
+              atualizarPerfilAnunciante(pa?.id ?? null);
+            }}
+          />
         </div>
 
         <div className="flex-1 space-y-6">
@@ -263,6 +278,105 @@ export default function Profile() {
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+// parte do anunciante
+function SecaoAnunciante({
+  sessaoId,
+  perfilAnunciante,
+  onAtualizar,
+}: {
+  sessaoId: string;
+  perfilAnunciante: PerfilAnuncianteResponse | null;
+  onAtualizar: (pa: PerfilAnuncianteResponse | null) => void;
+}) {
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function habilitar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const pa = await perfilAnuncianteApi.habilitar(sessaoId);
+      onAtualizar(pa);
+    } catch (e: unknown) {
+      setErro(
+        e instanceof ApiError ? e.message : "Erro ao habilitar perfil de anunciante.",
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function desabilitar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const pa = await perfilAnuncianteApi.desabilitar(sessaoId);
+      onAtualizar(pa);
+    } catch (e: unknown) {
+      setErro(
+        e instanceof ApiError ? e.message : "Erro ao desabilitar perfil de anunciante.",
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  const estaAtivo = perfilAnunciante?.ativo === true;
+
+  return (
+    <div className="bg-white p-6 rounded-apto-section border border-apto-border shadow-sm space-y-4">
+      <div className="flex items-center gap-2">
+        <Store size={16} className="text-apto-primary" />
+        <p className="section-title">Anunciante</p>
+      </div>
+
+      {estaAtivo ? (
+        <>
+          <div className="flex items-center gap-2">
+            <Badge tone="success">Ativo</Badge>
+            <p className="text-sm text-apto-text-muted">
+              Você pode publicar anúncios de moradia.
+            </p>
+          </div>
+          <Link to="/meus-anuncios">
+            <Button variant="secondary" size="sm" className="w-full">
+              Ver meus anúncios
+            </Button>
+          </Link>
+          <button
+            type="button"
+            onClick={desabilitar}
+            disabled={carregando}
+            className="w-full text-xs text-apto-text-muted hover:text-red-600 transition-colors"
+          >
+            {carregando ? "Aguarde..." : "Desativar papel de anunciante"}
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-apto-text-muted leading-relaxed">
+            Quer sublocar um quarto ou anunciar sua moradia? Ative o papel de
+            anunciante para publicar anúncios e receber manifestações de
+            interesse.
+          </p>
+          <Button
+            className="w-full"
+            onClick={habilitar}
+            disabled={carregando}
+          >
+            <Store size={14} className="mr-2" />
+            {carregando ? "Ativando..." : "Quero anunciar"}
+          </Button>
+        </>
+      )}
+
+      {erro && (
+        <p className="text-xs text-red-600">{erro}</p>
+      )}
     </div>
   );
 }

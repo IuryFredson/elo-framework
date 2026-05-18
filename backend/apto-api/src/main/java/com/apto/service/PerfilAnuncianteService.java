@@ -10,6 +10,7 @@ import com.apto.repository.UsuarioUniversitarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -56,8 +57,8 @@ public class PerfilAnuncianteService {
     public PerfilAnuncianteResponseDTO buscarPorUsuario(UUID usuarioId) {
         PerfilAnunciante perfil = perfilAnuncianteRepository
                 .findByUsuario_Id(usuarioId)
-                .orElseThrow(() -> new AnuncianteNaoEncontradoException(
-                        "Perfil de anunciante não encontrado para o usuário: " + usuarioId));
+                .orElseThrow(() -> new AnuncianteNaoEncontradoException("Anunciante não encontrado com id: " + usuarioId));
+
         return toResponseDTO(perfil);
     }
 

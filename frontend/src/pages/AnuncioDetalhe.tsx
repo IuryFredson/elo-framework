@@ -21,7 +21,7 @@ import { anunciosApi } from "../api/anuncios";
 import { moradiasApi } from "../api/moradias";
 import { locadoresApi, universitariosApi } from "../api/usuarios";
 import { manifestacoesApi } from "../api/manifestacoes";
-import { reputacaoApi } from "../api/reputacao";
+import { perfilAnuncianteApi, reputacaoApi } from "../api/reputacao";
 import { ApiError } from "../api/client";
 import { useAuth } from "../auth/useAuth";
 import { useToast } from "../components/ui/useToast";
@@ -36,7 +36,8 @@ import type {
   AnuncioResponse,
   LocadorResponse,
   MoradiaResponse,
-  ReputacaoLocadorResponse,
+  PerfilAnuncianteResponse,
+  ReputacaoAnuncianteResponse,
   UsuarioUniversitarioResponse,
 } from "../api/types";
 
@@ -52,9 +53,10 @@ export default function AnuncioDetalhe() {
   const [anuncio, setAnuncio] = useState<AnuncioResponse | null>(null);
   const [moradia, setMoradia] = useState<MoradiaResponse | null>(null);
   const [anunciante, setAnunciante] = useState<Anunciante | null>(null);
-  const [reputacao, setReputacao] = useState<ReputacaoLocadorResponse | null>(
-    null,
-  );
+  const [perfilAnunciante, setPerfilAnunciante] =
+    useState<PerfilAnuncianteResponse | null>(null);
+  const [reputacao, setReputacao] =
+    useState<ReputacaoAnuncianteResponse | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -66,38 +68,44 @@ export default function AnuncioDetalhe() {
     if (!id) return;
     setCarregando(true);
     setErro(null);
+
     anunciosApi
       .obter(id)
       .then(async (a) => {
         setAnuncio(a);
+
         const moradiaPromise = moradiasApi.obter(a.moradiaId);
+
+        // tenta Locador primeiro, cai em Universitário se 404
         const anunciantePromise = locadoresApi
           .obter(a.anuncianteId)
-          .then(
-            (l) => ({ tipo: "LOCADOR", data: l }) as Anunciante,
-          )
+          .then((l) => ({ tipo: "LOCADOR", data: l }) as Anunciante)
           .catch(() =>
             universitariosApi
               .obter(a.anuncianteId)
-              .then(
-                (u) => ({ tipo: "UNIVERSITARIO", data: u }) as Anunciante,
-              )
+              .then((u) => ({ tipo: "UNIVERSITARIO", data: u }) as Anunciante)
               .catch(
-                () =>
-                  ({
-                    tipo: "DESCONHECIDO",
-                    data: null,
-                  }) as Anunciante,
+                () => ({ tipo: "DESCONHECIDO", data: null }) as Anunciante,
               ),
           );
 
-        const [m, an] = await Promise.all([moradiaPromise, anunciantePromise]);
+        const perfilPromise = perfilAnuncianteApi
+          .porUsuario(a.anuncianteId)
+          .catch(() => null);
+
+        const [m, an, perfil] = await Promise.all([
+          moradiaPromise,
+          anunciantePromise,
+          perfilPromise,
+        ]);
+
         setMoradia(m);
         setAnunciante(an);
+        setPerfilAnunciante(perfil);
 
-        if (an.tipo === "LOCADOR") {
+        if (perfil) {
           reputacaoApi
-            .doLocador(an.data.id)
+            .doAnunciante(perfil.id)
             .then(setReputacao)
             .catch(() => setReputacao(null));
         }
@@ -131,10 +139,11 @@ export default function AnuncioDetalhe() {
   const ehDono = sessao?.id === anuncio.anuncianteId;
   const podeManifestar =
     sessao?.tipo === "UNIVERSITARIO" && !ehDono && anuncio.status === "ATIVO";
+
+  // universitário pode avaliar qualquer anunciante com PerfilAnunciante ativo
+  // removida a restrição de apenas Locadores poderem ser avaliados
   const podeAvaliar =
-    sessao?.tipo === "UNIVERSITARIO" &&
-    !ehDono &&
-    anunciante?.tipo === "LOCADOR";
+    sessao?.tipo === "UNIVERSITARIO" && !ehDono && perfilAnunciante !== null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 pb-20 grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-8">
@@ -238,7 +247,7 @@ export default function AnuncioDetalhe() {
               </div>
             </div>
 
-            {anunciante.tipo === "LOCADOR" && reputacao && (
+            {reputacao && (
               <div className="flex items-center gap-2 px-3 py-2 bg-apto-bg rounded-apto-ui border border-apto-border">
                 <Award className="text-amber-500" size={16} />
                 <div>
@@ -255,6 +264,7 @@ export default function AnuncioDetalhe() {
               </div>
             )}
 
+            {/* link para perfil público só faz sentido para Locadores por ora */}
             {anunciante.tipo === "LOCADOR" && (
               <Link to={`/locadores/${anunciante.data.id}`}>
                 <Button variant="secondary" size="sm" className="w-full">
@@ -289,7 +299,7 @@ export default function AnuncioDetalhe() {
               onClick={() => setAvaliarAberto(true)}
             >
               <Star size={16} />
-              Avaliar locador
+              Avaliar anunciante
             </Button>
           </div>
         )}
@@ -329,9 +339,10 @@ export default function AnuncioDetalhe() {
         onClose={() => setAvaliarAberto(false)}
         anuncioId={anuncio.id}
         onSucesso={() => {
-          if (anunciante?.tipo === "LOCADOR") {
+          // recarrega reputação usando perfilAnuncianteId
+          if (perfilAnunciante) {
             reputacaoApi
-              .doLocador(anunciante.data.id)
+              .doAnunciante(perfilAnunciante.id)
               .then(setReputacao)
               .catch(() => {});
           }
