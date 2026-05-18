@@ -5,26 +5,25 @@ import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { StarRating } from "../components/ui/StarRating";
 import { avaliacoesApi } from "../api/avaliacoes";
-import { reputacaoApi } from "../api/reputacao";
+import { perfilAnuncianteApi, reputacaoApi } from "../api/reputacao";
 import { locadoresApi } from "../api/usuarios";
 import { ApiError } from "../api/client";
 import { formatDateTime } from "../lib/format";
 import type {
   AvaliacaoResponse,
   LocadorResponse,
-  ReputacaoLocadorResponse,
-  ResumoAvaliacoesLocadorResponse,
+  ReputacaoAnuncianteResponse,
+  ResumoAvaliacoesAnuncianteResponse,
 } from "../api/types";
 
 export default function LocadorPublico() {
   const { id } = useParams<{ id: string }>();
+
   const [locador, setLocador] = useState<LocadorResponse | null>(null);
-  const [resumo, setResumo] = useState<ResumoAvaliacoesLocadorResponse | null>(
-    null,
-  );
-  const [reputacao, setReputacao] = useState<ReputacaoLocadorResponse | null>(
-    null,
-  );
+  const [resumo, setResumo] =
+    useState<ResumoAvaliacoesAnuncianteResponse | null>(null);
+  const [reputacao, setReputacao] =
+    useState<ReputacaoAnuncianteResponse | null>(null);
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoResponse[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -32,14 +31,20 @@ export default function LocadorPublico() {
   useEffect(() => {
     if (!id) return;
     setCarregando(true);
-    Promise.all([
-      locadoresApi.obter(id),
-      avaliacoesApi.resumoLocador(id).catch(() => null),
-      reputacaoApi.doLocador(id).catch(() => null),
-      avaliacoesApi.porLocador(id).catch(() => []),
-    ])
-      .then(([l, r, rep, avs]) => {
+
+    // 1. busca dados do locador e resolve o PerfilAnunciante em paralelo
+    Promise.all([locadoresApi.obter(id), perfilAnuncianteApi.porUsuario(id)])
+      .then(async ([l, perfil]) => {
         setLocador(l);
+
+        // 2. com o perfilAnuncianteId em mãos, busca avaliações e reputação
+        const perfilId = perfil.id;
+        const [r, rep, avs] = await Promise.all([
+          avaliacoesApi.resumoAnunciante(perfilId).catch(() => null),
+          reputacaoApi.doAnunciante(perfilId).catch(() => null),
+          avaliacoesApi.porAnunciante(perfilId).catch(() => []),
+        ]);
+
         setResumo(r);
         setReputacao(rep);
         setAvaliacoes(avs);

@@ -37,7 +37,7 @@ export type AcaoModeracaoAnuncio =
 
 export type OrigemCompatibilidade = "LLM" | "FALLBACK_DETERMINISTICO";
 
-// Perfil de Convivência (UC01)
+// Perfil de Convivência
 export type HorarioSono = "CEDO" | "MEDIO" | "TARDE";
 export type NivelBarulho = "BAIXO" | "MEDIO" | "ALTO";
 export type FrequenciaVisitas = "RARAMENTE" | "AS_VEZES" | "FREQUENTEMENTE";
@@ -70,7 +70,7 @@ export interface UsuarioUniversitarioResponse {
   ativo: boolean;
   emailInstitucional: string;
   curso: string;
-  dataNascimento: string; // ISO LocalDate
+  dataNascimento: string;
   genero: Genero;
 }
 
@@ -133,6 +133,14 @@ export interface AtualizarPerfilRequest {
   aceitaAnimais: boolean;
   preferenciaGeneroConvivencia: PreferenciaGeneroConvivencia;
   descricaoLivre?: string | null;
+}
+
+//Perfil Anunciante
+export interface PerfilAnuncianteResponse {
+  id: UUID;
+  usuarioId: UUID;
+  nomeUsuario: string;
+  ativo: boolean;
 }
 
 // Moradia
@@ -245,8 +253,7 @@ export interface ManifestacaoInteresseResponse {
   dataResposta?: string | null;
 }
 
-export interface ManifestacaoInteresseDetalheResponse
-  extends ManifestacaoInteresseResponse {
+export interface ManifestacaoInteresseDetalheResponse extends ManifestacaoInteresseResponse {
   contatoInteressado?: ContatoLiberadoResponse | null;
   contatoAnunciante?: ContatoLiberadoResponse | null;
 }
@@ -274,7 +281,7 @@ export interface MatchmakingResponse {
   candidatos: MatchColegaResponse[];
 }
 
-// Avaliação
+// avaliação
 export interface CriarAvaliacaoRequest {
   avaliadorId: UUID;
   anuncioId: UUID;
@@ -290,8 +297,8 @@ export interface AvaliacaoResponse {
   id: UUID;
   avaliadorId: UUID;
   avaliadorNome: string;
-  locadorAvaliadoId: UUID;
-  locadorAvaliadoNome: string;
+  anuncianteAvaliadoId: UUID;
+  anuncianteAvaliadoNome: string;
   moradiaId: UUID;
   anuncioId: UUID;
   anuncioTitulo: string;
@@ -305,7 +312,7 @@ export interface AvaliacaoResponse {
   ativa: boolean;
 }
 
-export interface ResumoAvaliacoesLocadorResponse {
+export interface ResumoAvaliacoesAnuncianteResponse {
   locadorId: UUID;
   nomeLocador: string;
   totalAvaliacoes: number;
@@ -316,10 +323,11 @@ export interface ResumoAvaliacoesLocadorResponse {
   notaMediaCustoBeneficio: number | null;
 }
 
-// Reputação
-export interface ReputacaoLocadorResponse {
+// reputação
+export interface ReputacaoAnuncianteResponse {
   id: UUID;
-  locadorId: UUID;
+  perfilAnuncianteId: UUID;
+  usuarioId: UUID;
   reputacaoScore: number;
   totalAvaliacoes: number;
   mediaGeral: number;
@@ -329,6 +337,10 @@ export interface ReputacaoLocadorResponse {
   mediaCustoBeneficio: number;
   ultimaAtualizacao?: string | null;
 }
+
+export type ResumoAvaliacoesLocadorResponse =
+  ResumoAvaliacoesAnuncianteResponse;
+export type ReputacaoLocadorResponse = ReputacaoAnuncianteResponse;
 
 // Denúncia
 export interface CriarDenunciaRequest {
