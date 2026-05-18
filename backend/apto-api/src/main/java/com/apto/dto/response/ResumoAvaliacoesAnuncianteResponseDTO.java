@@ -2,9 +2,9 @@ package com.apto.dto.response;
 
 import java.util.UUID;
 
-public record ResumoAvaliacoesLocadorResponseDTO(
-        UUID locadorId,
-        String nomeLocador,
+public record ResumoAvaliacoesAnuncianteResponseDTO(
+        UUID anuncianteId,
+        String anuncianteNome,
         long totalAvaliacoes,
         Double notaMediaGeral,
         Double notaMediaComunicacao,

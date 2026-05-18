@@ -3,7 +3,7 @@ package com.apto.controller;
 import com.apto.dto.request.AtualizarAvaliacaoRequestDTO;
 import com.apto.dto.request.CriarAvaliacaoRequestDTO;
 import com.apto.dto.response.AvaliacaoResponseDTO;
-import com.apto.dto.response.ResumoAvaliacoesLocadorResponseDTO;
+import com.apto.dto.response.ResumoAvaliacoesAnuncianteResponseDTO;
 import com.apto.service.AvaliacaoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -48,7 +48,7 @@ public class AvaliacaoController {
     }
 
     @GetMapping("/anunciante/{perfilAnuncianteId}/resumo")
-    public ResponseEntity<ResumoAvaliacoesLocadorResponseDTO> resumoPorAnunciante(
+    public ResponseEntity<ResumoAvaliacoesAnuncianteResponseDTO> resumoPorAnunciante(
             @PathVariable UUID perfilAnuncianteId) {
         return ResponseEntity.ok(avaliacaoService.resumoPorAnunciante(perfilAnuncianteId));
     }
