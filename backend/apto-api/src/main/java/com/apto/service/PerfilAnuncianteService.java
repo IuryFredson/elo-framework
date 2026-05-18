@@ -1,0 +1,71 @@
+package com.apto.service;
+
+import com.apto.dto.response.PerfilAnuncianteResponseDTO;
+import com.apto.exception.AnuncianteNaoEncontradoException;
+import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.model.entity.PerfilAnunciante;
+import com.apto.model.entity.UsuarioUniversitario;
+import com.apto.repository.PerfilAnuncianteRepository;
+import com.apto.repository.UsuarioUniversitarioRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Service
+public class PerfilAnuncianteService {
+
+    private final PerfilAnuncianteRepository perfilAnuncianteRepository;
+    private final UsuarioUniversitarioRepository universitarioRepository;
+
+    public PerfilAnuncianteService(PerfilAnuncianteRepository perfilAnuncianteRepository,
+                                   UsuarioUniversitarioRepository universitarioRepository) {
+        this.perfilAnuncianteRepository = perfilAnuncianteRepository;
+        this.universitarioRepository = universitarioRepository;
+    }
+
+    @Transactional
+    public PerfilAnuncianteResponseDTO habilitarAnunciante(UUID universitarioId) {
+        UsuarioUniversitario universitario = universitarioRepository.findById(universitarioId)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException(
+                        "Usuário universitário não encontrado com id: " + universitarioId));
+
+        PerfilAnunciante perfil = perfilAnuncianteRepository
+                .findByUsuario_Id(universitarioId)
+                .orElseGet(() -> {
+                    PerfilAnunciante novo = new PerfilAnunciante();
+                    novo.setUsuario(universitario);
+                    return novo;
+                });
+
+        perfil.setAtivo(true);
+        return toResponseDTO(perfilAnuncianteRepository.save(perfil));
+    }
+
+    @Transactional
+    public PerfilAnuncianteResponseDTO desabilitarAnunciante(UUID universitarioId) {
+        PerfilAnunciante perfil = perfilAnuncianteRepository
+                .findByUsuario_Id(universitarioId)
+                .orElseThrow(() -> new AnuncianteNaoEncontradoException(
+                        "Este universitário não possui perfil de anunciante: " + universitarioId));
+
+        perfil.setAtivo(false);
+        return toResponseDTO(perfilAnuncianteRepository.save(perfil));
+    }
+
+    public PerfilAnuncianteResponseDTO buscarPorUsuario(UUID usuarioId) {
+        PerfilAnunciante perfil = perfilAnuncianteRepository
+                .findByUsuario_Id(usuarioId)
+                .orElseThrow(() -> new AnuncianteNaoEncontradoException(
+                        "Perfil de anunciante não encontrado para o usuário: " + usuarioId));
+        return toResponseDTO(perfil);
+    }
+
+    private PerfilAnuncianteResponseDTO toResponseDTO(PerfilAnunciante perfil) {
+        return new PerfilAnuncianteResponseDTO(
+                perfil.getId(),
+                perfil.getUsuario().getId(),
+                perfil.getUsuario().getNome(),
+                perfil.isAtivo());
+    }
+}

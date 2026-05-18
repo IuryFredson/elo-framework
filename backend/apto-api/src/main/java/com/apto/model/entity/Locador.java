@@ -19,4 +19,8 @@ public class Locador extends Usuario {
     @NotBlank
     @Column(nullable = false)
     private String nomeExibicaoOuRazao;
+
+    //locador é, por definição, um anunciante
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PerfilAnunciante perfilAnunciante;
 }

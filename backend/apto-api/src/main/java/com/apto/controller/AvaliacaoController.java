@@ -3,7 +3,7 @@ package com.apto.controller;
 import com.apto.dto.request.AtualizarAvaliacaoRequestDTO;
 import com.apto.dto.request.CriarAvaliacaoRequestDTO;
 import com.apto.dto.response.AvaliacaoResponseDTO;
-import com.apto.dto.response.ResumoAvaliacoesLocadorResponseDTO;
+import com.apto.dto.response.ResumoAvaliacoesAnuncianteResponseDTO;
 import com.apto.service.AvaliacaoService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -41,14 +41,16 @@ public class AvaliacaoController {
         return ResponseEntity.ok(avaliacaoService.buscarPorId(id));
     }
 
-    @GetMapping("/locador/{locadorId}")
-    public ResponseEntity<List<AvaliacaoResponseDTO>> listarPorLocador(@PathVariable UUID locadorId) {
-        return ResponseEntity.ok(avaliacaoService.listarPorLocador(locadorId));
+    @GetMapping("/anunciante/{perfilAnuncianteId}")
+    public ResponseEntity<List<AvaliacaoResponseDTO>> listarPorAnunciante(
+            @PathVariable UUID perfilAnuncianteId) {
+        return ResponseEntity.ok(avaliacaoService.listarPorAnunciante(perfilAnuncianteId));
     }
 
-    @GetMapping("/locador/{locadorId}/resumo")
-    public ResponseEntity<ResumoAvaliacoesLocadorResponseDTO> resumoPorLocador(@PathVariable UUID locadorId) {
-        return ResponseEntity.ok(avaliacaoService.resumoPorLocador(locadorId));
+    @GetMapping("/anunciante/{perfilAnuncianteId}/resumo")
+    public ResponseEntity<ResumoAvaliacoesAnuncianteResponseDTO> resumoPorAnunciante(
+            @PathVariable UUID perfilAnuncianteId) {
+        return ResponseEntity.ok(avaliacaoService.resumoPorAnunciante(perfilAnuncianteId));
     }
 
     @GetMapping("/moradia/{moradiaId}")

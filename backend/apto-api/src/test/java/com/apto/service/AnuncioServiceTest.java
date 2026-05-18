@@ -3,18 +3,21 @@ package com.apto.service;
 import com.apto.dto.request.AtualizarAnuncioRequestDTO;
 import com.apto.dto.request.CriarAnuncioRequestDTO;
 import com.apto.dto.response.AnuncioResponseDTO;
-import com.apto.exception.*;
+import com.apto.exception.AcessoNegadoException;
+import com.apto.exception.AnuncianteNaoEncontradoException;
+import com.apto.exception.AnuncioNaoEncontradoException;
+import com.apto.exception.MoradiaAssociadaComAnuncioException;
+import com.apto.exception.MoradiaNaoEncontradaException;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.Moradia;
-import com.apto.model.entity.Usuario;
+import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
 import com.apto.repository.AnuncioRepository;
-import com.apto.repository.LocadorRepository;
 import com.apto.repository.MoradiaRepository;
-import com.apto.repository.UsuarioUniversitarioRepository;
+import com.apto.repository.PerfilAnuncianteRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,30 +31,36 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AnuncioServiceTest {
+class AnuncioServiceTest {
 
     @Mock
     private AnuncioRepository anuncioRepository;
+
     @Mock
     private MoradiaRepository moradiaRepository;
+
     @Mock
-    private LocadorRepository locadorRepository;
-    @Mock
-    private UsuarioUniversitarioRepository universitarioRepository;
+    private PerfilAnuncianteRepository perfilAnuncianteRepository;
 
     @InjectMocks
     private AnuncioService anuncioService;
 
-    private UUID anuncianteId;
+    private UUID usuarioId;
+    private UUID perfilAnuncianteId;
     private UUID moradiaId;
     private UUID anuncioId;
 
-    private Usuario anunciante;
+    private Locador locador;
+    private PerfilAnunciante perfilAnunciante;
     private Moradia moradia;
     private Anuncio anuncio;
 
@@ -60,14 +69,22 @@ public class AnuncioServiceTest {
 
     @BeforeEach
     void setUp() {
+        usuarioId          = UUID.randomUUID();
+        perfilAnuncianteId = UUID.randomUUID();
+        moradiaId          = UUID.randomUUID();
+        anuncioId          = UUID.randomUUID();
 
-        //gerando dados
-        anuncianteId = UUID.randomUUID();
-        moradiaId = UUID.randomUUID();
-        anuncioId = UUID.randomUUID();
-        anunciante = new Locador();
-        anunciante.setId(anuncianteId);
-        anunciante.setNome("Uirá Kulesza");
+        locador = new Locador();
+        locador.setId(usuarioId);
+        locador.setNome("Uirá Kulesza");
+        locador.setEmail("uira@email.com");
+        locador.setDocumentoIdentificacao("12345678900");
+        locador.setNomeExibicaoOuRazao("Uirá Imóveis");
+
+        perfilAnunciante = new PerfilAnunciante();
+        perfilAnunciante.setId(perfilAnuncianteId);
+        perfilAnunciante.setUsuario(locador);
+        perfilAnunciante.setAtivo(true);
 
         moradia = new Moradia();
         moradia.setId(moradiaId);
@@ -76,6 +93,7 @@ public class AnuncioServiceTest {
         moradia.setMobiliado(true);
         moradia.setAceitaAnimais(false);
         moradia.setQuantidadeVagas(1);
+        moradia.setRegrasMoradia("Sem festas");
 
         anuncio = new Anuncio();
         anuncio.setId(anuncioId);
@@ -85,16 +103,15 @@ public class AnuncioServiceTest {
         anuncio.setTipoAnuncio(TipoAnuncio.IMOVEL_COMPLETO);
         anuncio.setStatus(StatusAnuncio.ATIVO);
         anuncio.setDataPublicacao(LocalDate.now());
-        anuncio.setAnunciante(anunciante);
+        anuncio.setAnunciante(perfilAnunciante);
         anuncio.setMoradia(moradia);
-
         criarDTO = new CriarAnuncioRequestDTO(
                 "Apto centro",
                 "Ótima localização",
                 new BigDecimal("1200.00"),
                 TipoAnuncio.IMOVEL_COMPLETO,
                 moradiaId,
-                anuncianteId
+                usuarioId
         );
 
         atualizarDTO = new AtualizarAnuncioRequestDTO(
@@ -106,8 +123,9 @@ public class AnuncioServiceTest {
     }
 
     @Test
-    void deveCriarAnuncioComDadosValidos(){
-        when(locadorRepository.findById(anuncianteId)).thenAnswer(invocation -> Optional.of(anunciante));
+    void deveCriarAnuncioComDadosValidos() {
+        when(perfilAnuncianteRepository.findByUsuario_Id(usuarioId))
+                .thenReturn(Optional.of(perfilAnunciante));
         when(moradiaRepository.findById(moradiaId)).thenReturn(Optional.of(moradia));
         when(anuncioRepository.existsByMoradia(moradia)).thenReturn(false);
         when(anuncioRepository.save(any(Anuncio.class))).thenReturn(anuncio);
@@ -121,8 +139,28 @@ public class AnuncioServiceTest {
     }
 
     @Test
-    void naoDeveCriarAnuncioSeMoradiaNaoEncontrada(){
-        when(locadorRepository.findById(anuncianteId)).thenAnswer(invocation -> Optional.of(anunciante));
+    void naoDeveCriarAnuncioSeAnuncianteNaoTiverPerfil() {
+        when(perfilAnuncianteRepository.findByUsuario_Id(usuarioId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(AnuncianteNaoEncontradoException.class, () -> anuncioService.criar(criarDTO));
+        verify(anuncioRepository, never()).save(any());
+    }
+
+    @Test
+    void naoDeveCriarAnuncioSePerfilAnuncianteEstiverInativo() {
+        perfilAnunciante.setAtivo(false);
+        when(perfilAnuncianteRepository.findByUsuario_Id(usuarioId))
+                .thenReturn(Optional.of(perfilAnunciante));
+
+        assertThrows(AnuncianteNaoEncontradoException.class, () -> anuncioService.criar(criarDTO));
+        verify(anuncioRepository, never()).save(any());
+    }
+
+    @Test
+    void naoDeveCriarAnuncioSeMoradiaNaoEncontrada() {
+        when(perfilAnuncianteRepository.findByUsuario_Id(usuarioId))
+                .thenReturn(Optional.of(perfilAnunciante));
         when(moradiaRepository.findById(moradiaId)).thenReturn(Optional.empty());
 
         assertThrows(MoradiaNaoEncontradaException.class, () -> anuncioService.criar(criarDTO));
@@ -130,32 +168,41 @@ public class AnuncioServiceTest {
     }
 
     @Test
-    void naoDeveCriarAnuncioSeMoradiaJaAssociada(){
-        when(locadorRepository.findById(anuncianteId)).thenAnswer(invocation -> Optional.of(anunciante));
+    void naoDeveCriarAnuncioSeMoradiaJaAssociada() {
+        when(perfilAnuncianteRepository.findByUsuario_Id(usuarioId))
+                .thenReturn(Optional.of(perfilAnunciante));
         when(moradiaRepository.findById(moradiaId)).thenReturn(Optional.of(moradia));
         when(anuncioRepository.existsByMoradia(moradia)).thenReturn(true);
 
         assertThrows(MoradiaAssociadaComAnuncioException.class, () -> anuncioService.criar(criarDTO));
         verify(anuncioRepository, never()).save(any());
-
     }
-
-    @Test
-    public void naoDeveCriarAnuncioSeUsuarioNaoEncontrado(){
-        when(locadorRepository.findById(anuncianteId)).thenReturn(Optional.empty());
-        when(universitarioRepository.findById(anuncianteId)).thenReturn(Optional.empty());
-        assertThrows(UsuarioNaoEncontradoException.class, () -> anuncioService.criar(criarDTO));
-
-        verify(anuncioRepository, never()).save(any());
-    }
-
 
     @Test
     void deveListarAnuncios() {
         when(anuncioRepository.findAll()).thenReturn(List.of(anuncio));
+
         var result = anuncioService.listarTodos();
+
         assertEquals(1, result.size());
         verify(anuncioRepository).findAll();
+    }
+
+    @Test
+    void deveBuscarAnuncioPorId() {
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
+
+        AnuncioResponseDTO response = anuncioService.buscarPorId(anuncioId);
+
+        assertEquals(anuncioId, response.id());
+    }
+
+    @Test
+    void naoDeveBuscarAnuncioInexistente() {
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
+
+        assertThrows(AnuncioNaoEncontradoException.class,
+                () -> anuncioService.buscarPorId(anuncioId));
     }
 
     @Test
@@ -168,8 +215,9 @@ public class AnuncioServiceTest {
     }
 
     @Test
-    void nãoDeveDeletarAnuncioInexistente(){
+    void naoDeveDeletarAnuncioInexistente() {
         when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
+
         assertThrows(AnuncioNaoEncontradoException.class, () -> anuncioService.deletar(anuncioId));
         verify(anuncioRepository, never()).delete(any());
     }
@@ -179,7 +227,7 @@ public class AnuncioServiceTest {
         when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(anuncioRepository.save(any(Anuncio.class))).thenReturn(anuncio);
 
-        AnuncioResponseDTO response = anuncioService.atualizar(anuncioId, anuncianteId, atualizarDTO);
+        AnuncioResponseDTO response = anuncioService.atualizar(anuncioId, usuarioId, atualizarDTO);
 
         assertNotNull(response);
         verify(anuncioRepository).save(anuncio);
@@ -189,10 +237,8 @@ public class AnuncioServiceTest {
     void naoDeveAtualizarCasoAnuncianteSejaDiferenteDoCriador() {
         when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
 
-        UUID outroId = UUID.randomUUID();
-
         assertThrows(AcessoNegadoException.class,
-                () -> anuncioService.atualizar(anuncioId, outroId, atualizarDTO));
+                () -> anuncioService.atualizar(anuncioId, UUID.randomUUID(), atualizarDTO));
         verify(anuncioRepository, never()).save(any());
     }
 
@@ -201,7 +247,7 @@ public class AnuncioServiceTest {
         when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
 
         assertThrows(AnuncioNaoEncontradoException.class,
-                () -> anuncioService.atualizar(anuncioId, anuncianteId, atualizarDTO));
+                () -> anuncioService.atualizar(anuncioId, usuarioId, atualizarDTO));
     }
 
     @Test

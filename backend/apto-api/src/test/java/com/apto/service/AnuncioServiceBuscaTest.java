@@ -6,6 +6,7 @@ import com.apto.dto.response.PaginaResponseDTO;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.Moradia;
+import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
@@ -55,6 +56,7 @@ class AnuncioServiceBuscaTest {
     private Moradia moradia;
     private Anuncio anuncio;
     private FiltroBuscaAnuncioDTO filtroVazio;
+    private PerfilAnunciante perfilAnunciante;
 
     @BeforeEach
     void setUp() {
@@ -75,6 +77,11 @@ class AnuncioServiceBuscaTest {
         moradia.setQuantidadeVagas(2);
         moradia.setRegrasMoradia("Sem festas após 22h");
 
+        perfilAnunciante = new PerfilAnunciante();
+        perfilAnunciante.setId(UUID.randomUUID());
+        perfilAnunciante.setUsuario(locador);
+        perfilAnunciante.setAtivo(true);
+
         anuncio = new Anuncio();
         anuncio.setId(UUID.randomUUID());
         anuncio.setTitulo("Apartamento no centro");
@@ -83,7 +90,7 @@ class AnuncioServiceBuscaTest {
         anuncio.setTipoAnuncio(TipoAnuncio.IMOVEL_COMPLETO);
         anuncio.setStatus(StatusAnuncio.ATIVO);
         anuncio.setDataPublicacao(LocalDate.now());
-        anuncio.setAnunciante(locador);
+        anuncio.setAnunciante(perfilAnunciante);
         anuncio.setMoradia(moradia);
 
         filtroVazio = new FiltroBuscaAnuncioDTO(null, null, null, null, null, null, null, null);
@@ -110,7 +117,7 @@ class AnuncioServiceBuscaTest {
         assertEquals("Apartamento no centro", dto.titulo());
         assertEquals(new BigDecimal("850.00"), dto.valorMensal());
         assertEquals("Centro", dto.bairro());
-        assertEquals("João Silva", dto.nomeAnunciante());
+        assertEquals("João Imóveis", dto.nomeAnunciante());
     }
 
     @Test

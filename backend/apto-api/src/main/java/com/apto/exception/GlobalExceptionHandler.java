@@ -175,4 +175,12 @@ public class GlobalExceptionHandler {
         erro.put("erro", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(erro);
     }
+
+    @ExceptionHandler(AnuncianteNaoEncontradoException.class)
+    public ResponseEntity<Map<String, String>> handleAnuncianteNaoEncontrado(
+            AnuncianteNaoEncontradoException ex) {
+        Map<String, String> erro = new HashMap<>();
+        erro.put("erro", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+    }
 }

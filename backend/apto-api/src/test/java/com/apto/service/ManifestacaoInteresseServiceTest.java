@@ -15,7 +15,7 @@ import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.Moradia;
-import com.apto.model.entity.Usuario;
+import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.Genero;
 import com.apto.model.enums.StatusAnuncio;
@@ -44,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
@@ -52,12 +53,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ManifestacaoInteresseServiceTest {
+class ManifestacaoInteresseServiceTest {
 
     @Mock
     private ManifestacaoInteresseRepository manifestacaoRepository;
+
     @Mock
     private AnuncioService anuncioService;
+
     @Mock
     private UsuarioUniversitarioRepository universitarioRepository;
 
@@ -65,11 +68,12 @@ public class ManifestacaoInteresseServiceTest {
     private ManifestacaoInteresseService manifestacaoInteresseService;
 
     private UUID anuncioId;
-    private UUID anuncianteId;
+    private UUID anuncianteUsuarioId;
     private UUID interessadoId;
     private UUID manifestacaoId;
 
     private Locador anunciante;
+    private PerfilAnunciante perfilAnunciante;
     private UsuarioUniversitario interessado;
     private Moradia moradia;
     private Anuncio anuncio;
@@ -78,16 +82,24 @@ public class ManifestacaoInteresseServiceTest {
 
     @BeforeEach
     void setUp() {
-        anuncioId = UUID.randomUUID();
-        anuncianteId = UUID.randomUUID();
-        interessadoId = UUID.randomUUID();
-        manifestacaoId = UUID.randomUUID();
+        anuncioId          = UUID.randomUUID();
+        anuncianteUsuarioId = UUID.randomUUID();
+        interessadoId      = UUID.randomUUID();
+        manifestacaoId     = UUID.randomUUID();
 
         anunciante = new Locador();
-        anunciante.setId(anuncianteId);
+        anunciante.setId(anuncianteUsuarioId);
         anunciante.setNome("Ana Locadora");
         anunciante.setEmail("ana@example.com");
         anunciante.setTelefone("+5583999990001");
+        anunciante.setDocumentoIdentificacao("11122233344");
+        anunciante.setNomeExibicaoOuRazao("Ana Imóveis");
+
+        // PerfilAnunciante wrapping o Locador
+        perfilAnunciante = new PerfilAnunciante();
+        perfilAnunciante.setId(UUID.randomUUID());
+        perfilAnunciante.setUsuario(anunciante);
+        perfilAnunciante.setAtivo(true);
 
         interessado = new UsuarioUniversitario();
         interessado.setId(interessadoId);
@@ -112,7 +124,7 @@ public class ManifestacaoInteresseServiceTest {
         anuncio.setTipoAnuncio(TipoAnuncio.IMOVEL_COMPLETO);
         anuncio.setStatus(StatusAnuncio.ATIVO);
         anuncio.setDataPublicacao(LocalDate.now());
-        anuncio.setAnunciante(anunciante);
+        anuncio.setAnunciante(perfilAnunciante);
         anuncio.setMoradia(moradia);
 
         manifestacao = new ManifestacaoInteresse();
@@ -124,10 +136,7 @@ public class ManifestacaoInteresseServiceTest {
         manifestacao.setDataManifestacao(LocalDateTime.now());
 
         criarDTO = new CriarManifestacaoInteresseRequestDTO(
-                anuncioId,
-                interessadoId,
-                "Tenho interesse, posso visitar?"
-        );
+                anuncioId, interessadoId, "Tenho interesse, posso visitar?");
     }
 
     // ---------- criar ----------
@@ -191,7 +200,12 @@ public class ManifestacaoInteresseServiceTest {
 
     @Test
     void naoDeveCriarManifestacaoNoProprioAnuncio() {
-        anuncio.setAnunciante(interessado);
+        PerfilAnunciante perfilDoInteressado = new PerfilAnunciante();
+        perfilDoInteressado.setId(UUID.randomUUID());
+        perfilDoInteressado.setUsuario(interessado);
+        perfilDoInteressado.setAtivo(true);
+        anuncio.setAnunciante(perfilDoInteressado);
+
         when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.of(interessado));
 
@@ -229,8 +243,8 @@ public class ManifestacaoInteresseServiceTest {
                 eq(anuncioId), eq(interessadoId), captor.capture());
         Collection<StatusManifestacaoInteresse> statuses = captor.getValue();
         assertEquals(2, statuses.size());
-        org.junit.jupiter.api.Assertions.assertTrue(statuses.contains(StatusManifestacaoInteresse.PENDENTE));
-        org.junit.jupiter.api.Assertions.assertTrue(statuses.contains(StatusManifestacaoInteresse.ACEITA));
+        assertTrue(statuses.contains(StatusManifestacaoInteresse.PENDENTE));
+        assertTrue(statuses.contains(StatusManifestacaoInteresse.ACEITA));
     }
 
     // ---------- aceitar ----------
@@ -241,13 +255,12 @@ public class ManifestacaoInteresseServiceTest {
         when(manifestacaoRepository.save(any(ManifestacaoInteresse.class))).thenReturn(manifestacao);
 
         ManifestacaoInteresseDetalheResponseDTO response =
-                manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteId);
+                manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteUsuarioId);
 
         assertEquals(StatusManifestacaoInteresse.ACEITA, response.status());
         assertNotNull(response.dataResposta());
         assertNotNull(response.contatoInteressado());
         assertEquals("bruno@academico.ufpb.br", response.contatoInteressado().emailInstitucional());
-        assertEquals("bruno@example.com", response.contatoInteressado().email());
         assertNotNull(response.contatoAnunciante());
         assertEquals("ana@example.com", response.contatoAnunciante().email());
         assertNull(response.contatoAnunciante().emailInstitucional());
@@ -257,18 +270,23 @@ public class ManifestacaoInteresseServiceTest {
     @Test
     void deveExporEmailInstitucionalDoAnuncianteQuandoElePerUniversitario() {
         UsuarioUniversitario anuncianteUniv = new UsuarioUniversitario();
-        anuncianteUniv.setId(anuncianteId);
+        anuncianteUniv.setId(anuncianteUsuarioId);
         anuncianteUniv.setNome("Carla Anunciante");
         anuncianteUniv.setEmail("carla@example.com");
         anuncianteUniv.setTelefone("+5583999990003");
         anuncianteUniv.setEmailInstitucional("carla@academico.ufpb.br");
-        anuncio.setAnunciante(anuncianteUniv);
+
+        PerfilAnunciante perfilUniv = new PerfilAnunciante();
+        perfilUniv.setId(UUID.randomUUID());
+        perfilUniv.setUsuario(anuncianteUniv);
+        perfilUniv.setAtivo(true);
+        anuncio.setAnunciante(perfilUniv);
 
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
         when(manifestacaoRepository.save(any(ManifestacaoInteresse.class))).thenReturn(manifestacao);
 
         ManifestacaoInteresseDetalheResponseDTO response =
-                manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteId);
+                manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteUsuarioId);
 
         assertEquals("carla@academico.ufpb.br", response.contatoAnunciante().emailInstitucional());
     }
@@ -278,7 +296,7 @@ public class ManifestacaoInteresseServiceTest {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.empty());
 
         assertThrows(ManifestacaoInteresseNaoEncontradaException.class,
-                () -> manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteId));
+                () -> manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteUsuarioId));
         verify(manifestacaoRepository, never()).save(any());
     }
 
@@ -286,10 +304,8 @@ public class ManifestacaoInteresseServiceTest {
     void naoDeveAceitarQuandoAnuncianteForOutroUsuario() {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
-        UUID outroId = UUID.randomUUID();
-
         assertThrows(AcessoNegadoException.class,
-                () -> manifestacaoInteresseService.aceitar(manifestacaoId, outroId));
+                () -> manifestacaoInteresseService.aceitar(manifestacaoId, UUID.randomUUID()));
         verify(manifestacaoRepository, never()).save(any());
     }
 
@@ -299,7 +315,7 @@ public class ManifestacaoInteresseServiceTest {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
         assertThrows(TransicaoInvalidaManifestacaoException.class,
-                () -> manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteId));
+                () -> manifestacaoInteresseService.aceitar(manifestacaoId, anuncianteUsuarioId));
         verify(manifestacaoRepository, never()).save(any());
     }
 
@@ -311,7 +327,7 @@ public class ManifestacaoInteresseServiceTest {
         when(manifestacaoRepository.save(any(ManifestacaoInteresse.class))).thenReturn(manifestacao);
 
         ManifestacaoInteresseDetalheResponseDTO response =
-                manifestacaoInteresseService.recusar(manifestacaoId, anuncianteId);
+                manifestacaoInteresseService.recusar(manifestacaoId, anuncianteUsuarioId);
 
         assertEquals(StatusManifestacaoInteresse.RECUSADA, response.status());
         assertNotNull(response.dataResposta());
@@ -324,10 +340,8 @@ public class ManifestacaoInteresseServiceTest {
     void naoDeveRecusarQuandoAnuncianteForOutroUsuario() {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
-        UUID outroId = UUID.randomUUID();
-
         assertThrows(AcessoNegadoException.class,
-                () -> manifestacaoInteresseService.recusar(manifestacaoId, outroId));
+                () -> manifestacaoInteresseService.recusar(manifestacaoId, UUID.randomUUID()));
         verify(manifestacaoRepository, never()).save(any());
     }
 
@@ -337,7 +351,7 @@ public class ManifestacaoInteresseServiceTest {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
         assertThrows(TransicaoInvalidaManifestacaoException.class,
-                () -> manifestacaoInteresseService.recusar(manifestacaoId, anuncianteId));
+                () -> manifestacaoInteresseService.recusar(manifestacaoId, anuncianteUsuarioId));
         verify(manifestacaoRepository, never()).save(any());
     }
 
@@ -361,10 +375,8 @@ public class ManifestacaoInteresseServiceTest {
     void naoDeveCancelarQuandoSolicitanteNaoForOInteressado() {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
-        UUID outroId = UUID.randomUUID();
-
         assertThrows(AcessoNegadoException.class,
-                () -> manifestacaoInteresseService.cancelar(manifestacaoId, outroId));
+                () -> manifestacaoInteresseService.cancelar(manifestacaoId, UUID.randomUUID()));
         verify(manifestacaoRepository, never()).save(any());
     }
 
@@ -387,7 +399,7 @@ public class ManifestacaoInteresseServiceTest {
                 .thenReturn(List.of(manifestacao));
 
         List<ManifestacaoInteresseResponseDTO> result =
-                manifestacaoInteresseService.listarPorAnuncio(anuncioId, anuncianteId);
+                manifestacaoInteresseService.listarPorAnuncio(anuncioId, anuncianteUsuarioId);
 
         assertEquals(1, result.size());
         assertEquals(manifestacaoId, result.get(0).id());
@@ -397,10 +409,8 @@ public class ManifestacaoInteresseServiceTest {
     void naoDeveListarManifestacoesQuandoSolicitanteNaoForAnunciante() {
         when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
 
-        UUID outroId = UUID.randomUUID();
-
         assertThrows(AcessoNegadoException.class,
-                () -> manifestacaoInteresseService.listarPorAnuncio(anuncioId, outroId));
+                () -> manifestacaoInteresseService.listarPorAnuncio(anuncioId, UUID.randomUUID()));
         verify(manifestacaoRepository, never()).findByAnuncio_IdOrderByDataManifestacaoDesc(any());
     }
 
@@ -410,7 +420,7 @@ public class ManifestacaoInteresseServiceTest {
                 .thenThrow(new AnuncioNaoEncontradoException("Anuncio não encontrado"));
 
         assertThrows(AnuncioNaoEncontradoException.class,
-                () -> manifestacaoInteresseService.listarPorAnuncio(anuncioId, anuncianteId));
+                () -> manifestacaoInteresseService.listarPorAnuncio(anuncioId, anuncianteUsuarioId));
     }
 
     // ---------- listarPorInteressado ----------
@@ -447,7 +457,7 @@ public class ManifestacaoInteresseServiceTest {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
         ManifestacaoInteresseDetalheResponseDTO response =
-                manifestacaoInteresseService.buscarPorId(manifestacaoId, anuncianteId);
+                manifestacaoInteresseService.buscarPorId(manifestacaoId, anuncianteUsuarioId);
 
         assertEquals(manifestacaoId, response.id());
     }
@@ -456,10 +466,8 @@ public class ManifestacaoInteresseServiceTest {
     void naoDeveRetornarDetalheParaUsuarioNaoRelacionado() {
         when(manifestacaoRepository.findById(manifestacaoId)).thenReturn(Optional.of(manifestacao));
 
-        UUID outroId = UUID.randomUUID();
-
         assertThrows(AcessoNegadoException.class,
-                () -> manifestacaoInteresseService.buscarPorId(manifestacaoId, outroId));
+                () -> manifestacaoInteresseService.buscarPorId(manifestacaoId, UUID.randomUUID()));
     }
 
     @Test

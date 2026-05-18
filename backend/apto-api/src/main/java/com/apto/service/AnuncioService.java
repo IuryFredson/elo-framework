@@ -6,16 +6,18 @@ import com.apto.dto.request.FiltroBuscaAnuncioDTO;
 import com.apto.dto.response.AnuncioResponseDTO;
 import com.apto.dto.response.BuscaAnuncioResponseDTO;
 import com.apto.dto.response.PaginaResponseDTO;
-import com.apto.exception.*;
+import com.apto.exception.AcessoNegadoException;
+import com.apto.exception.AnuncioNaoEncontradoException;
+import com.apto.exception.AnuncianteNaoEncontradoException;
+import com.apto.exception.MoradiaAssociadaComAnuncioException;
+import com.apto.exception.MoradiaNaoEncontradaException;
 import com.apto.model.entity.Anuncio;
-import com.apto.model.entity.Locador;
 import com.apto.model.entity.Moradia;
-import com.apto.model.entity.Usuario;
+import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.repository.AnuncioRepository;
-import com.apto.repository.LocadorRepository;
 import com.apto.repository.MoradiaRepository;
-import com.apto.repository.UsuarioUniversitarioRepository;
+import com.apto.repository.PerfilAnuncianteRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,31 +31,35 @@ public class AnuncioService {
 
     private final AnuncioRepository anuncioRepository;
     private final MoradiaRepository moradiaRepository;
-    private final LocadorRepository locadorRepository;
-    private final UsuarioUniversitarioRepository universitarioRepository;
+    private final PerfilAnuncianteRepository perfilAnuncianteRepository;
 
     public AnuncioService(AnuncioRepository anuncioRepository,
                           MoradiaRepository moradiaRepository,
-                          LocadorRepository locadorRepository,
-                          UsuarioUniversitarioRepository universitarioRepository) {
+                          PerfilAnuncianteRepository perfilAnuncianteRepository) {
         this.anuncioRepository = anuncioRepository;
         this.moradiaRepository = moradiaRepository;
-        this.locadorRepository = locadorRepository;
-        this.universitarioRepository = universitarioRepository;
+        this.perfilAnuncianteRepository = perfilAnuncianteRepository;
     }
 
-    public AnuncioResponseDTO criar(CriarAnuncioRequestDTO dto){
+    public AnuncioResponseDTO criar(CriarAnuncioRequestDTO dto) {
+        // Busca direta pelo perfil — independente se é Locador ou Universitário
+        PerfilAnunciante anunciante = perfilAnuncianteRepository
+                .findByUsuario_Id(dto.anuncianteId())
+                .orElseThrow(() -> new AnuncianteNaoEncontradoException(
+                        "Perfil de anunciante não encontrado para o usuário: " + dto.anuncianteId()));
 
-        Usuario anunciante = locadorRepository.findById(dto.anuncianteId())
-                .map(locador -> (Usuario) locador)
-                .orElseGet(() -> universitarioRepository.findById(dto.anuncianteId())
-                        .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com id " + dto.anuncianteId())));
+        if (!anunciante.isAtivo()) {
+            throw new AnuncianteNaoEncontradoException(
+                    "O perfil de anunciante está inativo para o usuário: " + dto.anuncianteId());
+        }
 
         Moradia moradia = moradiaRepository.findById(dto.moradiaId())
-                .orElseThrow(() -> new MoradiaNaoEncontradaException("Moradia não encontrada com id " + dto.moradiaId()));
+                .orElseThrow(() -> new MoradiaNaoEncontradaException(
+                        "Moradia não encontrada com id " + dto.moradiaId()));
 
-        if(anuncioRepository.existsByMoradia(moradia)){
-            throw new MoradiaAssociadaComAnuncioException("A moradia já está associada com um anuncio.");
+        if (anuncioRepository.existsByMoradia(moradia)) {
+            throw new MoradiaAssociadaComAnuncioException(
+                    "A moradia já está associada com um anúncio.");
         }
 
         Anuncio anuncio = new Anuncio();
@@ -63,15 +69,13 @@ public class AnuncioService {
         anuncio.setValorMensal(dto.valorMensal());
         anuncio.setTipoAnuncio(dto.tipoAnuncio());
         anuncio.setStatus(StatusAnuncio.ATIVO);
-
         anuncio.setMoradia(moradia);
         anuncio.setDataPublicacao(LocalDate.now());
 
-        Anuncio salvar = anuncioRepository.save(anuncio);
-        return toResponseDTO(salvar);
+        return toResponseDTO(anuncioRepository.save(anuncio));
     }
 
-    public List<AnuncioResponseDTO> listarTodos(){
+    public List<AnuncioResponseDTO> listarTodos() {
         return anuncioRepository.findAll()
                 .stream()
                 .map(this::toResponseDTO)
@@ -79,25 +83,26 @@ public class AnuncioService {
     }
 
     public AnuncioResponseDTO buscarPorId(UUID id) {
-        Anuncio anuncio = buscarEntidadePorId(id);
-        return toResponseDTO(anuncio);
+        return toResponseDTO(buscarEntidadePorId(id));
     }
 
     public Anuncio buscarEntidadePorId(UUID id) {
         return anuncioRepository.findById(id)
-                .orElseThrow( ()-> new AnuncioNaoEncontradoException("Anuncio não encontrado com o id: " + id));
+                .orElseThrow(() -> new AnuncioNaoEncontradoException(
+                        "Anúncio não encontrado com o id: " + id));
     }
 
     public void deletar(UUID id) {
-        Anuncio anuncio = buscarEntidadePorId(id);
-        anuncioRepository.delete(anuncio);
+        anuncioRepository.delete(buscarEntidadePorId(id));
     }
 
-    public AnuncioResponseDTO atualizar(UUID id, UUID anuncianteId, AtualizarAnuncioRequestDTO dto){
+    public AnuncioResponseDTO atualizar(UUID id, UUID usuarioId, AtualizarAnuncioRequestDTO dto) {
         Anuncio anuncio = buscarEntidadePorId(id);
 
-        if(!anuncio.getAnunciante().getId().equals(anuncianteId)){
-            throw new AcessoNegadoException("Usuário não tem permissão para editar este anúncio");
+        // Compara o usuário dono do perfil, não o perfil diretamente
+        if (!anuncio.getAnuncianteUsuarioId().equals(usuarioId)) {
+            throw new AcessoNegadoException(
+                    "Usuário não tem permissão para editar este anúncio.");
         }
 
         anuncio.setTitulo(dto.titulo());
@@ -106,34 +111,31 @@ public class AnuncioService {
         return toResponseDTO(anuncioRepository.save(anuncio));
     }
 
-    public AnuncioResponseDTO atualizarStatus(UUID id, StatusAnuncio status){
+    public AnuncioResponseDTO atualizarStatus(UUID id, StatusAnuncio status) {
         Anuncio anuncio = buscarEntidadePorId(id);
         anuncio.setStatus(status);
         return toResponseDTO(anuncioRepository.save(anuncio));
     }
 
-    public PaginaResponseDTO<BuscaAnuncioResponseDTO> buscarAnuncios(FiltroBuscaAnuncioDTO filtro, Pageable pageable) {
+    public PaginaResponseDTO<BuscaAnuncioResponseDTO> buscarAnuncios(
+            FiltroBuscaAnuncioDTO filtro, Pageable pageable) {
+
         Page<Anuncio> pagina = anuncioRepository.buscarComFiltros(
-                filtro.valorMin(),
-                filtro.valorMax(),
-                filtro.bairro(),
-                filtro.tipoMoradia(),
-                filtro.tipoAnuncio(),
-                filtro.mobiliado(),
-                filtro.aceitaAnimais(),
-                filtro.quantidadeVagas(),
-                pageable);
+                filtro.valorMin(), filtro.valorMax(), filtro.bairro(),
+                filtro.tipoMoradia(), filtro.tipoAnuncio(), filtro.mobiliado(),
+                filtro.aceitaAnimais(), filtro.quantidadeVagas(), pageable);
+
         List<BuscaAnuncioResponseDTO> conteudo = pagina.getContent()
                 .stream()
                 .map(this::toBuscaResponseDTO)
                 .toList();
+
         return new PaginaResponseDTO<>(
                 conteudo,
                 pagina.getNumber(),
                 pagina.getTotalPages(),
                 pagina.getTotalElements(),
-                pagina.getSize()
-        );
+                pagina.getSize());
     }
 
     private BuscaAnuncioResponseDTO toBuscaResponseDTO(Anuncio anuncio) {
@@ -153,7 +155,7 @@ public class AnuncioService {
                 moradia.isMobiliado(),
                 moradia.isAceitaAnimais(),
                 moradia.getQuantidadeVagas(),
-                anuncio.getAnunciante().getNome()
+                anuncio.getAnuncianteNome()
         );
     }
 
@@ -166,7 +168,7 @@ public class AnuncioService {
                 anuncio.getTipoAnuncio(),
                 anuncio.getStatus(),
                 anuncio.getDataPublicacao(),
-                anuncio.getAnunciante().getId(),
+                anuncio.getAnuncianteUsuarioId(),
                 anuncio.getMoradia().getId()
         );
     }

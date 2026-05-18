@@ -56,7 +56,7 @@ public class ManifestacaoInteresseService {
                     "Não é possível manifestar interesse em um anúncio que não está ativo.");
         }
 
-        if (anuncio.getAnunciante().getId().equals(interessado.getId())) {
+        if (anuncio.getAnunciante().getUsuario().getId().equals(interessado.getId())) {
             throw new ManifestacaoInteresseInvalidaException(
                     "Não é possível manifestar interesse no próprio anúncio.");
         }
@@ -116,7 +116,7 @@ public class ManifestacaoInteresseService {
     public List<ManifestacaoInteresseResponseDTO> listarPorAnuncio(UUID anuncioId, UUID anuncianteId) {
         Anuncio anuncio = anuncioService.buscarEntidadePorId(anuncioId);
 
-        if (!anuncio.getAnunciante().getId().equals(anuncianteId)) {
+        if (!anuncio.getAnunciante().getUsuario().getId().equals(anuncianteId)) {
             throw new AcessoNegadoException(
                     "Usuário não tem permissão para visualizar as manifestações deste anúncio.");
         }
@@ -138,7 +138,7 @@ public class ManifestacaoInteresseService {
         ManifestacaoInteresse manifestacao = buscarEntidadePorId(id);
 
         UUID interessadoId = manifestacao.getInteressado().getId();
-        UUID anuncianteId = manifestacao.getAnuncio().getAnunciante().getId();
+        UUID anuncianteId = manifestacao.getAnuncio().getAnunciante().getUsuario().getId();
 
         if (!solicitanteId.equals(interessadoId) && !solicitanteId.equals(anuncianteId)) {
             throw new AcessoNegadoException(
@@ -155,7 +155,7 @@ public class ManifestacaoInteresseService {
     }
 
     private void validarAnunciante(ManifestacaoInteresse manifestacao, UUID anuncianteId) {
-        if (!manifestacao.getAnuncio().getAnunciante().getId().equals(anuncianteId)) {
+        if (!manifestacao.getAnuncio().getAnunciante().getUsuario().getId().equals(anuncianteId)) {
             throw new AcessoNegadoException(
                     "Usuário não tem permissão para responder esta manifestação de interesse.");
         }
@@ -188,7 +188,7 @@ public class ManifestacaoInteresseService {
 
         if (manifestacao.getStatus() == StatusManifestacaoInteresse.ACEITA) {
             contatoInteressado = montarContatoInteressado(manifestacao.getInteressado());
-            contatoAnunciante = montarContatoAnunciante(manifestacao.getAnuncio().getAnunciante());
+            contatoAnunciante = montarContatoAnunciante(manifestacao.getAnuncio().getAnunciante().getUsuario());
         }
 
         return new ManifestacaoInteresseDetalheResponseDTO(

@@ -34,8 +34,8 @@ public class Avaliacao {
     private UsuarioUniversitario avaliador;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "locador_avaliado_id", nullable = false)
-    private Locador locadorAvaliado;
+    @JoinColumn(name = "anunciante_avaliado_id", nullable = false)
+    private PerfilAnunciante anuncianteAvaliado;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "moradia_id", nullable = false)

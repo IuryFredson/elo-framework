@@ -35,4 +35,11 @@ public class UsuarioUniversitario extends Usuario {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "perfil_convivencia_id")
     private PerfilConvivencia perfilConvivencia;
+
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PerfilAnunciante perfilAnunciante;
+
+    public boolean isAnunciante() {
+        return perfilAnunciante != null && perfilAnunciante.isAtivo();
+    }
 }
