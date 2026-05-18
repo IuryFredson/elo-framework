@@ -188,7 +188,7 @@ public class ManifestacaoInteresseService {
 
         if (manifestacao.getStatus() == StatusManifestacaoInteresse.ACEITA) {
             contatoInteressado = montarContatoInteressado(manifestacao.getInteressado());
-            contatoAnunciante = montarContatoAnunciante(manifestacao.getAnuncio().getAnunciante());
+            contatoAnunciante = montarContatoAnunciante(manifestacao.getAnuncio().getAnunciante().getUsuario());
         }
 
         return new ManifestacaoInteresseDetalheResponseDTO(
