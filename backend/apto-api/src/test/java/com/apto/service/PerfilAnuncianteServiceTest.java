@@ -184,14 +184,17 @@ class PerfilAnuncianteServiceTest {
         when(perfilAnuncianteRepository.findByUsuario_Id(universitarioId))
                 .thenReturn(Optional.of(perfilExistente));
 
-        PerfilAnuncianteResponseDTO response =
+        Optional<PerfilAnuncianteResponseDTO> response =
                 perfilAnuncianteService.buscarPorUsuario(universitarioId);
 
-        assertNotNull(response);
-        assertEquals(perfilId, response.id());
-        assertEquals(universitarioId, response.usuarioId());
-        assertEquals("Ana Subloca", response.nomeUsuario());
-        assertTrue(response.ativo());
+        assertTrue(response.isPresent());
+
+        PerfilAnuncianteResponseDTO dto = response.get();
+
+        assertEquals(perfilId, dto.id());
+        assertEquals(universitarioId, dto.usuarioId());
+        assertEquals("Ana Subloca", dto.nomeUsuario());
+        assertTrue(dto.ativo());
     }
 
     @Test
@@ -199,8 +202,10 @@ class PerfilAnuncianteServiceTest {
         when(perfilAnuncianteRepository.findByUsuario_Id(universitarioId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(AnuncianteNaoEncontradoException.class,
-                () -> perfilAnuncianteService.buscarPorUsuario(universitarioId));
+        Optional<PerfilAnuncianteResponseDTO> response =
+                perfilAnuncianteService.buscarPorUsuario(universitarioId);
+
+        assertTrue(response.isEmpty());
     }
 
     @Test
@@ -220,11 +225,14 @@ class PerfilAnuncianteServiceTest {
         when(perfilAnuncianteRepository.findByUsuario_Id(locador.getId()))
                 .thenReturn(Optional.of(perfilLocador));
 
-        PerfilAnuncianteResponseDTO response =
+        Optional<PerfilAnuncianteResponseDTO> response =
                 perfilAnuncianteService.buscarPorUsuario(locador.getId());
 
-        assertNotNull(response);
-        assertEquals("Carlos Locador", response.nomeUsuario());
-        assertTrue(response.ativo());
+        assertTrue(response.isPresent());
+
+        PerfilAnuncianteResponseDTO dto = response.get();
+
+        assertEquals("Carlos Locador", dto.nomeUsuario());
+        assertTrue(dto.ativo());
     }
 }

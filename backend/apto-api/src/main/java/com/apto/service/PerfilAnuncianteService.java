@@ -10,6 +10,7 @@ import com.apto.repository.UsuarioUniversitarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -53,12 +54,10 @@ public class PerfilAnuncianteService {
         return toResponseDTO(perfilAnuncianteRepository.save(perfil));
     }
 
-    public PerfilAnuncianteResponseDTO buscarPorUsuario(UUID usuarioId) {
-        PerfilAnunciante perfil = perfilAnuncianteRepository
+    public Optional<PerfilAnuncianteResponseDTO> buscarPorUsuario(UUID usuarioId) {
+        return perfilAnuncianteRepository
                 .findByUsuario_Id(usuarioId)
-                .orElseThrow(() -> new AnuncianteNaoEncontradoException(
-                        "Perfil de anunciante não encontrado para o usuário: " + usuarioId));
-        return toResponseDTO(perfil);
+                .map(this::toResponseDTO);
     }
 
     private PerfilAnuncianteResponseDTO toResponseDTO(PerfilAnunciante perfil) {
