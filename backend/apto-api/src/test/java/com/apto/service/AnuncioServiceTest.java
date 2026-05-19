@@ -3,6 +3,8 @@ package com.apto.service;
 import com.apto.dto.request.AtualizarAnuncioRequestDTO;
 import com.apto.dto.request.CriarAnuncioRequestDTO;
 import com.apto.dto.response.AnuncioResponseDTO;
+import com.apto.event.AnuncioIndisponibilizadoEvent;
+import com.apto.event.MotivoIndisponibilizacaoAnuncio;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.AnuncioNaoEncontradoException;
@@ -15,6 +17,7 @@ import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
+import com.apto.observer.DomainEventPublisher;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.MoradiaRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
@@ -50,6 +53,9 @@ class AnuncioServiceTest {
 
     @Mock
     private PerfilAnuncianteRepository perfilAnuncianteRepository;
+
+    @Mock
+    private DomainEventPublisher eventPublisher;
 
     @InjectMocks
     private AnuncioService anuncioService;
@@ -211,6 +217,8 @@ class AnuncioServiceTest {
 
         anuncioService.deletar(anuncioId);
 
+        verify(eventPublisher).publish(new AnuncioIndisponibilizadoEvent(
+                anuncioId, StatusAnuncio.ATIVO, null, MotivoIndisponibilizacaoAnuncio.DELETADO));
         verify(anuncioRepository).delete(anuncio);
     }
 
@@ -259,6 +267,8 @@ class AnuncioServiceTest {
 
         assertNotNull(response);
         verify(anuncioRepository).save(anuncio);
+        verify(eventPublisher).publish(new AnuncioIndisponibilizadoEvent(
+                anuncioId, StatusAnuncio.ATIVO, StatusAnuncio.PAUSADO, MotivoIndisponibilizacaoAnuncio.PAUSADO));
     }
 
     @Test
