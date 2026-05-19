@@ -17,10 +17,11 @@ import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Moradia;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
+import com.apto.observer.DomainEventPublisher;
 import com.apto.repository.AnuncioRepository;
+import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.MoradiaRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
-import com.apto.observer.DomainEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,15 +36,18 @@ public class AnuncioService {
     private final AnuncioRepository anuncioRepository;
     private final MoradiaRepository moradiaRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
+    private final ManifestacaoInteresseRepository manifestacaoRepository;
     private final DomainEventPublisher eventPublisher;
 
     public AnuncioService(AnuncioRepository anuncioRepository,
                           MoradiaRepository moradiaRepository,
                           PerfilAnuncianteRepository perfilAnuncianteRepository,
+                          ManifestacaoInteresseRepository manifestacaoRepository,
                           DomainEventPublisher eventPublisher) {
         this.anuncioRepository = anuncioRepository;
         this.moradiaRepository = moradiaRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
+        this.manifestacaoRepository = manifestacaoRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -100,11 +104,19 @@ public class AnuncioService {
 
     public void deletar(UUID id) {
         Anuncio anuncio = buscarEntidadePorId(id);
-        eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
-                anuncio.getId(),
-                anuncio.getStatus(),
-                null,
-                MotivoIndisponibilizacaoAnuncio.DELETADO));
+        StatusAnuncio statusAnterior = anuncio.getStatus();
+
+        if (manifestacaoRepository.existsByAnuncio_Id(id)) {
+            anuncio.setStatus(StatusAnuncio.ENCERRADO);
+            anuncioRepository.save(anuncio);
+            eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
+                    anuncio.getId(),
+                    statusAnterior,
+                    StatusAnuncio.ENCERRADO,
+                    MotivoIndisponibilizacaoAnuncio.DELETADO));
+            return;
+        }
+
         anuncioRepository.delete(anuncio);
     }
 

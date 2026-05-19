@@ -19,6 +19,7 @@ import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
 import com.apto.observer.DomainEventPublisher;
 import com.apto.repository.AnuncioRepository;
+import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.MoradiaRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +54,9 @@ class AnuncioServiceTest {
 
     @Mock
     private PerfilAnuncianteRepository perfilAnuncianteRepository;
+
+    @Mock
+    private ManifestacaoInteresseRepository manifestacaoRepository;
 
     @Mock
     private DomainEventPublisher eventPublisher;
@@ -214,12 +218,29 @@ class AnuncioServiceTest {
     @Test
     void deveDeletarAnuncioValido() {
         when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
+        when(manifestacaoRepository.existsByAnuncio_Id(anuncioId)).thenReturn(false);
 
         anuncioService.deletar(anuncioId);
 
-        verify(eventPublisher).publish(new AnuncioIndisponibilizadoEvent(
-                anuncioId, StatusAnuncio.ATIVO, null, MotivoIndisponibilizacaoAnuncio.DELETADO));
         verify(anuncioRepository).delete(anuncio);
+    }
+
+    @Test
+    void deveEncerrarAnuncioAoDeletarQuandoPossuirManifestacao() {
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
+        when(manifestacaoRepository.existsByAnuncio_Id(anuncioId)).thenReturn(true);
+        when(anuncioRepository.save(any(Anuncio.class))).thenReturn(anuncio);
+
+        anuncioService.deletar(anuncioId);
+
+        assertEquals(StatusAnuncio.ENCERRADO, anuncio.getStatus());
+        verify(anuncioRepository).save(anuncio);
+        verify(anuncioRepository, never()).delete(any());
+        verify(eventPublisher).publish(new AnuncioIndisponibilizadoEvent(
+                anuncioId,
+                StatusAnuncio.ATIVO,
+                StatusAnuncio.ENCERRADO,
+                MotivoIndisponibilizacaoAnuncio.DELETADO));
     }
 
     @Test
