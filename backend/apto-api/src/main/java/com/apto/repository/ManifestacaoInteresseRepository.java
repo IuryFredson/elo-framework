@@ -18,4 +18,12 @@ public interface ManifestacaoInteresseRepository extends JpaRepository<Manifesta
     List<ManifestacaoInteresse> findByAnuncio_IdOrderByDataManifestacaoDesc(UUID anuncioId);
 
     List<ManifestacaoInteresse> findByInteressado_IdOrderByDataManifestacaoDesc(UUID interessadoId);
+
+    List<ManifestacaoInteresse> findByAnuncio_IdAndStatus(
+            UUID anuncioId,
+            StatusManifestacaoInteresse status);
+
+    List<ManifestacaoInteresse> findByAnuncio_IdAndStatusIn(
+            UUID anuncioId,
+            Collection<StatusManifestacaoInteresse> statuses);
 }

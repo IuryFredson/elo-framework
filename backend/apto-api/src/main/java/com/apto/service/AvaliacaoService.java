@@ -4,6 +4,8 @@ import com.apto.dto.request.AtualizarAvaliacaoRequestDTO;
 import com.apto.dto.request.CriarAvaliacaoRequestDTO;
 import com.apto.dto.response.AvaliacaoResponseDTO;
 import com.apto.dto.response.ResumoAvaliacoesAnuncianteResponseDTO;
+import com.apto.event.AvaliacaoAlteradaEvent;
+import com.apto.event.TipoOperacaoAvaliacao;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AvaliacaoDuplicadaException;
 import com.apto.exception.AvaliacaoInvalidaException;
@@ -17,6 +19,7 @@ import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.AvaliacaoRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
+import com.apto.observer.DomainEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,18 +34,18 @@ public class AvaliacaoService {
     private final UsuarioUniversitarioRepository universitarioRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final AnuncioService anuncioService;
-    private final ReputacaoCalculoService reputacaoCalculoService;
+    private final DomainEventPublisher eventPublisher;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             UsuarioUniversitarioRepository universitarioRepository,
                             PerfilAnuncianteRepository perfilAnuncianteRepository,
                             AnuncioService anuncioService,
-                            ReputacaoCalculoService reputacaoCalculoService) {
+                            DomainEventPublisher eventPublisher) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.universitarioRepository = universitarioRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.anuncioService = anuncioService;
-        this.reputacaoCalculoService = reputacaoCalculoService;
+        this.eventPublisher = eventPublisher;
     }
 
     public AvaliacaoResponseDTO criar(CriarAvaliacaoRequestDTO dto) {
@@ -87,7 +90,7 @@ public class AvaliacaoService {
         avaliacao.setAtiva(true);
 
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
-        reputacaoCalculoService.calcularReputacaoEAtualizar(anuncianteAvaliado.getId());
+        publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.CRIADA);
         return toResponseDTO(salva);
     }
 
@@ -139,8 +142,7 @@ public class AvaliacaoService {
         avaliacao.setComentario(dto.comentario());
 
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
-        reputacaoCalculoService.calcularReputacaoEAtualizar(
-                avaliacao.getAnuncianteAvaliado().getId());
+        publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.ATUALIZADA);
         return toResponseDTO(salva);
     }
 
@@ -148,9 +150,8 @@ public class AvaliacaoService {
         Avaliacao avaliacao = buscarEntidadePorId(id);
         validarDonoDaAvaliacao(avaliacao, avaliadorId);
         avaliacao.setAtiva(false);
-        avaliacaoRepository.save(avaliacao);
-        reputacaoCalculoService.calcularReputacaoEAtualizar(
-                avaliacao.getAnuncianteAvaliado().getId());
+        Avaliacao salva = avaliacaoRepository.save(avaliacao);
+        publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.DESATIVADA);
     }
 
     public ResumoAvaliacoesAnuncianteResponseDTO resumoPorAnunciante(UUID perfilAnuncianteId) {
@@ -196,6 +197,13 @@ public class AvaliacaoService {
     private Double media(List<Avaliacao> avaliacoes, ToIntFunction<Avaliacao> campo) {
         if (avaliacoes.isEmpty()) return 0.0;
         return avaliacoes.stream().mapToInt(campo).average().orElse(0.0);
+    }
+
+    private void publicarAvaliacaoAlterada(Avaliacao avaliacao, TipoOperacaoAvaliacao tipoOperacao) {
+        eventPublisher.publish(new AvaliacaoAlteradaEvent(
+                avaliacao.getId(),
+                avaliacao.getAnuncianteAvaliado().getId(),
+                tipoOperacao));
     }
 
     private AvaliacaoResponseDTO toResponseDTO(Avaliacao avaliacao) {

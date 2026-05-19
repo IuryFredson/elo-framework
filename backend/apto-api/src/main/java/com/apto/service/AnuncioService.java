@@ -6,6 +6,8 @@ import com.apto.dto.request.FiltroBuscaAnuncioDTO;
 import com.apto.dto.response.AnuncioResponseDTO;
 import com.apto.dto.response.BuscaAnuncioResponseDTO;
 import com.apto.dto.response.PaginaResponseDTO;
+import com.apto.event.AnuncioIndisponibilizadoEvent;
+import com.apto.event.MotivoIndisponibilizacaoAnuncio;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AnuncioNaoEncontradoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
@@ -18,6 +20,7 @@ import com.apto.model.enums.StatusAnuncio;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.MoradiaRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
+import com.apto.observer.DomainEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,13 +35,16 @@ public class AnuncioService {
     private final AnuncioRepository anuncioRepository;
     private final MoradiaRepository moradiaRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
+    private final DomainEventPublisher eventPublisher;
 
     public AnuncioService(AnuncioRepository anuncioRepository,
                           MoradiaRepository moradiaRepository,
-                          PerfilAnuncianteRepository perfilAnuncianteRepository) {
+                          PerfilAnuncianteRepository perfilAnuncianteRepository,
+                          DomainEventPublisher eventPublisher) {
         this.anuncioRepository = anuncioRepository;
         this.moradiaRepository = moradiaRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public AnuncioResponseDTO criar(CriarAnuncioRequestDTO dto) {
@@ -93,7 +99,13 @@ public class AnuncioService {
     }
 
     public void deletar(UUID id) {
-        anuncioRepository.delete(buscarEntidadePorId(id));
+        Anuncio anuncio = buscarEntidadePorId(id);
+        eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
+                anuncio.getId(),
+                anuncio.getStatus(),
+                null,
+                MotivoIndisponibilizacaoAnuncio.DELETADO));
+        anuncioRepository.delete(anuncio);
     }
 
     public AnuncioResponseDTO atualizar(UUID id, UUID usuarioId, AtualizarAnuncioRequestDTO dto) {
@@ -113,8 +125,11 @@ public class AnuncioService {
 
     public AnuncioResponseDTO atualizarStatus(UUID id, StatusAnuncio status) {
         Anuncio anuncio = buscarEntidadePorId(id);
+        StatusAnuncio statusAnterior = anuncio.getStatus();
         anuncio.setStatus(status);
-        return toResponseDTO(anuncioRepository.save(anuncio));
+        Anuncio salvo = anuncioRepository.save(anuncio);
+        publicarIndisponibilizacaoSeNecessario(salvo, statusAnterior, status);
+        return toResponseDTO(salvo);
     }
 
     public PaginaResponseDTO<BuscaAnuncioResponseDTO> buscarAnuncios(
@@ -157,6 +172,25 @@ public class AnuncioService {
                 moradia.getQuantidadeVagas(),
                 anuncio.getAnuncianteNome()
         );
+    }
+
+    private void publicarIndisponibilizacaoSeNecessario(
+            Anuncio anuncio,
+            StatusAnuncio statusAnterior,
+            StatusAnuncio statusNovo) {
+        if (statusAnterior == statusNovo || statusNovo == StatusAnuncio.ATIVO) {
+            return;
+        }
+
+        MotivoIndisponibilizacaoAnuncio motivo = statusNovo == StatusAnuncio.PAUSADO
+                ? MotivoIndisponibilizacaoAnuncio.PAUSADO
+                : MotivoIndisponibilizacaoAnuncio.ENCERRADO;
+
+        eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
+                anuncio.getId(),
+                statusAnterior,
+                statusNovo,
+                motivo));
     }
 
     private AnuncioResponseDTO toResponseDTO(Anuncio anuncio) {
