@@ -4,6 +4,7 @@ import com.apto.dto.request.CriarUsuarioUniversitarioRequestDTO;
 import com.apto.dto.response.UsuarioUniversitarioResponseDTO;
 import com.apto.exception.EmailInstitucionalJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
+import com.apto.mapper.UsuarioUniversitarioMapper;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.Genero;
 import com.apto.repository.UsuarioRepository;
@@ -38,7 +39,10 @@ class UsuarioUniversitarioServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UsuarioUniversitarioService(repository, usuarioRepository);
+        service = new UsuarioUniversitarioService(
+                repository,
+                usuarioRepository,
+                new UsuarioUniversitarioMapper());
         criarDTO = new CriarUsuarioUniversitarioRequestDTO(
                 "Maria",
                 "maria@email.com",

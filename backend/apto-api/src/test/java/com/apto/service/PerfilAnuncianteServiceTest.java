@@ -3,6 +3,7 @@ package com.apto.service;
 import com.apto.dto.response.PerfilAnuncianteResponseDTO;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.PerfilAnuncianteMapper;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.UsuarioUniversitario;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
@@ -39,6 +41,9 @@ class PerfilAnuncianteServiceTest {
 
     @Mock
     private UsuarioUniversitarioRepository universitarioRepository;
+
+    @Spy
+    private PerfilAnuncianteMapper perfilAnuncianteMapper = new PerfilAnuncianteMapper();
 
     @InjectMocks
     private PerfilAnuncianteService perfilAnuncianteService;

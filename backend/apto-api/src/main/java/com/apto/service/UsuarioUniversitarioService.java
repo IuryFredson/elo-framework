@@ -7,6 +7,7 @@ import com.apto.dto.response.UsuarioUniversitarioResponseDTO;
 import com.apto.exception.EmailInstitucionalJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.UsuarioUniversitarioMapper;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.UsuarioRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
@@ -20,11 +21,14 @@ public class UsuarioUniversitarioService {
 
     private final UsuarioUniversitarioRepository repository;
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioUniversitarioMapper usuarioMapper;
 
     public UsuarioUniversitarioService(UsuarioUniversitarioRepository repository,
-                                       UsuarioRepository usuarioRepository) {
+                                       UsuarioRepository usuarioRepository,
+                                       UsuarioUniversitarioMapper usuarioMapper) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
+        this.usuarioMapper = usuarioMapper;
     }
 
     public UsuarioUniversitarioResponseDTO criar(CriarUsuarioUniversitarioRequestDTO dto) {
@@ -42,19 +46,19 @@ public class UsuarioUniversitarioService {
         usuario.setGenero(dto.genero());
 
         UsuarioUniversitario salvo = repository.save(usuario);
-        return toResponseDTO(salvo);
+        return usuarioMapper.toResponseDTO(salvo);
     }
 
     public List<UsuarioUniversitarioResponseDTO> listarTodos() {
         return repository.findAll()
                 .stream()
-                .map(this::toResponseDTO)
+                .map(usuarioMapper::toResponseDTO)
                 .toList();
     }
 
     public UsuarioUniversitarioResponseDTO buscarPorId(UUID id) {
         UsuarioUniversitario usuario = buscarEntidadePorId(id);
-        return toResponseDTO(usuario);
+        return usuarioMapper.toResponseDTO(usuario);
     }
 
     public UsuarioUniversitarioResponseDTO atualizar(UUID id, AtualizarUsuarioUniversitarioRequestDTO dto) {
@@ -80,7 +84,7 @@ public class UsuarioUniversitarioService {
         usuario.setGenero(dto.genero());
 
         UsuarioUniversitario atualizado = repository.save(usuario);
-        return toResponseDTO(atualizado);
+        return usuarioMapper.toResponseDTO(atualizado);
     }
 
     public UsuarioUniversitarioResponseDTO alterarStatus(UUID id, AlterarStatusUsuarioRequestDTO dto) {
@@ -88,7 +92,7 @@ public class UsuarioUniversitarioService {
         usuario.setAtivo(dto.ativo());
 
         UsuarioUniversitario atualizado = repository.save(usuario);
-        return toResponseDTO(atualizado);
+        return usuarioMapper.toResponseDTO(atualizado);
     }
 
     public void deletar(UUID id) {
@@ -117,17 +121,4 @@ public class UsuarioUniversitarioService {
         }
     }
 
-    private UsuarioUniversitarioResponseDTO toResponseDTO(UsuarioUniversitario usuario) {
-        return new UsuarioUniversitarioResponseDTO(
-                usuario.getId(),
-                usuario.getNome(),
-                usuario.getEmail(),
-                usuario.getTelefone(),
-                usuario.isAtivo(),
-                usuario.getEmailInstitucional(),
-                usuario.getCurso(),
-                usuario.getDataNascimento(),
-                usuario.getGenero()
-        );
-    }
 }

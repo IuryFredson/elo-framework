@@ -13,6 +13,7 @@ import com.apto.exception.AnuncioNaoEncontradoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.MoradiaAssociadaComAnuncioException;
 import com.apto.exception.MoradiaNaoEncontradaException;
+import com.apto.mapper.AnuncioMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Moradia;
 import com.apto.model.entity.PerfilAnunciante;
@@ -38,17 +39,20 @@ public class AnuncioService {
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final ManifestacaoInteresseRepository manifestacaoRepository;
     private final DomainEventPublisher eventPublisher;
+    private final AnuncioMapper anuncioMapper;
 
     public AnuncioService(AnuncioRepository anuncioRepository,
                           MoradiaRepository moradiaRepository,
                           PerfilAnuncianteRepository perfilAnuncianteRepository,
                           ManifestacaoInteresseRepository manifestacaoRepository,
-                          DomainEventPublisher eventPublisher) {
+                          DomainEventPublisher eventPublisher,
+                          AnuncioMapper anuncioMapper) {
         this.anuncioRepository = anuncioRepository;
         this.moradiaRepository = moradiaRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.manifestacaoRepository = manifestacaoRepository;
         this.eventPublisher = eventPublisher;
+        this.anuncioMapper = anuncioMapper;
     }
 
     public AnuncioResponseDTO criar(CriarAnuncioRequestDTO dto) {
@@ -82,18 +86,18 @@ public class AnuncioService {
         anuncio.setMoradia(moradia);
         anuncio.setDataPublicacao(LocalDate.now());
 
-        return toResponseDTO(anuncioRepository.save(anuncio));
+        return anuncioMapper.toResponseDTO(anuncioRepository.save(anuncio));
     }
 
     public List<AnuncioResponseDTO> listarTodos() {
         return anuncioRepository.findAll()
                 .stream()
-                .map(this::toResponseDTO)
+                .map(anuncioMapper::toResponseDTO)
                 .toList();
     }
 
     public AnuncioResponseDTO buscarPorId(UUID id) {
-        return toResponseDTO(buscarEntidadePorId(id));
+        return anuncioMapper.toResponseDTO(buscarEntidadePorId(id));
     }
 
     public Anuncio buscarEntidadePorId(UUID id) {
@@ -132,7 +136,7 @@ public class AnuncioService {
         anuncio.setTitulo(dto.titulo());
         anuncio.setDescricao(dto.descricao());
         anuncio.setValorMensal(dto.valorMensal());
-        return toResponseDTO(anuncioRepository.save(anuncio));
+        return anuncioMapper.toResponseDTO(anuncioRepository.save(anuncio));
     }
 
     public AnuncioResponseDTO atualizarStatus(UUID id, StatusAnuncio status) {
@@ -141,7 +145,7 @@ public class AnuncioService {
         anuncio.setStatus(status);
         Anuncio salvo = anuncioRepository.save(anuncio);
         publicarIndisponibilizacaoSeNecessario(salvo, statusAnterior, status);
-        return toResponseDTO(salvo);
+        return anuncioMapper.toResponseDTO(salvo);
     }
 
     public PaginaResponseDTO<BuscaAnuncioResponseDTO> buscarAnuncios(
@@ -154,7 +158,7 @@ public class AnuncioService {
 
         List<BuscaAnuncioResponseDTO> conteudo = pagina.getContent()
                 .stream()
-                .map(this::toBuscaResponseDTO)
+                .map(anuncioMapper::toBuscaResponseDTO)
                 .toList();
 
         return new PaginaResponseDTO<>(
@@ -163,27 +167,6 @@ public class AnuncioService {
                 pagina.getTotalPages(),
                 pagina.getTotalElements(),
                 pagina.getSize());
-    }
-
-    private BuscaAnuncioResponseDTO toBuscaResponseDTO(Anuncio anuncio) {
-        Moradia moradia = anuncio.getMoradia();
-        return new BuscaAnuncioResponseDTO(
-                anuncio.getId(),
-                anuncio.getTitulo(),
-                anuncio.getDescricao(),
-                anuncio.getValorMensal(),
-                anuncio.getTipoAnuncio(),
-                anuncio.getStatus(),
-                anuncio.getDataPublicacao(),
-                moradia.getId(),
-                moradia.getTipoMoradia(),
-                moradia.getBairro(),
-                moradia.getEnderecoResumo(),
-                moradia.isMobiliado(),
-                moradia.isAceitaAnimais(),
-                moradia.getQuantidadeVagas(),
-                anuncio.getAnuncianteNome()
-        );
     }
 
     private void publicarIndisponibilizacaoSeNecessario(
@@ -203,19 +186,5 @@ public class AnuncioService {
                 statusAnterior,
                 statusNovo,
                 motivo));
-    }
-
-    private AnuncioResponseDTO toResponseDTO(Anuncio anuncio) {
-        return new AnuncioResponseDTO(
-                anuncio.getId(),
-                anuncio.getTitulo(),
-                anuncio.getDescricao(),
-                anuncio.getValorMensal(),
-                anuncio.getTipoAnuncio(),
-                anuncio.getStatus(),
-                anuncio.getDataPublicacao(),
-                anuncio.getAnuncianteUsuarioId(),
-                anuncio.getMoradia().getId()
-        );
     }
 }

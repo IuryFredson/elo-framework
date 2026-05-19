@@ -12,6 +12,7 @@ import com.apto.exception.AvaliacaoInvalidaException;
 import com.apto.exception.AvaliacaoNaoEncontradaException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.AvaliacaoMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Avaliacao;
 import com.apto.model.entity.PerfilAnunciante;
@@ -25,7 +26,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.ToIntFunction;
 
 @Service
 public class AvaliacaoService {
@@ -35,17 +35,20 @@ public class AvaliacaoService {
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final AnuncioService anuncioService;
     private final DomainEventPublisher eventPublisher;
+    private final AvaliacaoMapper avaliacaoMapper;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             UsuarioUniversitarioRepository universitarioRepository,
                             PerfilAnuncianteRepository perfilAnuncianteRepository,
                             AnuncioService anuncioService,
-                            DomainEventPublisher eventPublisher) {
+                            DomainEventPublisher eventPublisher,
+                            AvaliacaoMapper avaliacaoMapper) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.universitarioRepository = universitarioRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.anuncioService = anuncioService;
         this.eventPublisher = eventPublisher;
+        this.avaliacaoMapper = avaliacaoMapper;
     }
 
     public AvaliacaoResponseDTO criar(CriarAvaliacaoRequestDTO dto) {
@@ -91,11 +94,11 @@ public class AvaliacaoService {
 
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
         publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.CRIADA);
-        return toResponseDTO(salva);
+        return avaliacaoMapper.toResponseDTO(salva);
     }
 
     public AvaliacaoResponseDTO buscarPorId(UUID id) {
-        return toResponseDTO(buscarEntidadePorId(id));
+        return avaliacaoMapper.toResponseDTO(buscarEntidadePorId(id));
     }
 
     public List<AvaliacaoResponseDTO> listarPorAnunciante(UUID perfilAnuncianteId) {
@@ -105,21 +108,21 @@ public class AvaliacaoService {
         }
         return avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(avaliacaoMapper::toResponseDTO)
                 .toList();
     }
 
     public List<AvaliacaoResponseDTO> listarPorMoradia(UUID moradiaId) {
         return avaliacaoRepository.findByMoradia_IdAndAtivaTrue(moradiaId)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(avaliacaoMapper::toResponseDTO)
                 .toList();
     }
 
     public List<AvaliacaoResponseDTO> listarPorAvaliador(UUID avaliadorId) {
         return avaliacaoRepository.findByAvaliador_IdAndAtivaTrue(avaliadorId)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(avaliacaoMapper::toResponseDTO)
                 .toList();
     }
 
@@ -143,7 +146,7 @@ public class AvaliacaoService {
 
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
         publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.ATUALIZADA);
-        return toResponseDTO(salva);
+        return avaliacaoMapper.toResponseDTO(salva);
     }
 
     public void desativar(UUID id, UUID avaliadorId) {
@@ -162,15 +165,7 @@ public class AvaliacaoService {
         List<Avaliacao> avaliacoes =
                 avaliacaoRepository.findByAnuncianteAvaliado_IdAndAtivaTrue(perfilAnuncianteId);
 
-        return new ResumoAvaliacoesAnuncianteResponseDTO(
-                perfil.getId(),
-                perfil.getUsuario().getNome(),
-                avaliacoes.size(),
-                media(avaliacoes, Avaliacao::getNotaGeral),
-                media(avaliacoes, Avaliacao::getNotaComunicacao),
-                media(avaliacoes, Avaliacao::getNotaFidelidadeAnuncio),
-                media(avaliacoes, Avaliacao::getNotaEstadoMoradia),
-                media(avaliacoes, Avaliacao::getNotaCustoBeneficio));
+        return avaliacaoMapper.toResumoAnuncianteDTO(perfil, avaliacoes);
     }
 
     private Avaliacao buscarEntidadePorId(UUID id) {
@@ -194,36 +189,10 @@ public class AvaliacaoService {
         }
     }
 
-    private Double media(List<Avaliacao> avaliacoes, ToIntFunction<Avaliacao> campo) {
-        if (avaliacoes.isEmpty()) return 0.0;
-        return avaliacoes.stream().mapToInt(campo).average().orElse(0.0);
-    }
-
     private void publicarAvaliacaoAlterada(Avaliacao avaliacao, TipoOperacaoAvaliacao tipoOperacao) {
         eventPublisher.publish(new AvaliacaoAlteradaEvent(
                 avaliacao.getId(),
                 avaliacao.getAnuncianteAvaliado().getId(),
                 tipoOperacao));
-    }
-
-    private AvaliacaoResponseDTO toResponseDTO(Avaliacao avaliacao) {
-        PerfilAnunciante anunciante = avaliacao.getAnuncianteAvaliado();
-        return new AvaliacaoResponseDTO(
-                avaliacao.getId(),
-                avaliacao.getAvaliador().getId(),
-                avaliacao.getAvaliador().getNome(),
-                anunciante.getId(),
-                anunciante.getUsuario().getNome(),
-                avaliacao.getMoradia().getId(),
-                avaliacao.getAnuncio().getId(),
-                avaliacao.getAnuncio().getTitulo(),
-                avaliacao.getNotaGeral(),
-                avaliacao.getNotaComunicacao(),
-                avaliacao.getNotaFidelidadeAnuncio(),
-                avaliacao.getNotaEstadoMoradia(),
-                avaliacao.getNotaCustoBeneficio(),
-                avaliacao.getComentario(),
-                avaliacao.getDataCriacao(),
-                avaliacao.getAtiva());
     }
 }

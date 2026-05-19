@@ -5,6 +5,7 @@ import com.apto.dto.request.CriarMoradiaRequestDTO;
 import com.apto.dto.response.MoradiaResponseDTO;
 import com.apto.exception.MoradiaAssociadaComAnuncioException;
 import com.apto.exception.MoradiaNaoEncontradaException;
+import com.apto.mapper.MoradiaMapper;
 import com.apto.model.entity.Moradia;
 import com.apto.model.enums.TipoMoradia;
 import com.apto.repository.AnuncioRepository;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -32,6 +34,9 @@ public class MoradiaServiceTest {
 
     @Mock
     private AnuncioRepository anuncioRepository;
+
+    @Spy
+    private MoradiaMapper moradiaMapper = new MoradiaMapper();
 
     @InjectMocks
     private MoradiaService moradiaService;

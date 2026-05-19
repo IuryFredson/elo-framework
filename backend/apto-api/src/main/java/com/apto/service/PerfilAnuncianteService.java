@@ -3,6 +3,7 @@ package com.apto.service;
 import com.apto.dto.response.PerfilAnuncianteResponseDTO;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.PerfilAnuncianteMapper;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.PerfilAnuncianteRepository;
@@ -18,11 +19,14 @@ public class PerfilAnuncianteService {
 
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final UsuarioUniversitarioRepository universitarioRepository;
+    private final PerfilAnuncianteMapper perfilAnuncianteMapper;
 
     public PerfilAnuncianteService(PerfilAnuncianteRepository perfilAnuncianteRepository,
-                                   UsuarioUniversitarioRepository universitarioRepository) {
+                                   UsuarioUniversitarioRepository universitarioRepository,
+                                   PerfilAnuncianteMapper perfilAnuncianteMapper) {
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.universitarioRepository = universitarioRepository;
+        this.perfilAnuncianteMapper = perfilAnuncianteMapper;
     }
 
     @Transactional
@@ -37,10 +41,10 @@ public class PerfilAnuncianteService {
                     PerfilAnunciante novo = new PerfilAnunciante();
                     novo.setUsuario(universitario);
                     return novo;
-                });
+        });
 
         perfil.setAtivo(true);
-        return toResponseDTO(perfilAnuncianteRepository.save(perfil));
+        return perfilAnuncianteMapper.toResponseDTO(perfilAnuncianteRepository.save(perfil));
     }
 
     @Transactional
@@ -51,7 +55,7 @@ public class PerfilAnuncianteService {
                         "Este universitário não possui perfil de anunciante: " + universitarioId));
 
         perfil.setAtivo(false);
-        return toResponseDTO(perfilAnuncianteRepository.save(perfil));
+        return perfilAnuncianteMapper.toResponseDTO(perfilAnuncianteRepository.save(perfil));
     }
 
     public PerfilAnuncianteResponseDTO buscarPorUsuario(UUID usuarioId) {
@@ -59,14 +63,6 @@ public class PerfilAnuncianteService {
                 .findByUsuario_Id(usuarioId)
                 .orElseThrow(() -> new AnuncianteNaoEncontradoException("Anunciante não encontrado com id: " + usuarioId));
 
-        return toResponseDTO(perfil);
-    }
-
-    private PerfilAnuncianteResponseDTO toResponseDTO(PerfilAnunciante perfil) {
-        return new PerfilAnuncianteResponseDTO(
-                perfil.getId(),
-                perfil.getUsuario().getId(),
-                perfil.getUsuario().getNome(),
-                perfil.isAtivo());
+        return perfilAnuncianteMapper.toResponseDTO(perfil);
     }
 }

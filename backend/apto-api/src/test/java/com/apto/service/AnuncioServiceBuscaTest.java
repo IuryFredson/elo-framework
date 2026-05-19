@@ -3,6 +3,7 @@ package com.apto.service;
 import com.apto.dto.request.FiltroBuscaAnuncioDTO;
 import com.apto.dto.response.BuscaAnuncioResponseDTO;
 import com.apto.dto.response.PaginaResponseDTO;
+import com.apto.mapper.AnuncioMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.Moradia;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -48,6 +50,9 @@ class AnuncioServiceBuscaTest {
 
     @Mock
     private UsuarioUniversitarioRepository universitarioRepository;
+
+    @Spy
+    private AnuncioMapper anuncioMapper = new AnuncioMapper();
 
     @InjectMocks
     private AnuncioService anuncioService;

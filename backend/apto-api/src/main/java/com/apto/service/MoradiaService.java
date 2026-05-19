@@ -6,6 +6,7 @@ import com.apto.dto.request.CriarMoradiaRequestDTO;
 import com.apto.dto.response.MoradiaResponseDTO;
 import com.apto.exception.MoradiaAssociadaComAnuncioException;
 import com.apto.exception.MoradiaNaoEncontradaException;
+import com.apto.mapper.MoradiaMapper;
 import com.apto.model.entity.Moradia;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.MoradiaRepository;
@@ -19,10 +20,14 @@ public class MoradiaService {
 
     private final MoradiaRepository moradiaRepository;
     private final AnuncioRepository anuncioRepository;
+    private final MoradiaMapper moradiaMapper;
 
-    public MoradiaService(MoradiaRepository moradiaRepository, AnuncioRepository anuncioRepository) {
+    public MoradiaService(MoradiaRepository moradiaRepository,
+                          AnuncioRepository anuncioRepository,
+                          MoradiaMapper moradiaMapper) {
         this.moradiaRepository = moradiaRepository;
         this.anuncioRepository = anuncioRepository;
+        this.moradiaMapper = moradiaMapper;
     }
     public MoradiaResponseDTO criar(CriarMoradiaRequestDTO dto){
         Moradia moradia = new Moradia();
@@ -35,19 +40,19 @@ public class MoradiaService {
         moradia.setQuantidadeVagas(dto.quantidadeVagas());
         moradia.setEnderecoResumo(dto.enderecoResumo());
 
-        return toResponseDTO(moradiaRepository.save(moradia));
+        return moradiaMapper.toResponseDTO(moradiaRepository.save(moradia));
     }
 
     public List<MoradiaResponseDTO> listarTodos(){
         return moradiaRepository.findAll()
                 .stream()
-                .map(this::toResponseDTO)
+                .map(moradiaMapper::toResponseDTO)
                 .toList();
     }
 
     public MoradiaResponseDTO buscarPorId(UUID id){
         Moradia moradia = buscarEntidadePorId(id);
-        return toResponseDTO(moradia);
+        return moradiaMapper.toResponseDTO(moradia);
 
     }
 
@@ -67,7 +72,7 @@ public class MoradiaService {
         moradia.setRegrasMoradia(dto.regrasMoradia());
         moradia.setTipoMoradia(dto.tipoMoradia());
 
-        return toResponseDTO(moradiaRepository.save(moradia));
+        return moradiaMapper.toResponseDTO(moradiaRepository.save(moradia));
     }
 
     public void deletar(UUID id){
@@ -76,19 +81,5 @@ public class MoradiaService {
             throw new MoradiaAssociadaComAnuncioException("Não é possível remover uma moradia que possui anúncio associado");
         }
         moradiaRepository.delete(moradia);
-    }
-
-
-    private MoradiaResponseDTO toResponseDTO(Moradia moradia){
-        return new MoradiaResponseDTO(
-                moradia.getId(),
-                moradia.getTipoMoradia(),
-                moradia.getBairro(),
-                moradia.getEnderecoResumo(),
-                moradia.isMobiliado(),
-                moradia.isAceitaAnimais(),
-                moradia.getQuantidadeVagas(),
-                moradia.getRegrasMoradia()
-        );
     }
 }

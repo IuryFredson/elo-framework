@@ -6,6 +6,7 @@ import com.apto.exception.GroqIntegracaoException;
 import com.apto.exception.PerfilConvivenciaAusenteException;
 import com.apto.exception.UsuarioNaoEncontradoException;
 import com.apto.integration.llm.GroqClient;
+import com.apto.mapper.MatchmakingMapper;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class MatchmakingService {
     private final CompatibilidadeDeterministicaCalculator calculator;
     private final MatchmakingPromptBuilder promptBuilder;
     private final MatchmakingLlmParser parser;
+    private final MatchmakingMapper matchmakingMapper;
 
     public MatchmakingResponseDTO buscarColegasCompativeis(UUID solicitanteId, int topN) {
 
@@ -70,7 +72,7 @@ public class MatchmakingService {
             // 6. Fallback: calcular tudo deterministicamente
             log.warn("Groq indisponível — usando fallback determinístico. solicitante={}", solicitanteId);
             resultados = candidatos.stream()
-                    .map(c -> toDTO(c, calculator.calcular(solicitante, c)))
+                    .map(c -> matchmakingMapper.toColegaResponseDTO(c, calculator.calcular(solicitante, c)))
                     .toList();
         }
 
@@ -96,20 +98,8 @@ public class MatchmakingService {
                 // Candidato ausente no retorno da LLM → usar fallback para ele
                 resultado = calculator.calcular(solicitante, candidato);
             }
-            lista.add(toDTO(candidato, resultado));
+            lista.add(matchmakingMapper.toColegaResponseDTO(candidato, resultado));
         }
         return lista;
-    }
-
-    private MatchColegaResponseDTO toDTO(UsuarioUniversitario candidato, ResultadoCompatibilidade resultado) {
-        return new MatchColegaResponseDTO(
-                candidato.getId(),
-                candidato.getNome(),
-                candidato.getCurso(),
-                candidato.getGenero(),
-                resultado.percentual(),
-                resultado.justificativa(),
-                resultado.origem()
-        );
     }
 }

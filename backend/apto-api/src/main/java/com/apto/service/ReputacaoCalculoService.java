@@ -2,6 +2,7 @@ package com.apto.service;
 
 import com.apto.dto.response.ReputacaoAnuncianteResponseDTO;
 import com.apto.exception.AnuncianteNaoEncontradoException;
+import com.apto.mapper.ReputacaoAnuncianteMapper;
 import com.apto.model.entity.Avaliacao;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.ReputacaoAnunciante;
@@ -20,13 +21,16 @@ public class ReputacaoCalculoService {
     private final ReputacaoAnuncianteRepository reputacaoRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final AvaliacaoRepository avaliacaoRepository;
+    private final ReputacaoAnuncianteMapper reputacaoMapper;
 
     public ReputacaoCalculoService(ReputacaoAnuncianteRepository reputacaoRepository,
                                    PerfilAnuncianteRepository perfilAnuncianteRepository,
-                                   AvaliacaoRepository avaliacaoRepository) {
+                                   AvaliacaoRepository avaliacaoRepository,
+                                   ReputacaoAnuncianteMapper reputacaoMapper) {
         this.reputacaoRepository = reputacaoRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.avaliacaoRepository = avaliacaoRepository;
+        this.reputacaoMapper = reputacaoMapper;
     }
 
     public ReputacaoAnuncianteResponseDTO buscarPorAnunciante(UUID perfilAnuncianteId) {
@@ -38,7 +42,7 @@ public class ReputacaoCalculoService {
                 .findByPerfilAnunciante(perfil)
                 .orElseGet(() -> reputacaoPadrao(perfil));
 
-        return toResponseDTO(reputacao);
+        return reputacaoMapper.toResponseDTO(reputacao);
     }
 
     public void calcularReputacaoEAtualizar(UUID perfilAnuncianteId) {
@@ -141,18 +145,4 @@ public class ReputacaoCalculoService {
                 .orElse(3.5);
     }
 
-    private ReputacaoAnuncianteResponseDTO toResponseDTO(ReputacaoAnunciante r) {
-        return new ReputacaoAnuncianteResponseDTO(
-                r.getId(),
-                r.getPerfilAnunciante().getId(),
-                r.getPerfilAnunciante().getUsuario().getId(),
-                r.getReputacaoScore(),
-                r.getTotalAvaliacoes(),
-                r.getMediaGeral(),
-                r.getMediaComunicacao(),
-                r.getMediaFidelidadeAnuncio(),
-                r.getMediaEstadoMoradia(),
-                r.getMediaCustoBeneficio(),
-                r.getUltimaAtualizacao());
-    }
 }

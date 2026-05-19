@@ -11,6 +11,7 @@ import com.apto.exception.ManifestacaoInteresseInvalidaException;
 import com.apto.exception.ManifestacaoInteresseNaoEncontradaException;
 import com.apto.exception.TransicaoInvalidaManifestacaoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.ManifestacaoInteresseMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.ManifestacaoInteresse;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -63,6 +65,9 @@ class ManifestacaoInteresseServiceTest {
 
     @Mock
     private UsuarioUniversitarioRepository universitarioRepository;
+
+    @Spy
+    private ManifestacaoInteresseMapper manifestacaoMapper = new ManifestacaoInteresseMapper();
 
     @InjectMocks
     private ManifestacaoInteresseService manifestacaoInteresseService;

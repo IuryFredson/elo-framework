@@ -2,6 +2,7 @@ package com.apto.service;
 
 import com.apto.dto.response.ReputacaoAnuncianteResponseDTO;
 import com.apto.exception.AnuncianteNaoEncontradoException;
+import com.apto.mapper.ReputacaoAnuncianteMapper;
 import com.apto.model.entity.Avaliacao;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.PerfilAnunciante;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -40,6 +42,9 @@ class ReputacaoCalculoServiceTest {
 
     @Mock
     private AvaliacaoRepository avaliacaoRepository;
+
+    @Spy
+    private ReputacaoAnuncianteMapper reputacaoMapper = new ReputacaoAnuncianteMapper();
 
     @InjectMocks
     private ReputacaoCalculoService reputacaoCalculoService;

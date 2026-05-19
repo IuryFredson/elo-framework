@@ -3,6 +3,7 @@ package com.apto.service;
 import com.apto.dto.request.CriarDenunciaRequestDTO;
 import com.apto.dto.response.DenunciaResponseDTO;
 import com.apto.exception.*;
+import com.apto.mapper.DenunciaMapper;
 import com.apto.model.entity.*;
 import com.apto.model.enums.StatusDenuncia;
 import com.apto.repository.AnuncioRepository;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -35,6 +37,9 @@ public class DenunciaServiceTest {
     private LocadorRepository locadorRepository;
     @Mock
     private AnuncioRepository anuncioRepository;
+
+    @Spy
+    private DenunciaMapper denunciaMapper = new DenunciaMapper();
 
     @InjectMocks
     private DenunciaService denunciaService;

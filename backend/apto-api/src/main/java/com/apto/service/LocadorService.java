@@ -7,6 +7,7 @@ import com.apto.dto.response.LocadorResponseDTO;
 import com.apto.exception.DocumentoIdentificacaoJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
 import com.apto.exception.LocadorNaoEncontradoException;
+import com.apto.mapper.LocadorMapper;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.repository.LocadorRepository;
@@ -24,13 +25,16 @@ public class LocadorService {
     private final LocadorRepository repository;
     private final UsuarioRepository usuarioRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
+    private final LocadorMapper locadorMapper;
 
     public LocadorService(LocadorRepository repository,
                           UsuarioRepository usuarioRepository,
-                          PerfilAnuncianteRepository perfilAnuncianteRepository) {
+                          PerfilAnuncianteRepository perfilAnuncianteRepository,
+                          LocadorMapper locadorMapper) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
+        this.locadorMapper = locadorMapper;
     }
 
     @Transactional
@@ -53,15 +57,15 @@ public class LocadorService {
         perfil.setAtivo(true);
         perfilAnuncianteRepository.save(perfil);
 
-        return toResponseDTO(salvo);
+        return locadorMapper.toResponseDTO(salvo);
     }
 
     public List<LocadorResponseDTO> listarTodos() {
-        return repository.findAll().stream().map(this::toResponseDTO).toList();
+        return repository.findAll().stream().map(locadorMapper::toResponseDTO).toList();
     }
 
     public LocadorResponseDTO buscarPorId(UUID id) {
-        return toResponseDTO(buscarEntidadePorId(id));
+        return locadorMapper.toResponseDTO(buscarEntidadePorId(id));
     }
 
     public LocadorResponseDTO atualizar(UUID id, AtualizarLocadorRequestDTO dto) {
@@ -85,13 +89,13 @@ public class LocadorService {
         locador.setDocumentoIdentificacao(dto.documentoIdentificacao());
         locador.setNomeExibicaoOuRazao(dto.nomeExibicaoOuRazao());
 
-        return toResponseDTO(repository.save(locador));
+        return locadorMapper.toResponseDTO(repository.save(locador));
     }
 
     public LocadorResponseDTO alterarStatus(UUID id, AlterarStatusUsuarioRequestDTO dto) {
         Locador locador = buscarEntidadePorId(id);
         locador.setAtivo(dto.ativo());
-        return toResponseDTO(repository.save(locador));
+        return locadorMapper.toResponseDTO(repository.save(locador));
     }
 
     public void deletar(UUID id) {
@@ -118,14 +122,4 @@ public class LocadorService {
         }
     }
 
-    private LocadorResponseDTO toResponseDTO(Locador locador) {
-        return new LocadorResponseDTO(
-                locador.getId(),
-                locador.getNome(),
-                locador.getEmail(),
-                locador.getTelefone(),
-                locador.isAtivo(),
-                locador.getDocumentoIdentificacao(),
-                locador.getNomeExibicaoOuRazao());
-    }
 }

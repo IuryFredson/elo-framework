@@ -5,6 +5,7 @@ import com.apto.dto.response.PerfilResponseDTO;
 import com.apto.exception.EmailInstitucionalJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.PerfilMapper;
 import com.apto.model.entity.PerfilConvivencia;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.UsuarioRepository;
@@ -18,16 +19,19 @@ public class PerfilService {
 
     private final UsuarioUniversitarioRepository repository;
     private final UsuarioRepository usuarioRepository;
+    private final PerfilMapper perfilMapper;
 
     public PerfilService(UsuarioUniversitarioRepository repository,
-                         UsuarioRepository usuarioRepository) {
+                         UsuarioRepository usuarioRepository,
+                         PerfilMapper perfilMapper) {
         this.repository = repository;
         this.usuarioRepository = usuarioRepository;
+        this.perfilMapper = perfilMapper;
     }
 
     public PerfilResponseDTO buscarPerfil(UUID id) {
         UsuarioUniversitario usuario = buscarUsuarioPorId(id);
-        return toResponseDTO(usuario);
+        return perfilMapper.toResponseDTO(usuario);
     }
 
     public PerfilResponseDTO atualizarPerfil(UUID id, AtualizarPerfilRequestDTO dto) {
@@ -72,7 +76,7 @@ public class PerfilService {
 
         repository.save(usuario);
 
-        return toResponseDTO(usuario);
+        return perfilMapper.toResponseDTO(usuario);
     }
 
     private UsuarioUniversitario buscarUsuarioPorId(UUID id) {
@@ -84,30 +88,4 @@ public class PerfilService {
                 );
     }
 
-    private PerfilResponseDTO toResponseDTO(UsuarioUniversitario usuario) {
-
-        PerfilConvivencia perfil = usuario.getPerfilConvivencia();
-
-        return new PerfilResponseDTO(
-                usuario.getId(),
-                usuario.getNome(),
-                usuario.getEmail(),
-                usuario.getEmailInstitucional(),
-                usuario.getTelefone(),
-                usuario.getCurso(),
-                usuario.getDataNascimento(),
-                usuario.getGenero(),
-
-                perfil != null ? perfil.getHorarioSono() : null,
-                perfil != null ? perfil.getNivelBarulhoAceitavel() : null,
-                perfil != null ? perfil.getFrequenciaVisitas() : null,
-                perfil != null ? perfil.getNivelOrganizacao() : null,
-                perfil != null ? perfil.getRotinaEstudos() : null,
-                perfil != null ? perfil.getConsomeAlcool() : null,
-                perfil != null ? perfil.getFumante() : null,
-                perfil != null ? perfil.getAceitaAnimais() : null,
-                perfil != null ? perfil.getPreferenciaGeneroConvivencia() : null,
-                perfil != null ? perfil.getDescricaoLivre() : null
-        );
-    }
 }

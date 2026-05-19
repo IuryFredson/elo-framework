@@ -4,6 +4,7 @@ import com.apto.dto.request.ModerarDenunciaRequestDTO;
 import com.apto.dto.response.ModeracaoResponseDTO;
 import com.apto.exception.DenunciaNaoEncontradaException;
 import com.apto.exception.ModeracaoInvalidaException;
+import com.apto.mapper.ModeracaoMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Denuncia;
 import com.apto.model.enums.AcaoModeracaoAnuncio;
@@ -21,11 +22,14 @@ public class ModeracaoService {
 
     private final DenunciaRepository denunciaRepository;
     private final AnuncioRepository anuncioRepository;
+    private final ModeracaoMapper moderacaoMapper;
 
     public ModeracaoService(DenunciaRepository denunciaRepository,
-                            AnuncioRepository anuncioRepository) {
+                            AnuncioRepository anuncioRepository,
+                            ModeracaoMapper moderacaoMapper) {
         this.denunciaRepository = denunciaRepository;
         this.anuncioRepository = anuncioRepository;
+        this.moderacaoMapper = moderacaoMapper;
     }
 
     public ModeracaoResponseDTO moderar(UUID denunciaId, ModerarDenunciaRequestDTO dto) {
@@ -43,17 +47,12 @@ public class ModeracaoService {
         anuncioRepository.save(anuncio);
         denunciaRepository.save(denuncia);
 
-        return new ModeracaoResponseDTO(
-                denuncia.getId(),
-                anuncio.getId(),
+        return moderacaoMapper.toResponseDTO(
+                denuncia,
+                anuncio,
                 statusAnteriorDenuncia,
-                denuncia.getStatusDenuncia(),
-                dto.acaoAnuncio(),
                 statusAnteriorAnuncio,
-                anuncio.getStatus(),
-                dto.justificativa(),
-                denuncia.getStatusAtualizadoEm()
-        );
+                dto);
     }
 
     private Denuncia buscarDenunciaPorId(UUID denunciaId) {

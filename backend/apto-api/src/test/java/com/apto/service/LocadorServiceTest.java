@@ -4,6 +4,7 @@ import com.apto.dto.request.CriarLocadorRequestDTO;
 import com.apto.dto.response.LocadorResponseDTO;
 import com.apto.exception.DocumentoIdentificacaoJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
+import com.apto.mapper.LocadorMapper;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.repository.LocadorRepository;
@@ -43,7 +44,11 @@ class LocadorServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new LocadorService(repository, usuarioRepository, perfilAnuncianteRepository);
+        service = new LocadorService(
+                repository,
+                usuarioRepository,
+                perfilAnuncianteRepository,
+                new LocadorMapper());
 
         criarDTO = new CriarLocadorRequestDTO(
                 "Carlos",

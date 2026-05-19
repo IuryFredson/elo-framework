@@ -3,6 +3,7 @@ package com.apto.service;
 import com.apto.dto.request.CriarDenunciaRequestDTO;
 import com.apto.dto.response.DenunciaResponseDTO;
 import com.apto.exception.*;
+import com.apto.mapper.DenunciaMapper;
 import com.apto.model.entity.*;
 import com.apto.model.enums.StatusDenuncia;
 import com.apto.repository.AnuncioRepository;
@@ -21,18 +22,24 @@ public class DenunciaService {
     private final UsuarioUniversitarioRepository universitarioRepository;
     private final LocadorRepository locadorRepository;
     private final AnuncioRepository anuncioRepository;
+    private final DenunciaMapper denunciaMapper;
 
-    public DenunciaService(DenunciaRepository denunciaRepository, UsuarioUniversitarioRepository universitarioRepository, LocadorRepository locadorRepository, AnuncioRepository anuncioRepository) {
+    public DenunciaService(DenunciaRepository denunciaRepository,
+                           UsuarioUniversitarioRepository universitarioRepository,
+                           LocadorRepository locadorRepository,
+                           AnuncioRepository anuncioRepository,
+                           DenunciaMapper denunciaMapper) {
         this.denunciaRepository = denunciaRepository;
         this.universitarioRepository = universitarioRepository;
         this.locadorRepository = locadorRepository;
         this.anuncioRepository = anuncioRepository;
+        this.denunciaMapper = denunciaMapper;
     }
 
     public List<DenunciaResponseDTO> listarTodas(){
         return denunciaRepository.findAll()
                 .stream()
-                .map(this::toResponseDTO)
+                .map(denunciaMapper::toResponseDTO)
                 .toList();
     }
 
@@ -51,7 +58,7 @@ public class DenunciaService {
         denuncia.setTitulo(dto.titulo());
         denuncia.setCorpo(dto.corpo());
         denuncia.setCriadoEm(atual);
-        return toResponseDTO(denunciaRepository.save(denuncia));
+        return denunciaMapper.toResponseDTO(denunciaRepository.save(denuncia));
     }
 
     public DenunciaResponseDTO atualizarStatus(UUID id, StatusDenuncia novoStatus){
@@ -62,7 +69,7 @@ public class DenunciaService {
         }
         denuncia.setStatusDenuncia(novoStatus);
         denuncia.setStatusAtualizadoEm(LocalDateTime.now());
-        return toResponseDTO(denunciaRepository.save(denuncia));
+        return denunciaMapper.toResponseDTO(denunciaRepository.save(denuncia));
     }
 
     public void deletar(UUID id){
@@ -77,7 +84,7 @@ public class DenunciaService {
 
     public DenunciaResponseDTO buscarPorId(UUID id){
         Denuncia denuncia = buscarEntidadePorId(id);
-        return toResponseDTO(denuncia);
+        return denunciaMapper.toResponseDTO(denuncia);
     }
 
     public List<DenunciaResponseDTO> buscarPorAnuncioId(UUID anuncioId){
@@ -86,7 +93,7 @@ public class DenunciaService {
 
         return denunciaRepository.findByAnuncio(anuncio)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(denunciaMapper::toResponseDTO)
                 .toList();
     }
 
@@ -94,25 +101,13 @@ public class DenunciaService {
         Usuario usuario = buscarUsuarioPorId(usuarioId);
         return denunciaRepository.findByDenunciante(usuario)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(denunciaMapper::toResponseDTO)
                 .toList();
     }
 
     public List<DenunciaResponseDTO> buscarPorStatus(StatusDenuncia status){
         List<Denuncia> denuncias = denunciaRepository.findByStatusDenuncia(status);
-        return denuncias.stream().map(this::toResponseDTO).toList();
-    }
-
-    private DenunciaResponseDTO toResponseDTO(Denuncia denuncia) {
-        return new DenunciaResponseDTO(
-                denuncia.getId(),
-                denuncia.getDenunciante().getId(),
-                denuncia.getAnuncio().getId(),
-                denuncia.getTitulo(),
-                denuncia.getCorpo(),
-                denuncia.getStatusDenuncia(),
-                denuncia.getCriadoEm()
-        );
+        return denuncias.stream().map(denunciaMapper::toResponseDTO).toList();
     }
 
     //valida se a ida do status atual para outro novo é válida

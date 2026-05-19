@@ -10,6 +10,7 @@ import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.AnuncioNaoEncontradoException;
 import com.apto.exception.MoradiaAssociadaComAnuncioException;
 import com.apto.exception.MoradiaNaoEncontradaException;
+import com.apto.mapper.AnuncioMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Locador;
 import com.apto.model.entity.Moradia;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -60,6 +62,9 @@ class AnuncioServiceTest {
 
     @Mock
     private DomainEventPublisher eventPublisher;
+
+    @Spy
+    private AnuncioMapper anuncioMapper = new AnuncioMapper();
 
     @InjectMocks
     private AnuncioService anuncioService;

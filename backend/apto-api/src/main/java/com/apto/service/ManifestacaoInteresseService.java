@@ -11,9 +11,9 @@ import com.apto.exception.ManifestacaoInteresseInvalidaException;
 import com.apto.exception.ManifestacaoInteresseNaoEncontradaException;
 import com.apto.exception.TransicaoInvalidaManifestacaoException;
 import com.apto.exception.UsuarioNaoEncontradoException;
+import com.apto.mapper.ManifestacaoInteresseMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.ManifestacaoInteresse;
-import com.apto.model.entity.Usuario;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.StatusManifestacaoInteresse;
@@ -35,13 +35,16 @@ public class ManifestacaoInteresseService {
     private final ManifestacaoInteresseRepository manifestacaoRepository;
     private final AnuncioService anuncioService;
     private final UsuarioUniversitarioRepository universitarioRepository;
+    private final ManifestacaoInteresseMapper manifestacaoMapper;
 
     public ManifestacaoInteresseService(ManifestacaoInteresseRepository manifestacaoRepository,
                                         AnuncioService anuncioService,
-                                        UsuarioUniversitarioRepository universitarioRepository) {
+                                        UsuarioUniversitarioRepository universitarioRepository,
+                                        ManifestacaoInteresseMapper manifestacaoMapper) {
         this.manifestacaoRepository = manifestacaoRepository;
         this.anuncioService = anuncioService;
         this.universitarioRepository = universitarioRepository;
+        this.manifestacaoMapper = manifestacaoMapper;
     }
 
     public ManifestacaoInteresseDetalheResponseDTO criar(CriarManifestacaoInteresseRequestDTO dto) {
@@ -75,7 +78,7 @@ public class ManifestacaoInteresseService {
         manifestacao.setDataManifestacao(LocalDateTime.now());
 
         ManifestacaoInteresse salva = manifestacaoRepository.save(manifestacao);
-        return toDetalheDTO(salva);
+        return manifestacaoMapper.toDetalheDTO(salva);
     }
 
     public ManifestacaoInteresseDetalheResponseDTO aceitar(UUID id, UUID anuncianteId) {
@@ -85,7 +88,7 @@ public class ManifestacaoInteresseService {
 
         manifestacao.setStatus(StatusManifestacaoInteresse.ACEITA);
         manifestacao.setDataResposta(LocalDateTime.now());
-        return toDetalheDTO(manifestacaoRepository.save(manifestacao));
+        return manifestacaoMapper.toDetalheDTO(manifestacaoRepository.save(manifestacao));
     }
 
     public ManifestacaoInteresseDetalheResponseDTO recusar(UUID id, UUID anuncianteId) {
@@ -95,7 +98,7 @@ public class ManifestacaoInteresseService {
 
         manifestacao.setStatus(StatusManifestacaoInteresse.RECUSADA);
         manifestacao.setDataResposta(LocalDateTime.now());
-        return toDetalheDTO(manifestacaoRepository.save(manifestacao));
+        return manifestacaoMapper.toDetalheDTO(manifestacaoRepository.save(manifestacao));
     }
 
     public ManifestacaoInteresseDetalheResponseDTO cancelar(UUID id, UUID interessadoId) {
@@ -110,7 +113,7 @@ public class ManifestacaoInteresseService {
 
         manifestacao.setStatus(StatusManifestacaoInteresse.CANCELADA);
         manifestacao.setDataResposta(LocalDateTime.now());
-        return toDetalheDTO(manifestacaoRepository.save(manifestacao));
+        return manifestacaoMapper.toDetalheDTO(manifestacaoRepository.save(manifestacao));
     }
 
     public List<ManifestacaoInteresseResponseDTO> listarPorAnuncio(UUID anuncioId, UUID anuncianteId) {
@@ -123,14 +126,14 @@ public class ManifestacaoInteresseService {
 
         return manifestacaoRepository.findByAnuncio_IdOrderByDataManifestacaoDesc(anuncioId)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(manifestacaoMapper::toResponseDTO)
                 .toList();
     }
 
     public List<ManifestacaoInteresseResponseDTO> listarPorInteressado(UUID interessadoId) {
         return manifestacaoRepository.findByInteressado_IdOrderByDataManifestacaoDesc(interessadoId)
                 .stream()
-                .map(this::toResponseDTO)
+                .map(manifestacaoMapper::toResponseDTO)
                 .toList();
     }
 
@@ -145,7 +148,7 @@ public class ManifestacaoInteresseService {
                     "Usuário não tem permissão para visualizar esta manifestação de interesse.");
         }
 
-        return toDetalheDTO(manifestacao);
+        return manifestacaoMapper.toDetalheDTO(manifestacao);
     }
 
     private ManifestacaoInteresse buscarEntidadePorId(UUID id) {
@@ -168,62 +171,4 @@ public class ManifestacaoInteresseService {
         }
     }
 
-    private ManifestacaoInteresseResponseDTO toResponseDTO(ManifestacaoInteresse manifestacao) {
-        return new ManifestacaoInteresseResponseDTO(
-                manifestacao.getId(),
-                manifestacao.getAnuncio().getId(),
-                manifestacao.getAnuncio().getTitulo(),
-                manifestacao.getInteressado().getId(),
-                manifestacao.getInteressado().getNome(),
-                manifestacao.getStatus(),
-                manifestacao.getMensagem(),
-                manifestacao.getDataManifestacao(),
-                manifestacao.getDataResposta()
-        );
-    }
-
-    private ManifestacaoInteresseDetalheResponseDTO toDetalheDTO(ManifestacaoInteresse manifestacao) {
-        ContatoLiberadoResponseDTO contatoInteressado = null;
-        ContatoLiberadoResponseDTO contatoAnunciante = null;
-
-        if (manifestacao.getStatus() == StatusManifestacaoInteresse.ACEITA) {
-            contatoInteressado = montarContatoInteressado(manifestacao.getInteressado());
-            contatoAnunciante = montarContatoAnunciante(manifestacao.getAnuncio().getAnunciante().getUsuario());
-        }
-
-        return new ManifestacaoInteresseDetalheResponseDTO(
-                manifestacao.getId(),
-                manifestacao.getAnuncio().getId(),
-                manifestacao.getAnuncio().getTitulo(),
-                manifestacao.getInteressado().getId(),
-                manifestacao.getInteressado().getNome(),
-                manifestacao.getStatus(),
-                manifestacao.getMensagem(),
-                manifestacao.getDataManifestacao(),
-                manifestacao.getDataResposta(),
-                contatoInteressado,
-                contatoAnunciante
-        );
-    }
-
-    private ContatoLiberadoResponseDTO montarContatoInteressado(UsuarioUniversitario interessado) {
-        return new ContatoLiberadoResponseDTO(
-                interessado.getNome(),
-                interessado.getEmail(),
-                interessado.getTelefone(),
-                interessado.getEmailInstitucional()
-        );
-    }
-
-    private ContatoLiberadoResponseDTO montarContatoAnunciante(Usuario anunciante) {
-        String emailInstitucional = anunciante instanceof UsuarioUniversitario uu
-                ? uu.getEmailInstitucional()
-                : null;
-        return new ContatoLiberadoResponseDTO(
-                anunciante.getNome(),
-                anunciante.getEmail(),
-                anunciante.getTelefone(),
-                emailInstitucional
-        );
-    }
 }

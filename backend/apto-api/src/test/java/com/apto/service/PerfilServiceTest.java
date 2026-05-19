@@ -4,6 +4,7 @@ import com.apto.dto.request.AtualizarPerfilRequestDTO;
 import com.apto.dto.response.PerfilResponseDTO;
 import com.apto.exception.EmailInstitucionalJaCadastradoException;
 import com.apto.exception.EmailJaCadastradoException;
+import com.apto.mapper.PerfilMapper;
 import com.apto.model.entity.PerfilConvivencia;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.FrequenciaVisitas;
@@ -49,7 +50,7 @@ class PerfilServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PerfilService(repository, usuarioRepository);
+        service = new PerfilService(repository, usuarioRepository, new PerfilMapper());
 
         usuarioId = UUID.randomUUID();
 
