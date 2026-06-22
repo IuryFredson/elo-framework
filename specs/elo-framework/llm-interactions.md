@@ -304,13 +304,13 @@ Para a entrega parcial, o objetivo não é “completar” o Elo Framework intei
 Decisão da equipe:
 
 ```text
-[Aceito | Adaptado | Rejeitado]
+Aceito
 ```
 
 Justificativa da decisão:
 
 ```text
-
+O parecer mantém os pontos fixos e flexíveis definidos nas especificações, prioriza o Apto como primeira instância do framework, preserva o comportamento existente e limita o escopo ao necessário para a entrega parcial.
 ```
 
 Adaptações feitas, se houver:
