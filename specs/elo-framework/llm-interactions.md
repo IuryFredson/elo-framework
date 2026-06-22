@@ -324,3 +324,256 @@ Commit relacionado, se houver:
 ```text
 
 ```
+
+### Interação 2
+
+Data: 2026-06-22
+
+Tema: Definição das classes e interfaces mínimas do Elo Framework
+
+Prompt enviado:
+
+
+```text
+Você é um arquiteto Java/Spring Boot revisando uma aplicação acadêmica que será evoluída para framework.
+
+Use o contexto base do Elo Framework abaixo:
+Estamos evoluindo a aplicação Apto, da Fase 1 da disciplina Projeto Detalhado de Software, para o Elo Framework na Fase 2.
+
+O Elo Framework é um framework para Plataformas Baseadas em Perfis, Ofertas, Manifestação de Interesse e Compatibilidade.
+
+Equipe: Iury Fredson Germano Miranda, Gabriel Eugenio Vitalino da Silva e Matheus Henrique Ferreira da Silva.
+
+Pontos fixos do framework:
+1. Cadastro e gestão de usuários.
+2. Cadastro de perfis.
+3. Publicação de ofertas.
+4. Manifestação de Interesse.
+5. Cálculo de compatibilidade.
+
+Pontos flexíveis do framework:
+1. Dados do perfil.
+2. Tipo de oferta publicada.
+3. Critérios de compatibilidade.
+
+Regra importante:
+Manifestação de Interesse é um mecanismo fixo de interação em todas as instâncias. No Apto, o usuário manifesta interesse em moradia ou vaga. No Study Buddy, o usuário manifesta interesse em grupo de estudo. No Mentor Match, o usuário manifesta interesse em sessão ou programa de mentoria. Manifestação de Interesse não deve ser tratada como ponto flexível.
+
+Exigência parcial do professor:
+Para a próxima semana, o grupo deve trazer um diagrama de classe do framework explicitando as classes/interfaces que são pontos flexíveis e o código da aplicação da Fase 1 já instanciada no framework. Ou seja, cada ponto flexível do framework deve ser estendido para contemplar a aplicação da Fase 1.
+
+Prioridade atual:
+Focar primeiro no Apto instanciado no framework. Study Buddy e Mentor Match podem ficar para etapa posterior, salvo quando forem necessários para demonstrar extensibilidade.
+
+Não implemente autenticação real, deploy, frontend novo ou reescrita completa do domínio.
+
+Tarefa:
+Proponha as classes e interfaces mínimas do framework para representar os pontos fixos e flexíveis.
+
+Obrigatório:
+- Mostrar quais elementos são fixos.
+- Mostrar quais elementos são pontos flexíveis.
+- Mostrar como o Apto implementa ou estende cada ponto flexível.
+- Preservar o comportamento atual do Apto.
+- Manter o escopo pequeno.
+
+Pontos flexíveis:
+1. Dados do perfil.
+2. Tipo de oferta publicada.
+3. Critérios de compatibilidade.
+
+Manifestação de Interesse é ponto fixo, não flexível.
+
+Responda com:
+1. Lista de interfaces/classes propostas.
+2. Responsabilidade de cada uma.
+3. Relação com classes atuais do Apto.
+4. Riscos da proposta.
+5. Alternativas consideradas e por que foram descartadas.
+
+Não implemente código ainda.
+
+Leia as classes atuais relevantes nos arquivos locais:
+- backend/apto-api/src/main/java/com/apto/model/entity/Usuario.java
+- backend/apto-api/src/main/java/com/apto/model/entity/UsuarioUniversitario.java
+- backend/apto-api/src/main/java/com/apto/model/entity/PerfilConvivencia.java
+- backend/apto-api/src/main/java/com/apto/model/entity/Anuncio.java
+- backend/apto-api/src/main/java/com/apto/model/entity/ManifestacaoInteresse.java
+- backend/apto-api/src/main/java/com/apto/service/matchmaking/MatchmakingService.java
+- backend/apto-api/src/main/java/com/apto/service/matchmaking/CompatibilidadeDeterministicaCalculator.java
+```
+
+
+Resposta da LLM:
+
+```text
+1. Classes e interfaces propostas
+
+Núcleo do framework:
+
+- UsuarioFramework: interface fixa que representa o usuário participante da plataforma.
+- PerfilFramework: interface flexível para os perfis das instâncias.
+- OfertaFramework: interface flexível para as ofertas publicadas.
+- ManifestacaoInteresseFramework: interface fixa para o mecanismo comum de interesse.
+- CompatibilidadeStrategy<T>: interface flexível para elegibilidade e cálculo.
+- ResultadoCompatibilidade: classe ou record fixo para o resultado padronizado.
+- CompatibilidadeService<T>: classe fixa que executa o fluxo usando uma estratégia.
+
+Também podem existir contratos pequenos de serviço para os comportamentos fixos: GestaoUsuario<U>, GestaoPerfil<U, P>, PublicacaoOferta<O> e GestaoManifestacaoInteresse<I>. Eles podem ser implementados por adapters que reutilizem os serviços atuais do Apto.
+
+2. Responsabilidades
+
+UsuarioFramework
+
+Representa os dados comuns mínimos de um usuário: identificador, nome e estado ativo ou inativo. Não deve conter campos específicos do Apto, como curso ou e-mail institucional.
+
+PerfilFramework
+
+Marca um objeto como perfil válido para uma instância do Elo. Não é recomendável criar getters genéricos para todos os atributos, porque os dados variam por domínio. Inicialmente, o contrato pode expor somente uma identificação do tipo de perfil.
+
+OfertaFramework
+
+Representa algo publicado por um usuário. Suas responsabilidades mínimas são identificação da oferta, identificação do publicador, estado da publicação e tipo da oferta. Campos como valor mensal, moradia e tipo de anúncio permanecem específicos do Apto.
+
+ManifestacaoInteresseFramework
+
+Define o conceito fixo de um usuário manifestando interesse em uma oferta: interessado, oferta alvo, status, data da manifestação e resposta ou cancelamento.
+
+O nome InteracaoFramework, presente nas specs atuais, é genérico demais. Como a decisão conceitual já estabelece Manifestação de Interesse em todas as instâncias, o nome explícito reduz ambiguidade.
+
+CompatibilidadeStrategy<T>
+
+Deve concentrar o ponto flexível “critérios de compatibilidade”.
+
+Contrato conceitual mínimo:
+
+boolean elegivel(T solicitante, T candidato);
+ResultadoCompatibilidade calcular(T solicitante, T candidato);
+
+O método elegivel é necessário porque o Apto atualmente verifica preferência de gênero antes do cálculo percentual.
+
+O tipo genérico não deve ser limitado imediatamente a PerfilFramework, pois a compatibilidade atual também usa Genero, que pertence a UsuarioUniversitario, e não a PerfilConvivencia.
+
+ResultadoCompatibilidade
+
+Pode reutilizar a classe existente. Deve continuar contendo, no mínimo, percentual, justificativa e origem do cálculo. Adicionar critérios atendidos pode ficar para uma evolução posterior.
+
+CompatibilidadeService<T>
+
+Representa o fluxo fixo de receber participantes, aplicar elegibilidade, executar a estratégia, ordenar resultados e limitar a quantidade retornada. A estratégia decide os critérios; o serviço controla o processo.
+
+3. Relação com o Apto
+
+Dados do perfil:
+
+PerfilFramework
+    └── PerfilConvivencia
+
+PerfilConvivencia é a implementação concreta do perfil da instância Apto. Para evitar impacto nas entidades JPA, pode implementar diretamente PerfilFramework ou ser envolvido por AptoPerfilAdapter. A implementação direta é menor, desde que a interface não exija métodos artificiais.
+
+Tipo de oferta:
+
+OfertaFramework
+    └── Anuncio
+            └── contém Moradia
+
+Anuncio representa a publicação, enquanto Moradia contém os dados específicos do imóvel. Portanto, Anuncio deve ser a oferta concreta do Apto. Um AptoOfertaAdapter pode ser usado caso o contrato do framework não combine naturalmente com os getters da entidade.
+
+Critérios de compatibilidade:
+
+CompatibilidadeStrategy<UsuarioUniversitario>
+    └── AptoCompatibilidadeStrategy
+            └── delega para CompatibilidadeDeterministicaCalculator
+
+AptoCompatibilidadeStrategy seria a extensão mais explícita para o diagrama e para a entrega acadêmica. Ela pode delegar elegivel para preferenciaGeneroCompativel e calcular para CompatibilidadeDeterministicaCalculator.calcular, preservando o algoritmo atual.
+
+Manifestação de Interesse:
+
+ManifestacaoInteresseFramework
+    └── ManifestacaoInteresse
+
+Essa relação demonstra reutilização do mecanismo fixo. Ela não representa um novo ponto flexível.
+
+Serviços atuais:
+
+- UsuarioUniversitarioService e LocadorService instanciam a gestão de usuários.
+- PerfilService instancia a gestão de perfis.
+- AnuncioService instancia a publicação de ofertas.
+- ManifestacaoInteresseService instancia o mecanismo fixo de interesse.
+- MatchmakingService instancia o fluxo de compatibilidade.
+- CompatibilidadeDeterministicaCalculator preserva os critérios concretos do Apto.
+
+Os controllers, DTOs e endpoints podem continuar inalterados.
+
+4. Riscos
+
+1. Interfaces sem responsabilidade observável podem existir apenas para satisfazer o diagrama.
+2. Fazer entidades JPA implementarem contratos grandes pode introduzir métodos artificiais e dificultar a persistência.
+3. Limitar o contrato de compatibilidade a perfil não representa corretamente o código atual, pois a elegibilidade usa UsuarioUniversitario.
+4. O framework não deve duplicar ResultadoCompatibilidade.
+5. Modelar Study Buddy e Mentor Match agora pode gerar generalização prematura.
+6. A extração da estratégia não deve remover o fluxo por LLM e o fallback determinístico do MatchmakingService.
+7. Manter InteracaoFramework pode sugerir diferentes tipos de interação, contrariando a decisão atual.
+
+5. Alternativas descartadas
+
+Classe abstrata para perfil e oferta
+
+Foi descartada porque PerfilConvivencia e Anuncio já são entidades JPA. Introduzir herança agora aumentaria o risco sobre o mapeamento das tabelas.
+
+Framework baseado somente em entidades genéricas
+
+Uma entidade genérica com campos dinâmicos, JSON ou mapas enfraqueceria a tipagem e exigiria reescrita do domínio existente.
+
+Tornar Manifestação de Interesse uma Strategy
+
+Foi descartado porque a manifestação é um mecanismo fixo. O que varia é a oferta concreta que recebe o interesse.
+
+Alterar diretamente o calculador atual
+
+Fazer CompatibilidadeDeterministicaCalculator implementar a interface seria menor em quantidade de classes, mas deixaria menos explícita a instanciação do Apto. Um adapter AptoCompatibilidadeStrategy produz uma demonstração acadêmica mais clara e preserva o calculador.
+
+Criar interfaces CRUD completas
+
+Contratos com muitos métodos forçariam alterações nos serviços existentes. Para a entrega parcial, os contratos devem apresentar apenas as operações necessárias para demonstrar os pontos fixos.
+
+Parecer técnico
+
+A estrutura mínima deve combinar contratos pequenos no núcleo com implementações ou adapters do Apto. A relação principal a ser mostrada no diagrama é:
+
+PerfilFramework <- PerfilConvivencia
+OfertaFramework <- Anuncio
+CompatibilidadeStrategy <- AptoCompatibilidadeStrategy
+ManifestacaoInteresseFramework <- ManifestacaoInteresse
+
+Antes da implementação, a equipe precisa decidir:
+
+- implementação direta ou adapters para PerfilConvivencia e Anuncio;
+- substituição de InteracaoFramework por ManifestacaoInteresseFramework;
+- criação de AptoCompatibilidadeStrategy ou implementação direta no calculador;
+- quais contratos de serviço fixos precisam aparecer no código da entrega parcial.
+```
+
+Decisão da equipe:
+
+```text
+Adaptado
+```
+
+Justificativa da decisão:
+
+```text
+A proposta foi adaptada para utilizar implementação direta dos contratos pelas classes atuais do Apto, evitando adapters desnecessários e mantendo a estrutura menor para a entrega parcial.
+```
+
+Adaptações feitas, se houver:
+
+```text
+PerfilConvivencia implementará PerfilFramework e Anuncio implementará OfertaFramework diretamente. CompatibilidadeDeterministicaCalculator implementará CompatibilidadeStrategy diretamente, preservando o comportamento atual e sem criar AptoCompatibilidadeStrategy.
+```
+
+Commit relacionado, se houver:
+
+```text
+
+```
