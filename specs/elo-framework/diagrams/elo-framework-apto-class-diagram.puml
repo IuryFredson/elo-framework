@@ -7,12 +7,12 @@ skinparam classAttributeIconSize 0
 package "Elo Framework - Nucleo" {
 
   interface PerfilFramework <<ponto flexivel>> {
-    +getId(): Long
+    +getId(): UUID
   }
 
   interface OfertaFramework <<ponto flexivel>> {
-    +getId(): Long
-    +getPublicadorId(): Long
+    +getId(): UUID
+    +getPublicadorId(): UUID
     +isAtiva(): boolean
   }
 
@@ -22,9 +22,9 @@ package "Elo Framework - Nucleo" {
   }
 
   interface ManifestacaoInteresseFramework <<ponto fixo>> {
-    +getId(): Long
-    +getInteressadoId(): Long
-    +getOfertaId(): Long
+    +getId(): UUID
+    +getInteressadoId(): UUID
+    +getOfertaId(): UUID
     +getStatus(): String
   }
 
@@ -43,7 +43,7 @@ package "Elo Framework - Nucleo" {
 package "Apto - Instancia do Framework" {
 
   class Usuario <<ponto fixo instanciado>> {
-    -id: Long
+    -id: UUID
     -nome: String
     -email: String
   }
@@ -57,6 +57,11 @@ package "Apto - Instancia do Framework" {
     -telefone: String
   }
 
+  class PerfilAnunciante <<papel de publicador>> {
+    -id: UUID
+    -ativo: boolean
+  }
+
   class PerfilConvivencia <<dados de perfil>> {
     -fumante: boolean
     -aceitaAnimais: boolean
@@ -65,21 +70,21 @@ package "Apto - Instancia do Framework" {
   }
 
   class Anuncio <<tipo de oferta>> {
-    -id: Long
+    -id: UUID
     -titulo: String
     -descricao: String
     -ativo: boolean
   }
 
   class Moradia <<dados especificos da oferta>> {
-    -id: Long
+    -id: UUID
     -endereco: String
     -valorAluguel: BigDecimal
     -quantidadeVagas: int
   }
 
   class ManifestacaoInteresse <<ponto fixo instanciado>> {
-    -id: Long
+    -id: UUID
     -status: StatusManifestacao
     -dataManifestacao: LocalDateTime
   }
@@ -91,7 +96,7 @@ package "Apto - Instancia do Framework" {
 
   class MatchmakingService <<ponto fixo instanciado>> {
     -compatibilidadeStrategy: CompatibilidadeStrategy<UsuarioUniversitario>
-    +buscarMatches(usuarioId: Long): List<ResultadoCompatibilidade>
+    +buscarMatches(usuarioId: UUID): List<ResultadoCompatibilidade>
   }
 }
 
@@ -99,7 +104,8 @@ Usuario <|-- UsuarioUniversitario
 Usuario <|-- Locador
 
 UsuarioUniversitario "1" -- "1" PerfilConvivencia
-Locador "1" -- "0..*" Anuncio
+Usuario "1" -- "0..1" PerfilAnunciante : possui papel
+PerfilAnunciante "1" -- "0..*" Anuncio : publica
 Anuncio "1" -- "1" Moradia
 
 UsuarioUniversitario "1" -- "0..*" ManifestacaoInteresse : manifesta

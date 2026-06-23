@@ -10,13 +10,13 @@ Este arquivo deve ser atualizado conforme a implementacao avancar.
 
 | Requisito | Descricao | Tarefas | Arquivos esperados | Testes esperados | Status |
 | --- | --- | --- | --- | --- | --- |
-| EF-001 | Pontos fixos reutilizaveis | TASK-BE-001, TASK-BE-002, TASK-BE-003, TASK-BE-004 | contratos de perfil, oferta, interacao e compatibilidade | testes de compilacao e regressao | Pendente |
+| EF-001 | Pontos fixos reutilizaveis | TASK-BE-001, TASK-BE-002, TASK-BE-003, TASK-BE-004, TASK-BE-004A | contratos de perfil, oferta, manifestacao de interesse, compatibilidade e service fixo de compatibilidade | testes de compilacao e regressao | Pendente |
 | EF-002 | Pontos variaveis limitados | TASK-SPEC-001, TASK-BE-004 | spec, contratos, strategies | testes de strategies | Pendente |
 | EF-003 | Interacao como ponto fixo | TASK-BE-003 | contrato/adaptacao de interacao | testes existentes de manifestacao | Pendente |
-| EF-004 | Apto como instancia original | TASK-BE-005, TASK-TEST-001 | services/entities atuais, adapters se necessario | testes existentes do Apto | Pendente |
+| EF-004 | Apto como instancia original | TASK-BE-004A, TASK-BE-005, TASK-TEST-001 | services/entities atuais, CompatibilidadeService e contracts implementados diretamente | testes existentes do Apto | Pendente |
 | EF-005 | Study Buddy demonstravel | TASK-BE-006, TASK-TEST-002 | perfil academico, oferta de estudo, strategy academica | teste Study Buddy | Pendente |
 | EF-006 | Mentor Match demonstravel | TASK-BE-007, TASK-TEST-002 | perfil mentoria, oferta mentoria, strategy mentoria | teste Mentor Match | Pendente |
-| EF-007 | Extensibilidade controlada | TASK-BE-001, TASK-BE-002, TASK-BE-003, TASK-BE-004 | contratos e estrategias | testes de variacao | Pendente |
+| EF-007 | Extensibilidade controlada | TASK-BE-001, TASK-BE-002, TASK-BE-003, TASK-BE-004, TASK-BE-004A | contratos, estrategias e fluxo fixo de compatibilidade | testes de variacao | Pendente |
 
 ## Registro de Commits
 

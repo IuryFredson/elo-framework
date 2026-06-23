@@ -92,7 +92,7 @@ Validacao:
 - backend compila;
 - `Anuncio` pode ser explicado como oferta da instancia Apto.
 
-### TASK-BE-003: Extrair contrato de interacao
+### TASK-BE-003: Extrair contrato de manifestacao de interesse
 
 Requisito relacionado:
 
@@ -102,7 +102,7 @@ Requisito relacionado:
 
 Objetivo:
 
-- Criar contrato minimo para registro de interacoes.
+- Criar contrato minimo para Manifestacao de Interesse como mecanismo fixo de interacao.
 
 Validacao:
 
@@ -126,6 +126,35 @@ Validacao:
 - compatibilidade do Apto continua funcionando;
 - novas estrategias podem ser adicionadas sem alterar o fluxo fixo.
 
+### TASK-BE-004A: Criar CompatibilidadeService
+
+Requisito relacionado:
+
+- EF-001
+- EF-004
+- EF-007
+
+Objetivo:
+
+- Criar `CompatibilidadeService<T>` como fluxo fixo do framework para aplicar elegibilidade, calcular compatibilidades, ordenar resultados e limitar a quantidade retornada.
+- Priorizar este service como primeira instancia operacional do Elo Framework no Apto.
+
+Arquivos:
+
+- `backend/apto-api/src/main/java/com/apto/framework/CompatibilidadeService.java`
+- `backend/apto-api/src/main/java/com/apto/framework/CompatibilidadeStrategy.java`
+
+Validacao:
+
+- backend compila;
+- teste unitario cobre o fluxo com uma strategy fake ou com a strategy do Apto;
+- o service nao depende de classes especificas do Apto.
+
+Risco:
+
+- duplicar responsabilidades do `MatchmakingService`;
+- alterar ordenacao ou filtragem de compatibilidade sem perceber.
+
 ### TASK-BE-005: Adaptar Apto como instancia
 
 Requisito relacionado:
@@ -135,11 +164,18 @@ Requisito relacionado:
 Objetivo:
 
 - Mapear perfil de convivencia, anuncio, manifestacao de interesse e matchmaking como elementos da instancia Apto.
+- Fazer `CompatibilidadeDeterministicaCalculator` implementar `CompatibilidadeStrategy<UsuarioUniversitario>`.
+- Fazer `MatchmakingService` usar `CompatibilidadeService<UsuarioUniversitario>` preservando o comportamento atual.
 
 Validacao:
 
 - testes existentes passam;
 - README ou documentacao descreve Apto como instancia do Elo Framework.
+
+Risco:
+
+- quebrar o fallback deterministico usado quando a integracao LLM falha;
+- mudar contratos REST existentes de matchmaking.
 
 ### TASK-BE-006: Implementar Study Buddy minimo
 

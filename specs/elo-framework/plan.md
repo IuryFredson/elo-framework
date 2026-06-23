@@ -35,6 +35,13 @@ Criar uma camada conceitual para representar os pontos fixos:
 
 Essa camada pode ser implementada por interfaces, classes abstratas, services ou contratos simples, conforme aderencia ao codigo atual.
 
+Para a entrega parcial, a prioridade de implementacao deve comecar por compatibilidade, pois ela demonstra com clareza a separacao entre fluxo fixo do framework e criterio variavel da instancia:
+
+- `CompatibilidadeStrategy<T>` representa o ponto flexivel de criterios de compatibilidade.
+- `CompatibilidadeService<T>` representa o fluxo fixo do framework para filtrar candidatos elegiveis, calcular compatibilidades, ordenar resultados e limitar retornos.
+- `CompatibilidadeDeterministicaCalculator` instancia `CompatibilidadeStrategy<UsuarioUniversitario>` para o Apto.
+- `MatchmakingService` deve orquestrar o caso de uso atual reaproveitando `CompatibilidadeService<UsuarioUniversitario>`, preservando LLM, fallback e respostas publicas.
+
 ### Instancia Apto
 
 O Apto deve continuar sendo a instancia principal e funcional.
@@ -43,12 +50,15 @@ O codigo existente ja possui:
 
 - `Usuario` e especializacoes;
 - `PerfilConvivencia`;
+- `PerfilAnunciante`;
 - `Anuncio`;
 - `ManifestacaoInteresse`;
 - `MatchmakingService`;
 - `CompatibilidadeDeterministicaCalculator`.
 
 A refatoracao deve reaproveitar esses elementos como evidencia da instancia Apto.
+
+No Apto, `Anuncio` deve ser tratado como oferta publicada por meio de `PerfilAnunciante`, que representa o papel de publicador assumido por `Locador` ou `UsuarioUniversitario`.
 
 ### Instancias Study Buddy e Mentor Match
 
@@ -81,27 +91,31 @@ Entregaveis:
 
 Objetivo:
 
-- Criar contratos de perfil, oferta, interacao e compatibilidade.
+- Criar contratos de perfil, oferta, manifestacao de interesse e compatibilidade.
+- Criar o fluxo fixo `CompatibilidadeService<T>` antes de alterar o `MatchmakingService`.
 - Evitar alterar comportamento existente.
 
 Possiveis entregaveis:
 
 - contrato de perfil;
 - contrato de oferta;
-- contrato de interacao;
+- contrato de manifestacao de interesse;
 - contrato de estrategia de compatibilidade.
+- service fixo de compatibilidade.
 
 ### Fase 3: Adaptar Apto como instancia
 
 Objetivo:
 
 - Mapear o Apto atual para os contratos.
+- Usar `CompatibilidadeService<UsuarioUniversitario>` como primeira instancia operacional do Elo Framework no Apto.
 - Manter matchmaking atual funcionando.
 - Explicar que o match atual compara usuarios universitarios por perfil de convivencia.
 
 Possiveis entregaveis:
 
-- adapter ou strategy para compatibilidade do Apto;
+- `CompatibilidadeDeterministicaCalculator` implementando a strategy de compatibilidade do Apto;
+- `MatchmakingService` usando o fluxo fixo de `CompatibilidadeService<T>`;
 - testes garantindo compatibilidade existente.
 
 ### Fase 4: Implementar Study Buddy minimo
