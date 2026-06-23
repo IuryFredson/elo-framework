@@ -7,11 +7,12 @@ import com.apto.model.enums.RotinaEstudos;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CompatibilidadeDeterministicaCalculator {
+public class CompatibilidadeDeterministicaCalculator implements CompatibilidadeStrategy {
 
     private static final String JUSTIFICATIVA_PADRAO =
             "Compatibilidade calculada por critérios determinísticos.";
 
+    @Override
     public ResultadoCompatibilidade calcular(UsuarioUniversitario solicitante, UsuarioUniversitario candidato) {
         PerfilConvivencia perfilSolicitante = solicitante.getPerfilConvivencia();
         PerfilConvivencia perfilCandidato = candidato.getPerfilConvivencia();
@@ -87,6 +88,7 @@ public class CompatibilidadeDeterministicaCalculator {
         );
     }
 
+    @Override
     public boolean preferenciaGeneroCompativel(UsuarioUniversitario a, UsuarioUniversitario b) {
         if (a == null || b == null || a.getGenero() == null || b.getGenero() == null) {
             return false;

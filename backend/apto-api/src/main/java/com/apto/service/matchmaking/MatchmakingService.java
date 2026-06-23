@@ -26,7 +26,7 @@ public class MatchmakingService {
 
     private final UsuarioUniversitarioRepository repository;
     private final GroqClient groqClient;
-    private final CompatibilidadeDeterministicaCalculator calculator;
+    private final CompatibilidadeStrategy compatibilidadeStrategy;
     private final MatchmakingPromptBuilder promptBuilder;
     private final MatchmakingLlmParser parser;
     private final MatchmakingMapper matchmakingMapper;
@@ -48,7 +48,7 @@ public class MatchmakingService {
         List<UsuarioUniversitario> candidatos = repository
                 .buscarCandidatosMatchmaking(solicitanteId)
                 .stream()
-                .filter(c -> calculator.preferenciaGeneroCompativel(solicitante, c))
+                .filter(c -> compatibilidadeStrategy.preferenciaGeneroCompativel(solicitante, c))
                 .toList();
 
         // 4. Lista vazia → retornar DTO vazio
@@ -72,7 +72,7 @@ public class MatchmakingService {
             // 6. Fallback: calcular tudo deterministicamente
             log.warn("Groq indisponível — usando fallback determinístico. solicitante={}", solicitanteId);
             resultados = candidatos.stream()
-                    .map(c -> matchmakingMapper.toColegaResponseDTO(c, calculator.calcular(solicitante, c)))
+                    .map(c -> matchmakingMapper.toColegaResponseDTO(c, compatibilidadeStrategy.calcular(solicitante, c)))
                     .toList();
         }
 
@@ -96,7 +96,7 @@ public class MatchmakingService {
             ResultadoCompatibilidade resultado = resultadosPorId.get(candidato.getId());
             if (resultado == null) {
                 // Candidato ausente no retorno da LLM → usar fallback para ele
-                resultado = calculator.calcular(solicitante, candidato);
+                resultado = compatibilidadeStrategy.calcular(solicitante, candidato);
             }
             lista.add(matchmakingMapper.toColegaResponseDTO(candidato, resultado));
         }
