@@ -1,0 +1,147 @@
+@startuml
+title Elo Framework - Entrega Parcial com Apto Instanciado
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "Elo Framework - Nucleo" {
+
+  interface PerfilFramework <<ponto flexivel>> {
+    +getId(): Long
+  }
+
+  interface OfertaFramework <<ponto flexivel>> {
+    +getId(): Long
+    +getPublicadorId(): Long
+    +isAtiva(): boolean
+  }
+
+  interface CompatibilidadeStrategy<T> <<ponto flexivel>> {
+    +elegivel(solicitante: T, candidato: T): boolean
+    +calcular(solicitante: T, candidato: T): ResultadoCompatibilidade
+  }
+
+  interface ManifestacaoInteresseFramework <<ponto fixo>> {
+    +getId(): Long
+    +getInteressadoId(): Long
+    +getOfertaId(): Long
+    +getStatus(): String
+  }
+
+  class ResultadoCompatibilidade <<ponto fixo>> {
+    -percentual: int
+    -justificativa: String
+    -origem: OrigemCompatibilidade
+  }
+
+  class CompatibilidadeService<T> <<ponto fixo>> {
+    -strategy: CompatibilidadeStrategy<T>
+    +calcularCompatibilidades(solicitante: T, candidatos: List<T>): List<ResultadoCompatibilidade>
+  }
+}
+
+package "Apto - Instancia do Framework" {
+
+  class Usuario <<ponto fixo instanciado>> {
+    -id: Long
+    -nome: String
+    -email: String
+  }
+
+  class UsuarioUniversitario <<ponto fixo instanciado>> {
+    -curso: String
+    -genero: Genero
+  }
+
+  class Locador <<ponto fixo instanciado>> {
+    -telefone: String
+  }
+
+  class PerfilConvivencia <<dados de perfil>> {
+    -fumante: boolean
+    -aceitaAnimais: boolean
+    -horarioSono: String
+    -nivelOrganizacao: String
+  }
+
+  class Anuncio <<tipo de oferta>> {
+    -id: Long
+    -titulo: String
+    -descricao: String
+    -ativo: boolean
+  }
+
+  class Moradia <<dados especificos da oferta>> {
+    -id: Long
+    -endereco: String
+    -valorAluguel: BigDecimal
+    -quantidadeVagas: int
+  }
+
+  class ManifestacaoInteresse <<ponto fixo instanciado>> {
+    -id: Long
+    -status: StatusManifestacao
+    -dataManifestacao: LocalDateTime
+  }
+
+  class CompatibilidadeDeterministicaCalculator <<criterio de compatibilidade>> {
+    +elegivel(solicitante: UsuarioUniversitario, candidato: UsuarioUniversitario): boolean
+    +calcular(solicitante: UsuarioUniversitario, candidato: UsuarioUniversitario): ResultadoCompatibilidade
+  }
+
+  class MatchmakingService <<ponto fixo instanciado>> {
+    -compatibilidadeStrategy: CompatibilidadeStrategy<UsuarioUniversitario>
+    +buscarMatches(usuarioId: Long): List<ResultadoCompatibilidade>
+  }
+}
+
+Usuario <|-- UsuarioUniversitario
+Usuario <|-- Locador
+
+UsuarioUniversitario "1" -- "1" PerfilConvivencia
+Locador "1" -- "0..*" Anuncio
+Anuncio "1" -- "1" Moradia
+
+UsuarioUniversitario "1" -- "0..*" ManifestacaoInteresse : manifesta
+ManifestacaoInteresse "0..*" -- "1" Anuncio : oferta alvo
+
+PerfilFramework <|.. PerfilConvivencia
+OfertaFramework <|.. Anuncio
+ManifestacaoInteresseFramework <|.. ManifestacaoInteresse
+CompatibilidadeStrategy <|.. CompatibilidadeDeterministicaCalculator
+
+CompatibilidadeService --> CompatibilidadeStrategy
+MatchmakingService --> CompatibilidadeStrategy
+MatchmakingService --> ResultadoCompatibilidade
+CompatibilidadeDeterministicaCalculator --> ResultadoCompatibilidade
+
+note right of PerfilFramework
+Ponto flexivel:
+cada instancia define
+os dados do perfil.
+No Apto: PerfilConvivencia.
+end note
+
+note right of OfertaFramework
+Ponto flexivel:
+cada instancia define
+o tipo de oferta publicada.
+No Apto: Anuncio/Moradia.
+end note
+
+note right of CompatibilidadeStrategy
+Ponto flexivel:
+cada instancia define
+os criterios de compatibilidade.
+No Apto: compatibilidade
+de convivencia.
+end note
+
+note right of ManifestacaoInteresseFramework
+Ponto fixo:
+todas as instancias usam
+Manifestacao de Interesse
+como mecanismo de interacao.
+end note
+
+@enduml

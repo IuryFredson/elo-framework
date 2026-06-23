@@ -577,3 +577,255 @@ Commit relacionado, se houver:
 ```text
 
 ```
+
+### Interação 3
+
+Data: 2026-06-22
+
+Tema: Geração do diagrama de classes em PlantUML para a entrega parcial
+
+Prompt enviado:
+
+```text
+Você é um modelador UML.
+
+Use o contexto base do Elo Framework abaixo:
+Estamos evoluindo a aplicação Apto, da Fase 1 da disciplina Projeto Detalhado de Software, para o Elo Framework na Fase 2.
+
+O Elo Framework é um framework para Plataformas Baseadas em Perfis, Ofertas, Manifestação de Interesse e Compatibilidade.
+
+Equipe: Iury Fredson Germano Miranda, Gabriel Eugenio Vitalino da Silva e Matheus Henrique Ferreira da Silva.
+
+Pontos fixos do framework:
+1. Cadastro e gestão de usuários.
+2. Cadastro de perfis.
+3. Publicação de ofertas.
+4. Manifestação de Interesse.
+5. Cálculo de compatibilidade.
+
+Pontos flexíveis do framework:
+1. Dados do perfil.
+2. Tipo de oferta publicada.
+3. Critérios de compatibilidade.
+
+Regra importante:
+Manifestação de Interesse é um mecanismo fixo de interação em todas as instâncias. No Apto, o usuário manifesta interesse em moradia ou vaga. No Study Buddy, o usuário manifesta interesse em grupo de estudo. No Mentor Match, o usuário manifesta interesse em sessão ou programa de mentoria. Manifestação de Interesse não deve ser tratada como ponto flexível.
+
+Exigência parcial do professor:
+Para a próxima semana, o grupo deve trazer um diagrama de classe do framework explicitando as classes/interfaces que são pontos flexíveis e o código da aplicação da Fase 1 já instanciada no framework. Ou seja, cada ponto flexível do framework deve ser estendido para contemplar a aplicação da Fase 1.
+
+Prioridade atual:
+Focar primeiro no Apto instanciado no framework. Study Buddy e Mentor Match podem ficar para etapa posterior, salvo quando forem necessários para demonstrar extensibilidade.
+
+Não implemente autenticação real, deploy, frontend novo ou reescrita completa do domínio.
+
+Tarefa:
+Crie um diagrama de classes em PlantUML para a entrega parcial do professor.
+
+O diagrama deve mostrar:
+1. Classes/interfaces do núcleo do framework.
+2. Quais interfaces/classes são pontos flexíveis.
+3. Como o Apto instancia cada ponto flexível.
+4. Manifestação de Interesse como ponto fixo.
+5. Compatibilidade com critério variável, preferencialmente por Strategy ou contrato equivalente.
+
+Pontos flexíveis obrigatórios:
+- Dados do perfil.
+- Tipo de oferta publicada.
+- Critérios de compatibilidade.
+
+Instanciação do Apto:
+- PerfilConvivencia como dados de perfil.
+- Anuncio/Moradia como oferta.
+- Compatibilidade de convivência como critério de compatibilidade.
+- ManifestacaoInteresse como uso do mecanismo fixo de Manifestação de Interesse.
+
+Responda somente com:
+1. Código PlantUML.
+2. Uma explicação curta dos pontos flexíveis representados.
+
+Não implemente código Java.
+Não adicionar Study Buddy ou Mentor Match neste diagrama principal, a menos que seja apenas como nota externa de extensibilidade.
+```
+
+Resposta da LLM:
+
+```text
+@startuml
+title Elo Framework - Entrega Parcial com Apto Instanciado
+
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "Elo Framework - Núcleo" {
+
+  interface PerfilFramework <<ponto flexível>> {
+    +getId(): Long
+  }
+
+  interface OfertaFramework <<ponto flexível>> {
+    +getId(): Long
+    +getPublicadorId(): Long
+    +isAtiva(): boolean
+  }
+
+  interface CompatibilidadeStrategy<T> <<ponto flexível>> {
+    +elegivel(solicitante: T, candidato: T): boolean
+    +calcular(solicitante: T, candidato: T): ResultadoCompatibilidade
+  }
+
+  interface ManifestacaoInteresseFramework <<ponto fixo>> {
+    +getId(): Long
+    +getInteressadoId(): Long
+    +getOfertaId(): Long
+    +getStatus(): String
+  }
+
+  class ResultadoCompatibilidade <<ponto fixo>> {
+    -percentual: int
+    -justificativa: String
+    -origem: OrigemCompatibilidade
+  }
+
+  class CompatibilidadeService<T> <<ponto fixo>> {
+    -strategy: CompatibilidadeStrategy<T>
+    +calcularCompatibilidades(solicitante: T, candidatos: List<T>): List<ResultadoCompatibilidade>
+  }
+}
+
+package "Apto - Instância do Framework" {
+
+  class Usuario <<ponto fixo instanciado>> {
+    -id: Long
+    -nome: String
+    -email: String
+  }
+
+  class UsuarioUniversitario <<ponto fixo instanciado>> {
+    -curso: String
+    -genero: Genero
+  }
+
+  class Locador <<ponto fixo instanciado>> {
+    -telefone: String
+  }
+
+  class PerfilConvivencia <<dados de perfil>> {
+    -fumante: boolean
+    -aceitaAnimais: boolean
+    -horarioSono: String
+    -nivelOrganizacao: String
+  }
+
+  class Anuncio <<tipo de oferta>> {
+    -id: Long
+    -titulo: String
+    -descricao: String
+    -ativo: boolean
+  }
+
+  class Moradia <<dados específicos da oferta>> {
+    -id: Long
+    -endereco: String
+    -valorAluguel: BigDecimal
+    -quantidadeVagas: int
+  }
+
+  class ManifestacaoInteresse <<ponto fixo instanciado>> {
+    -id: Long
+    -status: StatusManifestacao
+    -dataManifestacao: LocalDateTime
+  }
+
+  class CompatibilidadeDeterministicaCalculator <<critério de compatibilidade>> {
+    +elegivel(solicitante: UsuarioUniversitario, candidato: UsuarioUniversitario): boolean
+    +calcular(solicitante: UsuarioUniversitario, candidato: UsuarioUniversitario): ResultadoCompatibilidade
+  }
+
+  class MatchmakingService <<ponto fixo instanciado>> {
+    -compatibilidadeStrategy: CompatibilidadeStrategy<UsuarioUniversitario>
+    +buscarMatches(usuarioId: Long): List<ResultadoCompatibilidade>
+  }
+}
+
+Usuario <|-- UsuarioUniversitario
+Usuario <|-- Locador
+
+UsuarioUniversitario "1" -- "1" PerfilConvivencia
+Locador "1" -- "0..*" Anuncio
+Anuncio "1" -- "1" Moradia
+
+UsuarioUniversitario "1" -- "0..*" ManifestacaoInteresse : manifesta
+ManifestacaoInteresse "0..*" -- "1" Anuncio : oferta alvo
+
+PerfilFramework <|.. PerfilConvivencia
+OfertaFramework <|.. Anuncio
+ManifestacaoInteresseFramework <|.. ManifestacaoInteresse
+CompatibilidadeStrategy <|.. CompatibilidadeDeterministicaCalculator
+
+CompatibilidadeService --> CompatibilidadeStrategy
+MatchmakingService --> CompatibilidadeStrategy
+MatchmakingService --> ResultadoCompatibilidade
+CompatibilidadeDeterministicaCalculator --> ResultadoCompatibilidade
+
+note right of PerfilFramework
+Ponto flexível:
+cada instância define
+os dados do perfil.
+No Apto: PerfilConvivencia.
+end note
+
+note right of OfertaFramework
+Ponto flexível:
+cada instância define
+o tipo de oferta publicada.
+No Apto: Anuncio/Moradia.
+end note
+
+note right of CompatibilidadeStrategy
+Ponto flexível:
+cada instância define
+os critérios de compatibilidade.
+No Apto: compatibilidade
+de convivência.
+end note
+
+note right of ManifestacaoInteresseFramework
+Ponto fixo:
+todas as instâncias usam
+Manifestação de Interesse
+como mecanismo de interação.
+end note
+
+@enduml
+
+Explicação curta:
+
+Os pontos flexíveis estão representados por PerfilFramework, OfertaFramework e CompatibilidadeStrategy. No Apto, eles são instanciados diretamente por PerfilConvivencia, Anuncio/Moradia e CompatibilidadeDeterministicaCalculator.
+
+ManifestacaoInteresseFramework aparece como ponto fixo, não como variação. A classe ManifestacaoInteresse apenas instancia esse mecanismo fixo dentro do Apto.
+```
+
+Decisão da equipe:
+
+```text
+Adaptado
+```
+
+Justificativa da decisão:
+
+```text
+A resposta foi adaptada para virar artefato versionado do projeto, com o código PlantUML salvo em arquivo próprio e compilado em SVG e PNG para uso na apresentação e documentação.
+```
+
+Adaptações feitas, se houver:
+
+```text
+Foi criado o arquivo specs/elo-framework/diagrams/elo-framework-apto-class-diagram.puml. O diagrama foi compilado para specs/elo-framework/diagrams/elo-framework-apto-class-diagram.svg e specs/elo-framework/diagrams/elo-framework-apto-class-diagram.png. O conteúdo do arquivo .puml foi mantido em ASCII para seguir o padrão dos artefatos locais.
+```
+
+Commit relacionado, se houver:
+
+```text
+
+```
