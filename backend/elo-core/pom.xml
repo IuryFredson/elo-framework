@@ -15,4 +15,12 @@
 
 	<name>elo-core</name>
 	<description>Biblioteca base do Elo Framework</description>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 </project>
