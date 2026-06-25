@@ -35,7 +35,7 @@ class MatchmakingServiceTest {
     private GroqClient groqClient;
 
     @Mock
-    private CompatibilidadeStrategy compatibilidadeStrategy;
+    private CompatibilidadeDeterministicaCalculator compatibilidadeDeterministicaCalculator;
 
     @Mock
     private MatchmakingPromptBuilder promptBuilder;
@@ -54,20 +54,23 @@ class MatchmakingServiceTest {
         UUID solicitanteId = UUID.randomUUID();
         UsuarioUniversitario solicitante = usuario(solicitanteId, "Ana", Genero.FEMININO);
         UsuarioUniversitario candidato = usuario(UUID.randomUUID(), "Bruno", Genero.MASCULINO);
-        ResultadoCompatibilidade compatibilidade = new ResultadoCompatibilidade(
+        com.elo.compatibilidade.ResultadoCompatibilidade compatibilidade = new com.elo.compatibilidade.ResultadoCompatibilidade(
                 87,
                 "Compatibilidade calculada por criterios do Apto.",
-                OrigemCompatibilidade.FALLBACK_DETERMINISTICO
+                List.of()
         );
 
         when(repository.findById(solicitanteId)).thenReturn(Optional.of(solicitante));
         when(repository.buscarCandidatosMatchmaking(solicitanteId)).thenReturn(List.of(candidato));
-        when(compatibilidadeStrategy.preferenciaGeneroCompativel(solicitante, candidato)).thenReturn(true);
+        when(compatibilidadeDeterministicaCalculator.preferenciaGeneroCompativel(solicitante, candidato)).thenReturn(true);
         when(promptBuilder.montarSystemPrompt()).thenReturn("system");
         when(promptBuilder.montarUserPrompt(solicitante, List.of(candidato))).thenReturn("user");
         when(groqClient.completarChat(anyString(), anyString(), eq(true)))
                 .thenThrow(new GroqIntegracaoException("LLM indisponivel"));
-        when(compatibilidadeStrategy.calcular(solicitante, candidato)).thenReturn(compatibilidade);
+        when(compatibilidadeDeterministicaCalculator.calcular(
+                solicitante.getPerfilConvivencia(),
+                candidato.getPerfilConvivencia()
+        )).thenReturn(compatibilidade);
 
         MatchmakingResponseDTO response = matchmakingService.buscarColegasCompativeis(solicitanteId, 10);
 
@@ -76,8 +79,10 @@ class MatchmakingServiceTest {
         assertEquals(candidato.getId(), response.candidatos().getFirst().id());
         assertEquals(87, response.candidatos().getFirst().percentualCompatibilidade());
         assertEquals(OrigemCompatibilidade.FALLBACK_DETERMINISTICO, response.candidatos().getFirst().origem());
-        verify(compatibilidadeStrategy).preferenciaGeneroCompativel(solicitante, candidato);
-        verify(compatibilidadeStrategy).calcular(solicitante, candidato);
+        verify(compatibilidadeDeterministicaCalculator).calcular(
+                solicitante.getPerfilConvivencia(),
+                candidato.getPerfilConvivencia()
+        );
     }
 
     private UsuarioUniversitario usuario(UUID id, String nome, Genero genero) {

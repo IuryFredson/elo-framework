@@ -1,6 +1,7 @@
 package com.apto.model.entity;
 
 import com.apto.model.enums.*;
+import com.elo.perfil.PerfilFramework;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PerfilConvivencia {
+public class PerfilConvivencia implements PerfilFramework {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -54,4 +55,9 @@ public class PerfilConvivencia {
 
     @Column(length = 1000)
     private String descricaoLivre;
+
+    @Override
+    public String tipoPerfil() {
+        return "PERFIL_CONVIVENCIA";
+    }
 }

@@ -4,24 +4,26 @@ import com.apto.model.entity.PerfilConvivencia;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.PreferenciaGeneroConvivencia;
 import com.apto.model.enums.RotinaEstudos;
+import com.elo.compatibilidade.CompatibilidadeStrategy;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
-public class CompatibilidadeDeterministicaCalculator implements CompatibilidadeStrategy {
+public class CompatibilidadeDeterministicaCalculator implements CompatibilidadeStrategy<PerfilConvivencia> {
 
     private static final String JUSTIFICATIVA_PADRAO =
             "Compatibilidade calculada por critérios determinísticos.";
 
     @Override
-    public ResultadoCompatibilidade calcular(UsuarioUniversitario solicitante, UsuarioUniversitario candidato) {
-        PerfilConvivencia perfilSolicitante = solicitante.getPerfilConvivencia();
-        PerfilConvivencia perfilCandidato = candidato.getPerfilConvivencia();
-
+    public com.elo.compatibilidade.ResultadoCompatibilidade calcular(
+            PerfilConvivencia perfilSolicitante,
+            PerfilConvivencia perfilCandidato) {
         if (perfilSolicitante == null || perfilCandidato == null) {
-            return new ResultadoCompatibilidade(
+            return new com.elo.compatibilidade.ResultadoCompatibilidade(
                     0,
                     JUSTIFICATIVA_PADRAO,
-                    OrigemCompatibilidade.FALLBACK_DETERMINISTICO
+                    List.of()
             );
         }
 
@@ -81,14 +83,13 @@ public class CompatibilidadeDeterministicaCalculator implements CompatibilidadeS
 
         percentual = clamp(percentual, 0, 100);
 
-        return new ResultadoCompatibilidade(
+        return new com.elo.compatibilidade.ResultadoCompatibilidade(
                 percentual,
                 JUSTIFICATIVA_PADRAO,
-                OrigemCompatibilidade.FALLBACK_DETERMINISTICO
+                List.of()
         );
     }
 
-    @Override
     public boolean preferenciaGeneroCompativel(UsuarioUniversitario a, UsuarioUniversitario b) {
         if (a == null || b == null || a.getGenero() == null || b.getGenero() == null) {
             return false;

@@ -2,6 +2,7 @@ package com.apto.model.entity;
 
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
+import com.elo.oferta.OfertaFramework;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "anuncio")
-public class Anuncio {
+public class Anuncio implements OfertaFramework {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -55,6 +56,21 @@ public class Anuncio {
 
     public UUID getAnuncianteUsuarioId() {
         return anunciante.getUsuario().getId();
+    }
+
+    @Override
+    public UUID getPublicadorId() {
+        return getAnuncianteUsuarioId();
+    }
+
+    @Override
+    public String tipoOferta() {
+        return tipoAnuncio == null ? null : tipoAnuncio.name();
+    }
+
+    @Override
+    public boolean isAtiva() {
+        return status == StatusAnuncio.ATIVO;
     }
 
     public String getAnuncianteNome() {

@@ -43,4 +43,16 @@ public class ManifestacaoInteresse {
 
     @Column(name = "data_resposta")
     private LocalDateTime dataResposta;
+
+    public UUID getInteressadoId() {
+        return interessado == null ? null : interessado.getId();
+    }
+
+    public UUID getOfertaId() {
+        return anuncio == null ? null : anuncio.getId();
+    }
+
+    public String tipoFixo() {
+        return "MANIFESTACAO_INTERESSE";
+    }
 }
