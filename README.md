@@ -15,7 +15,8 @@ O projeto busca apoiar estudantes universitários na busca por moradias, vagas c
 ```text
 .
 ├── backend/
-│   └── apto-api/       # API Spring Boot
+│   ├── elo-core/       # Biblioteca base do Elo Framework
+│   └── apto/           # API Spring Boot
 ├── frontend/           # Aplicação web React/Vite
 └── docker/             # Serviços auxiliares, como PostgreSQL
 ```
@@ -113,8 +114,8 @@ O PostgreSQL será iniciado com:
 ### 2. Rodar o Backend
 
 ```bash
-cd backend/apto-api
-./mvnw spring-boot:run
+cd backend
+./mvnw -pl apto spring-boot:run
 ```
 
 A API ficará disponível em:
@@ -142,7 +143,7 @@ http://localhost:5173
 O backend usa PostgreSQL no ambiente local, configurado em:
 
 ```text
-backend/apto-api/src/main/resources/application.yml
+backend/apto/src/main/resources/application.yml
 ```
 
 Configuração padrão:
@@ -176,7 +177,7 @@ VITE_API_URL=http://localhost:8080 npm run dev
 Existe um seeder de dados de desenvolvimento em:
 
 ```text
-backend/apto-api/src/main/java/com/apto/config/seed/DevDataSeeder.java
+backend/apto/src/main/java/com/apto/config/seed/DevDataSeeder.java
 ```
 
 Ele roda no profile `dev` e popula usuários, locadores, perfis anunciantes, moradias, anúncios, avaliações, reputações, manifestações de interesse e denúncias.
@@ -186,7 +187,7 @@ Ele roda no profile `dev` e popula usuários, locadores, perfis anunciantes, mor
 Backend:
 
 ```bash
-cd backend/apto-api
+cd backend
 ./mvnw test
 ```
 

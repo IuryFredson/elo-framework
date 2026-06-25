@@ -4,22 +4,24 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.4</version>
-		<relativePath/> </parent>
+		<groupId>com.elo</groupId>
+		<artifactId>elo-framework</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
 
 	<groupId>com.apto</groupId>
-	<artifactId>apto-api</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>apto</artifactId>
 	<name>apto-api</name>
 	<description>API para o projeto Apto</description>
 
-	<properties>
-		<java.version>21</java.version>
-	</properties>
-
 	<dependencies>
+		<dependency>
+			<groupId>com.elo</groupId>
+			<artifactId>elo-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
