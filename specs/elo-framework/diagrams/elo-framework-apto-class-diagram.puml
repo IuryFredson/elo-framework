@@ -1,153 +1,218 @@
 @startuml
-title Elo Framework - Entrega Parcial com Apto Instanciado
+title Elo Framework - Apto como Instancia (organizado)
 
+left to right direction
 skinparam packageStyle rectangle
 skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam shadowing false
 
-package "Elo Framework - Nucleo" {
+' ============================================================
+' 1. FRAMEWORK CORE (BIBLIOTECA PURA)
+' ============================================================
+package "elo-core (com.elo) <<framework>>" {
 
   interface PerfilFramework <<ponto flexivel>> {
-    +getId(): UUID
+    +tipoPerfil(): String
+  }
+    
+  enum STATUS_INTERACAO <<contrato fixo>> {
+    ATIVO,
+    PAUSADO,
+    ENCERRADO
   }
 
   interface OfertaFramework <<ponto flexivel>> {
     +getId(): UUID
     +getPublicadorId(): UUID
+    +tipoOferta(): String
     +isAtiva(): boolean
   }
 
-  interface CompatibilidadeStrategy<T> <<ponto flexivel>> {
-    +elegivel(solicitante: T, candidato: T): boolean
-    +calcular(solicitante: T, candidato: T): ResultadoCompatibilidade
-  }
-
-  interface ManifestacaoInteresseFramework <<ponto fixo>> {
+  interface InteracaoFramework <<ponto fixo>> {
     +getId(): UUID
     +getInteressadoId(): UUID
     +getOfertaId(): UUID
-    +getStatus(): String
+    +tipoFixo(): String
+    +getStatus(): STATUS_INTERACAO
   }
+
 
   class ResultadoCompatibilidade <<ponto fixo>> {
-    -percentual: int
-    -justificativa: String
-    -origem: OrigemCompatibilidade
+    +percentual: int
+    +justificativa: String
+    +criteriosAtendidos: List<String>
   }
 
-  class CompatibilidadeService<T> <<ponto fixo>> {
-    -strategy: CompatibilidadeStrategy<T>
-    +calcularCompatibilidades(solicitante: T, candidatos: List<T>): List<ResultadoCompatibilidade>
+  interface CompatibilidadeStrategy<P extends PerfilFramework> <<ponto flexivel>> {
+    +calcular(solicitante: P, candidato: P): ResultadoCompatibilidade
   }
+
+  class CompatibilidadeService<P extends PerfilFramework> <<ponto fixo>> {
+    -strategy: CompatibilidadeStrategy<P>
+    -elegibilidade: BiPredicate<P>
+
+    +calcularCompatibilidades(
+      solicitante: P,
+      candidatos: List<P>,
+      topN: int
+    ): List<ResultadoCompatibilidade>
+  }
+
+  CompatibilidadeService o--> CompatibilidadeStrategy
+  CompatibilidadeService ..> ResultadoCompatibilidade
 }
 
-package "Apto - Instancia do Framework" {
+' ============================================================
+' 2. IMPLEMENTAÇÕES DO APTO (DOMÍNIO)
+' ============================================================
+package "apto (com.apto) <<instancia>> - dominio" {
 
-  class Usuario <<ponto fixo instanciado>> {
+  abstract class Usuario {
     -id: UUID
     -nome: String
     -email: String
-  }
-
-  class UsuarioUniversitario <<ponto fixo instanciado>> {
-    -curso: String
-    -genero: Genero
-  }
-
-  class Locador <<ponto fixo instanciado>> {
     -telefone: String
+    -ativo: boolean
   }
 
-  class PerfilAnunciante <<papel de publicador>> {
+  class UsuarioUniversitario {
+    -emailInstitucional: String
+    -curso: String
+    -dataNascimento: LocalDate
+    -genero: Genero
+
+    +isAnunciante(): boolean
+  }
+
+  class Locador {
+    -documentoIdentificacao: String
+    -nomeExibicaoOuRazao: String
+  }
+
+  class PerfilAnunciante {
     -id: UUID
     -ativo: boolean
   }
 
-  class PerfilConvivencia <<dados de perfil>> {
-    -fumante: boolean
-    -aceitaAnimais: boolean
-    -horarioSono: String
-    -nivelOrganizacao: String
+  class PerfilConvivencia {
+    -id: UUID
+    -horarioSono: HorarioSono
+    -nivelBarulhoAceitavel: NivelBarulho
+    -frequenciaVisitas: FrequenciaVisitas
+    -nivelOrganizacao: NivelOrganizacao
+    -rotinaEstudos: RotinaEstudos
+    -consomeAlcool: Boolean
+    -fumante: Boolean
+    -aceitaAnimais: Boolean
+    -preferenciaGeneroConvivencia: PreferenciaGeneroConvivencia
+    -descricaoLivre: String
+
+    +tipoPerfil(): String
   }
 
-  class Anuncio <<tipo de oferta>> {
+  class Anuncio {
     -id: UUID
     -titulo: String
     -descricao: String
-    -ativo: boolean
+    -valorMensal: BigDecimal
+    -tipoAnuncio: TipoAnuncio
+    -status: StatusAnuncio
+    -dataPublicacao: LocalDate
+
+    +tipoOferta(): String
+    +getPublicadorId(): UUID
+    +isAtiva(): boolean
   }
 
-  class Moradia <<dados especificos da oferta>> {
+  class Moradia {
     -id: UUID
-    -endereco: String
-    -valorAluguel: BigDecimal
+    -tipoMoradia: TipoMoradia
+    -bairro: String
+    -enderecoResumo: String
+    -mobiliado: boolean
+    -aceitaAnimais: boolean
     -quantidadeVagas: int
+    -regrasMoradia: String
   }
 
-  class ManifestacaoInteresse <<ponto fixo instanciado>> {
+  class ManifestacaoInteresse {
     -id: UUID
-    -status: StatusManifestacao
+    -status: StatusManifestacaoInteresse
+    -mensagem: String
     -dataManifestacao: LocalDateTime
+    -dataResposta: LocalDateTime
+
+    +tipoFixo(): String
   }
 
-  class CompatibilidadeDeterministicaCalculator <<criterio de compatibilidade>> {
-    +elegivel(solicitante: UsuarioUniversitario, candidato: UsuarioUniversitario): boolean
-    +calcular(solicitante: UsuarioUniversitario, candidato: UsuarioUniversitario): ResultadoCompatibilidade
+  enum OrigemCompatibilidade {
+    LLM
+    FALLBACK_DETERMINISTICO
   }
 
-  class MatchmakingService <<ponto fixo instanciado>> {
-    -compatibilidadeStrategy: CompatibilidadeStrategy<UsuarioUniversitario>
-    +buscarMatches(usuarioId: UUID): List<ResultadoCompatibilidade>
+  class CompatibilidadeDeterministicaCalculator {
+    +calcular(
+      solicitante: PerfilConvivencia,
+      candidato: PerfilConvivencia
+    ): ResultadoCompatibilidade
+  }
+
+  class ElegibilidadeGeneroPolicy {
+    +compativel(
+      solicitante: UsuarioUniversitario,
+      candidato: UsuarioUniversitario
+    ): boolean
   }
 }
 
+' ============================================================
+' 3. ORQUESTRADOR (SERVIÇO DE APLICAÇÃO)
+' ============================================================
+package "apto (com.apto) <<instancia>> - orquestracao" {
+
+  class MatchmakingService {
+    -compatibilidadeService: CompatibilidadeService<PerfilConvivencia>
+    -elegibilidadeGenero: ElegibilidadeGeneroPolicy
+    -groqClient: GroqClient
+
+    +buscarColegasCompativeis(
+      solicitanteId: UUID,
+      topN: int
+    ): MatchmakingResponseDTO
+  }
+}
+
+' ============================================================
+' RELAÇÕES DO DOMÍNIO
+' ============================================================
 Usuario <|-- UsuarioUniversitario
 Usuario <|-- Locador
 
-UsuarioUniversitario "1" -- "1" PerfilConvivencia
-Usuario "1" -- "0..1" PerfilAnunciante : possui papel
-PerfilAnunciante "1" -- "0..*" Anuncio : publica
+UsuarioUniversitario "1" -- "0..1" PerfilConvivencia : possui
+Usuario "1" -- "0..1" PerfilAnunciante
+PerfilAnunciante "1" -- "0..*" Anuncio
 Anuncio "1" -- "1" Moradia
 
-UsuarioUniversitario "1" -- "0..*" ManifestacaoInteresse : manifesta
-ManifestacaoInteresse "0..*" -- "1" Anuncio : oferta alvo
+UsuarioUniversitario "1" -- "0..*" ManifestacaoInteresse
+ManifestacaoInteresse "0..*" -- "1" Anuncio
 
+' ============================================================
+' IMPLEMENTAÇÃO DO FRAMEWORK
+' ============================================================
 PerfilFramework <|.. PerfilConvivencia
 OfertaFramework <|.. Anuncio
-ManifestacaoInteresseFramework <|.. ManifestacaoInteresse
+InteracaoFramework <|.. ManifestacaoInteresse
 CompatibilidadeStrategy <|.. CompatibilidadeDeterministicaCalculator
 
-CompatibilidadeService --> CompatibilidadeStrategy
-MatchmakingService --> CompatibilidadeStrategy
-MatchmakingService --> ResultadoCompatibilidade
-CompatibilidadeDeterministicaCalculator --> ResultadoCompatibilidade
+' ============================================================
+' FLUXO
+' ============================================================
+MatchmakingService --> CompatibilidadeService
+CompatibilidadeService o--> CompatibilidadeStrategy
+CompatibilidadeService ..> ResultadoCompatibilidade
 
-note right of PerfilFramework
-Ponto flexivel:
-cada instancia define
-os dados do perfil.
-No Apto: PerfilConvivencia.
-end note
-
-note right of OfertaFramework
-Ponto flexivel:
-cada instancia define
-o tipo de oferta publicada.
-No Apto: Anuncio/Moradia.
-end note
-
-note right of CompatibilidadeStrategy
-Ponto flexivel:
-cada instancia define
-os criterios de compatibilidade.
-No Apto: compatibilidade
-de convivencia.
-end note
-
-note right of ManifestacaoInteresseFramework
-Ponto fixo:
-todas as instancias usam
-Manifestacao de Interesse
-como mecanismo de interacao.
-end note
+MatchmakingService --> ElegibilidadeGeneroPolicy
+MatchmakingService ..> OrigemCompatibilidade
 
 @enduml
