@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class PerfilService {
+public class PerfilService extends com.elo.perfil.PerfilService<UsuarioUniversitario, PerfilConvivencia, AtualizarPerfilRequestDTO, PerfilResponseDTO> {
 
     private final UsuarioUniversitarioRepository repository;
     private final UsuarioRepository usuarioRepository;
@@ -29,25 +29,47 @@ public class PerfilService {
         this.perfilMapper = perfilMapper;
     }
 
-    public PerfilResponseDTO buscarPerfil(UUID id) {
-        UsuarioUniversitario usuario = buscarUsuarioPorId(id);
-        return perfilMapper.toResponseDTO(usuario);
+    @Override
+    protected UsuarioUniversitario buscarDonoPerfil(UUID usuarioId) {
+        return repository.findById(usuarioId)
+                .orElseThrow(() ->
+                        new UsuarioNaoEncontradoException(
+                                "Usuario universitario nao encontrado com id: " + usuarioId
+                        )
+                );
     }
 
-    public PerfilResponseDTO atualizarPerfil(UUID id, AtualizarPerfilRequestDTO dto) {
-        UsuarioUniversitario usuario = buscarUsuarioPorId(id);
+    @Override
+    protected PerfilConvivencia obterPerfil(UsuarioUniversitario usuario) {
+        return usuario.getPerfilConvivencia();
+    }
 
+    @Override
+    protected PerfilConvivencia criarPerfil(AtualizarPerfilRequestDTO dto) {
+        return new PerfilConvivencia();
+    }
+
+    @Override
+    protected void associarPerfil(UsuarioUniversitario usuario, PerfilConvivencia perfil) {
+        usuario.setPerfilConvivencia(perfil);
+    }
+
+    @Override
+    protected void validarAtualizacao(UsuarioUniversitario usuario, AtualizarPerfilRequestDTO dto) {
         if (!usuario.getEmail().equals(dto.email()) && usuarioRepository.existsByEmail(dto.email())) {
-            throw new EmailJaCadastradoException("Já existe usuário com o email: " + dto.email());
+            throw new EmailJaCadastradoException("Ja existe usuario com o email: " + dto.email());
         }
 
         if (!usuario.getEmailInstitucional().equals(dto.emailInstitucional())
                 && repository.existsByEmailInstitucional(dto.emailInstitucional())) {
             throw new EmailInstitucionalJaCadastradoException(
-                    "Já existe usuário com o email institucional: " + dto.emailInstitucional()
+                    "Ja existe usuario com o email institucional: " + dto.emailInstitucional()
             );
         }
+    }
 
+    @Override
+    protected void aplicarDadosDonoPerfil(UsuarioUniversitario usuario, AtualizarPerfilRequestDTO dto) {
         usuario.setNome(dto.nome());
         usuario.setEmail(dto.email());
         usuario.setEmailInstitucional(dto.emailInstitucional());
@@ -55,14 +77,10 @@ public class PerfilService {
         usuario.setCurso(dto.curso());
         usuario.setDataNascimento(dto.dataNascimento());
         usuario.setGenero(dto.genero());
+    }
 
-        PerfilConvivencia perfil = usuario.getPerfilConvivencia();
-
-        if (perfil == null) {
-            perfil = new PerfilConvivencia();
-            usuario.setPerfilConvivencia(perfil);
-        }
-
+    @Override
+    protected void aplicarDadosPerfil(PerfilConvivencia perfil, AtualizarPerfilRequestDTO dto) {
         perfil.setHorarioSono(dto.horarioSono());
         perfil.setNivelBarulhoAceitavel(dto.nivelBarulhoAceitavel());
         perfil.setFrequenciaVisitas(dto.frequenciaVisitas());
@@ -73,19 +91,16 @@ public class PerfilService {
         perfil.setAceitaAnimais(dto.aceitaAnimais());
         perfil.setPreferenciaGeneroConvivencia(dto.preferenciaGeneroConvivencia());
         perfil.setDescricaoLivre(dto.descricaoLivre());
+    }
 
+    @Override
+    protected UsuarioUniversitario salvarDonoPerfil(UsuarioUniversitario usuario) {
         repository.save(usuario);
+        return usuario;
+    }
 
+    @Override
+    protected PerfilResponseDTO mapearResposta(UsuarioUniversitario usuario, PerfilConvivencia perfil) {
         return perfilMapper.toResponseDTO(usuario);
     }
-
-    private UsuarioUniversitario buscarUsuarioPorId(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() ->
-                        new UsuarioNaoEncontradoException(
-                                "Usuário universitário não encontrado com id: " + id
-                        )
-                );
-    }
-
 }
