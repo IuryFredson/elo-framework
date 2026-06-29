@@ -1,6 +1,6 @@
 package com.apto.dto.response;
 
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

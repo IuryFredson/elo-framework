@@ -3,7 +3,7 @@ package com.apto.observer.impl;
 import com.apto.event.AnuncioIndisponibilizadoEvent;
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.Notificacao;
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 import com.apto.observer.DomainObserver;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.NotificacaoRepository;

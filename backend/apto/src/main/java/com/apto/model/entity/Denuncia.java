@@ -1,6 +1,6 @@
 package com.apto.model.entity;
 
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "denuncia")
-public class Denuncia {
+public class Denuncia implements com.elo.denuncia.Denuncia {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
@@ -45,4 +45,19 @@ public class Denuncia {
 
     @Column(name = "status_atualizado_em")
     private LocalDateTime statusAtualizadoEm;
+
+    @Override
+    public UUID getDenuncianteId() {
+        return denunciante == null ? null : denunciante.getId();
+    }
+
+    @Override
+    public UUID getOfertaId() {
+        return anuncio == null ? null : anuncio.getId();
+    }
+
+    @Override
+    public StatusDenuncia getStatus() {
+        return statusDenuncia;
+    }
 }

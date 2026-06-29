@@ -5,7 +5,7 @@ import com.apto.dto.response.DenunciaResponseDTO;
 import com.apto.exception.*;
 import com.apto.mapper.DenunciaMapper;
 import com.apto.model.entity.*;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.DenunciaRepository;
 import com.apto.repository.LocadorRepository;

@@ -1,7 +1,7 @@
 package com.apto.model.entity;
 
 import com.apto.model.enums.*;
-import com.elo.perfil.PerfilFramework;
+import com.elo.perfil.Perfil;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class PerfilConvivencia implements PerfilFramework {
+public class PerfilConvivencia implements Perfil {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

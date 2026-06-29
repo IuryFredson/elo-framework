@@ -2,7 +2,7 @@ package com.apto.dto.response;
 
 import com.apto.model.enums.AcaoModeracaoAnuncio;
 import com.apto.model.enums.StatusAnuncio;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

@@ -2,7 +2,10 @@ package com.elo.oferta;
 
 import java.util.UUID;
 
-public interface OfertaFramework {
+/**
+ * Oportunidade publicada por um usuário da plataforma.
+ */
+public interface Oferta {
 
 	UUID getId();
 

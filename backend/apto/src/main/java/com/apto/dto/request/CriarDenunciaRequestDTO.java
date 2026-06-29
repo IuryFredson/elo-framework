@@ -1,6 +1,5 @@
 package com.apto.dto.request;
 
-import com.apto.model.enums.StatusDenuncia;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

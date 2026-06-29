@@ -3,7 +3,7 @@ package com.apto.controller;
 import com.apto.dto.request.AtualizarStatusRequestDTO;
 import com.apto.dto.request.CriarDenunciaRequestDTO;
 import com.apto.dto.response.DenunciaResponseDTO;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import com.apto.service.DenunciaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;

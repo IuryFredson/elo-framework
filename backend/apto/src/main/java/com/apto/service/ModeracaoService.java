@@ -9,7 +9,7 @@ import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Denuncia;
 import com.apto.model.enums.AcaoModeracaoAnuncio;
 import com.apto.model.enums.StatusAnuncio;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.DenunciaRepository;
 import org.springframework.stereotype.Service;

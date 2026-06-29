@@ -2,7 +2,7 @@ package com.apto.model.entity;
 
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
-import com.elo.oferta.OfertaFramework;
+import com.elo.oferta.Oferta;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "anuncio")
-public class Anuncio implements OfertaFramework {
+public class Anuncio implements Oferta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

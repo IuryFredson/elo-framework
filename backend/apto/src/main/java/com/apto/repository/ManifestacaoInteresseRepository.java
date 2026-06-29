@@ -1,7 +1,7 @@
 package com.apto.repository;
 
 import com.apto.model.entity.ManifestacaoInteresse;
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;

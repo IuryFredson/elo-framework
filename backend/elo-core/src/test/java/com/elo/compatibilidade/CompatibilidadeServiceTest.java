@@ -1,6 +1,6 @@
 package com.elo.compatibilidade;
 
-import com.elo.perfil.PerfilFramework;
+import com.elo.perfil.Perfil;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ class CompatibilidadeServiceTest {
 		assertEquals("compatibilidade de segundo", resultados.get(1).justificativa());
 	}
 
-	private record FakePerfil(String nome, int percentual, boolean elegivel) implements PerfilFramework {
+	private record FakePerfil(String nome, int percentual, boolean elegivel) implements Perfil {
 
 		@Override
 		public String tipoPerfil() {

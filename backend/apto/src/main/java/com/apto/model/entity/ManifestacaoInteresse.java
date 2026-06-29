@@ -1,6 +1,6 @@
 package com.apto.model.entity;
 
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Entity
 @Table(name = "manifestacao_interesse")
-public class ManifestacaoInteresse {
+public class ManifestacaoInteresse implements com.elo.manifestacao.ManifestacaoInteresse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -52,7 +52,4 @@ public class ManifestacaoInteresse {
         return anuncio == null ? null : anuncio.getId();
     }
 
-    public String tipoFixo() {
-        return "MANIFESTACAO_INTERESSE";
-    }
 }

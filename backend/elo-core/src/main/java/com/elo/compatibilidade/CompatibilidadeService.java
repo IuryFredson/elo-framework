@@ -1,13 +1,13 @@
 package com.elo.compatibilidade;
 
-import com.elo.perfil.PerfilFramework;
+import com.elo.perfil.Perfil;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 
-public class CompatibilidadeService<P extends PerfilFramework> {
+public class CompatibilidadeService<P extends Perfil> {
 
 	private final CompatibilidadeStrategy<P> strategy;
 

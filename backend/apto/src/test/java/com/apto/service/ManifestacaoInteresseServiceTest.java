@@ -20,7 +20,7 @@ import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.Genero;
 import com.apto.model.enums.StatusAnuncio;
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
 import com.apto.repository.ManifestacaoInteresseRepository;

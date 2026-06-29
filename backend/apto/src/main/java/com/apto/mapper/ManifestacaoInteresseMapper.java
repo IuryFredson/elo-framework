@@ -6,7 +6,7 @@ import com.apto.dto.response.ManifestacaoInteresseResponseDTO;
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.Usuario;
 import com.apto.model.entity.UsuarioUniversitario;
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 import org.springframework.stereotype.Component;
 
 @Component

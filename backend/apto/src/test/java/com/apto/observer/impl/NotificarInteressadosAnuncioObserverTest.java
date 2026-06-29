@@ -7,7 +7,7 @@ import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.Notificacao;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.StatusAnuncio;
-import com.apto.model.enums.StatusManifestacaoInteresse;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.NotificacaoRepository;
 import org.junit.jupiter.api.Test;

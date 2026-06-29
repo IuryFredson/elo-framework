@@ -1,7 +1,7 @@
 package com.apto.dto.request;
 
 import com.apto.model.enums.AcaoModeracaoAnuncio;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 

@@ -3,7 +3,7 @@ package com.apto.repository;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Denuncia;
 import com.apto.model.entity.Usuario;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

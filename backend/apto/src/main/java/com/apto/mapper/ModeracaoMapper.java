@@ -5,7 +5,7 @@ import com.apto.dto.response.ModeracaoResponseDTO;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Denuncia;
 import com.apto.model.enums.StatusAnuncio;
-import com.apto.model.enums.StatusDenuncia;
+import com.elo.denuncia.StatusDenuncia;
 import org.springframework.stereotype.Component;
 
 @Component
