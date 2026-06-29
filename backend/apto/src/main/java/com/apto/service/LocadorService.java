@@ -16,7 +16,6 @@ import com.apto.repository.UsuarioRepository;
 import com.elo.usuario.UsuarioService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -47,30 +46,18 @@ public class LocadorService extends UsuarioService<Locador, CriarLocadorRequestD
     }
 
     @Override
-    protected List<Locador> listarEntidades() {
-        return repository.findAll();
+    protected LocadorRepository repositorio() {
+        return repository;
     }
 
     @Override
-    protected Locador buscarEntidadePorId(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new LocadorNaoEncontradoException(
-                        "Locador nao encontrado com id: " + id));
+    protected LocadorMapper mapperResposta() {
+        return locadorMapper;
     }
 
     @Override
-    protected Locador salvar(Locador usuario) {
-        return repository.save(usuario);
-    }
-
-    @Override
-    protected void excluir(Locador usuario) {
-        repository.delete(usuario);
-    }
-
-    @Override
-    protected LocadorResponseDTO mapearResposta(Locador usuario) {
-        return locadorMapper.toResponseDTO(usuario);
+    protected RuntimeException erroUsuarioNaoEncontrado(UUID id) {
+        return new LocadorNaoEncontradoException("Locador nao encontrado com id: " + id);
     }
 
     @Override

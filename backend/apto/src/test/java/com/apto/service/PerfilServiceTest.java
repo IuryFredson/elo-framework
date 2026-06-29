@@ -90,6 +90,7 @@ class PerfilServiceTest {
         when(repository.findById(usuarioId)).thenReturn(Optional.of(usuario));
         when(usuarioRepository.existsByEmail(atualizarDTO.email())).thenReturn(false);
         when(repository.existsByEmailInstitucional(atualizarDTO.emailInstitucional())).thenReturn(false);
+        when(repository.save(usuario)).thenReturn(usuario);
 
         PerfilResponseDTO response = service.atualizarPerfil(usuarioId, atualizarDTO);
 
@@ -125,6 +126,7 @@ class PerfilServiceTest {
         );
 
         when(repository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(repository.save(usuario)).thenReturn(usuario);
 
         PerfilResponseDTO response = service.atualizarPerfil(usuarioId, dto);
 

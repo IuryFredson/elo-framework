@@ -14,7 +14,6 @@ import com.apto.repository.UsuarioUniversitarioRepository;
 import com.elo.usuario.UsuarioService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -42,31 +41,18 @@ public class UsuarioUniversitarioService extends UsuarioService<UsuarioUniversit
     }
 
     @Override
-    protected List<UsuarioUniversitario> listarEntidades() {
-        return repository.findAll();
+    protected UsuarioUniversitarioRepository repositorio() {
+        return repository;
     }
 
     @Override
-    protected UsuarioUniversitario buscarEntidadePorId(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() ->
-                        new UsuarioNaoEncontradoException("Usuario universitario nao encontrado com id: " + id)
-                );
+    protected UsuarioUniversitarioMapper mapperResposta() {
+        return usuarioMapper;
     }
 
     @Override
-    protected UsuarioUniversitario salvar(UsuarioUniversitario usuario) {
-        return repository.save(usuario);
-    }
-
-    @Override
-    protected void excluir(UsuarioUniversitario usuario) {
-        repository.delete(usuario);
-    }
-
-    @Override
-    protected UsuarioUniversitarioResponseDTO mapearResposta(UsuarioUniversitario usuario) {
-        return usuarioMapper.toResponseDTO(usuario);
+    protected RuntimeException erroUsuarioNaoEncontrado(UUID id) {
+        return new UsuarioNaoEncontradoException("Usuario universitario nao encontrado com id: " + id);
     }
 
     @Override

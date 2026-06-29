@@ -1,13 +1,19 @@
 package com.elo.perfil;
 
+import com.elo.porta.MapperResposta;
+import com.elo.persistencia.RepositorioBase;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class PerfilServiceTest {
 
@@ -22,7 +28,7 @@ class PerfilServiceTest {
         String resposta = service.buscarPerfil(id);
 
         assertEquals("silencioso", resposta);
-        assertEquals(List.of("buscarDonoPerfil", "obterPerfil", "mapearResposta"), service.eventos);
+        assertEquals(List.of("buscarDonoPerfil", "mapearResposta"), service.eventos);
     }
 
     @Test
@@ -43,7 +49,6 @@ class PerfilServiceTest {
                 "associarPerfil",
                 "aplicarDadosPerfil",
                 "salvarDonoPerfil",
-                "obterPerfil",
                 "mapearResposta"), service.eventos);
         assertEquals("organizado", service.usuario.perfil.descricao);
     }
@@ -104,11 +109,32 @@ class PerfilServiceTest {
         private final List<String> eventos = new ArrayList<>();
         private FakeUsuario usuario;
         private boolean validacaoFalha;
+        private final RepositorioBase<FakeUsuario, UUID> repositorio = mock(RepositorioBase.class);
+
+        private FakePerfilService() {
+            when(repositorio.findById(any(UUID.class))).thenAnswer(invocacao -> {
+                eventos.add("buscarDonoPerfil");
+                return Optional.ofNullable(usuario);
+            });
+            when(repositorio.save(any(FakeUsuario.class))).thenAnswer(invocacao -> {
+                eventos.add("salvarDonoPerfil");
+                return invocacao.getArgument(0);
+            });
+        }
 
         @Override
-        protected FakeUsuario buscarDonoPerfil(UUID usuarioId) {
-            eventos.add("buscarDonoPerfil");
-            return usuario;
+        protected RepositorioBase<FakeUsuario, UUID> repositorioDonoPerfil() {
+            return repositorio;
+        }
+
+        @Override
+        protected MapperResposta<FakeUsuario, String> mapperResposta() {
+            return this::mapear;
+        }
+
+        @Override
+        protected RuntimeException erroDonoPerfilNaoEncontrado(UUID usuarioId) {
+            return new IllegalStateException(usuarioId.toString());
         }
 
         @Override
@@ -148,15 +174,9 @@ class PerfilServiceTest {
             perfil.descricao = dto.descricao();
         }
 
-        @Override
-        protected FakeUsuario salvarDonoPerfil(FakeUsuario usuario) {
-            eventos.add("salvarDonoPerfil");
-            return usuario;
-        }
-
-        @Override
-        protected String mapearResposta(FakeUsuario usuario, FakePerfil perfil) {
+        private String mapear(FakeUsuario usuario) {
             eventos.add("mapearResposta");
+            FakePerfil perfil = usuario.perfil;
             return perfil == null ? null : perfil.descricao;
         }
     }

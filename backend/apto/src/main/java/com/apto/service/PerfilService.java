@@ -30,13 +30,19 @@ public class PerfilService extends com.elo.perfil.PerfilService<UsuarioUniversit
     }
 
     @Override
-    protected UsuarioUniversitario buscarDonoPerfil(UUID usuarioId) {
-        return repository.findById(usuarioId)
-                .orElseThrow(() ->
-                        new UsuarioNaoEncontradoException(
-                                "Usuario universitario nao encontrado com id: " + usuarioId
-                        )
-                );
+    protected UsuarioUniversitarioRepository repositorioDonoPerfil() {
+        return repository;
+    }
+
+    @Override
+    protected PerfilMapper mapperResposta() {
+        return perfilMapper;
+    }
+
+    @Override
+    protected RuntimeException erroDonoPerfilNaoEncontrado(UUID usuarioId) {
+        return new UsuarioNaoEncontradoException(
+                "Usuario universitario nao encontrado com id: " + usuarioId);
     }
 
     @Override
@@ -91,16 +97,5 @@ public class PerfilService extends com.elo.perfil.PerfilService<UsuarioUniversit
         perfil.setAceitaAnimais(dto.aceitaAnimais());
         perfil.setPreferenciaGeneroConvivencia(dto.preferenciaGeneroConvivencia());
         perfil.setDescricaoLivre(dto.descricaoLivre());
-    }
-
-    @Override
-    protected UsuarioUniversitario salvarDonoPerfil(UsuarioUniversitario usuario) {
-        repository.save(usuario);
-        return usuario;
-    }
-
-    @Override
-    protected PerfilResponseDTO mapearResposta(UsuarioUniversitario usuario, PerfilConvivencia perfil) {
-        return perfilMapper.toResponseDTO(usuario);
     }
 }

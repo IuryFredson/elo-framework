@@ -1,5 +1,7 @@
 package com.elo.usuario;
 
+import com.elo.porta.MapperResposta;
+import com.elo.persistencia.RepositorioBase;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -9,6 +11,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class UsuarioServiceTest {
 
@@ -89,6 +95,28 @@ class UsuarioServiceTest {
         private boolean emailExiste;
         private FakeUsuario usuarioSalvo;
         private FakeUsuario entidadeExistente;
+        private final RepositorioBase<FakeUsuario, UUID> repositorio = mock(RepositorioBase.class);
+
+        private FakeUsuarioService() {
+            when(repositorio.save(any(FakeUsuario.class))).thenAnswer(invocacao -> {
+                FakeUsuario usuario = invocacao.getArgument(0);
+                eventos.add("salvar");
+                usuarioSalvo = usuario;
+                return usuario;
+            });
+            when(repositorio.findById(any(UUID.class))).thenAnswer(invocacao -> {
+                eventos.add("buscarEntidadePorId");
+                return Optional.ofNullable(entidadeExistente);
+            });
+            when(repositorio.findAll()).thenAnswer(invocacao -> {
+                eventos.add("listarEntidades");
+                return List.of();
+            });
+            doAnswer(invocacao -> {
+                eventos.add("excluir");
+                return null;
+            }).when(repositorio).delete(any(FakeUsuario.class));
+        }
 
         @Override
         protected FakeUsuario construirEntidade(CriarUsuarioDto dto) {
@@ -97,31 +125,21 @@ class UsuarioServiceTest {
         }
 
         @Override
-        protected List<FakeUsuario> listarEntidades() {
-            eventos.add("listarEntidades");
-            return List.of();
+        protected RepositorioBase<FakeUsuario, UUID> repositorio() {
+            return repositorio;
         }
 
         @Override
-        protected FakeUsuario buscarEntidadePorId(UUID id) {
-            eventos.add("buscarEntidadePorId");
-            return Optional.ofNullable(entidadeExistente).orElseThrow();
+        protected MapperResposta<FakeUsuario, String> mapperResposta() {
+            return this::mapear;
         }
 
         @Override
-        protected FakeUsuario salvar(FakeUsuario usuario) {
-            eventos.add("salvar");
-            usuarioSalvo = usuario;
-            return usuario;
+        protected RuntimeException erroUsuarioNaoEncontrado(UUID id) {
+            return new IllegalStateException(id.toString());
         }
 
-        @Override
-        protected void excluir(FakeUsuario usuario) {
-            eventos.add("excluir");
-        }
-
-        @Override
-        protected String mapearResposta(FakeUsuario usuario) {
+        private String mapear(FakeUsuario usuario) {
             eventos.add("mapearResposta");
             return usuario.getNome() + "|" + usuario.getEmail() + "|" + usuario.documento;
         }

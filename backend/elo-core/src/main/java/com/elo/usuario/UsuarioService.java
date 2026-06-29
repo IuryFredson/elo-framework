@@ -1,5 +1,7 @@
 package com.elo.usuario;
 
+import com.elo.porta.MapperResposta;
+import com.elo.persistencia.RepositorioBase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -16,21 +18,21 @@ public abstract class UsuarioService<T extends Usuario, C, A, R> {
         aplicarDadosComunsCriacao(usuario, dto);
         aplicarDadosEspecificosCriacao(usuario, dto);
 
-        T salvo = salvar(usuario);
+        T salvo = repositorio().save(usuario);
         aposCriar(salvo, dto);
-        return mapearResposta(salvo);
+        return mapperResposta().paraResposta(salvo);
     }
 
     @Transactional(readOnly = true)
     public List<R> listarTodos() {
-        return listarEntidades().stream()
-                .map(this::mapearResposta)
+        return repositorio().findAll().stream()
+                .map(mapperResposta()::paraResposta)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public R buscarPorId(UUID id) {
-        return mapearResposta(buscarEntidadePorId(id));
+        return mapperResposta().paraResposta(buscarEntidadePorId(id));
     }
 
     @Transactional
@@ -42,14 +44,14 @@ public abstract class UsuarioService<T extends Usuario, C, A, R> {
         aplicarDadosComunsAtualizacao(usuario, dto);
         aplicarDadosEspecificosAtualizacao(usuario, dto);
 
-        return mapearResposta(salvar(usuario));
+        return mapperResposta().paraResposta(repositorio().save(usuario));
     }
 
     @Transactional
     public R alterarStatus(UUID id, boolean ativo) {
         T usuario = buscarEntidadePorId(id);
         usuario.setAtivo(ativo);
-        return mapearResposta(salvar(usuario));
+        return mapperResposta().paraResposta(repositorio().save(usuario));
     }
 
     @Transactional
@@ -64,20 +66,16 @@ public abstract class UsuarioService<T extends Usuario, C, A, R> {
 
     @Transactional
     public void deletar(UUID id) {
-        excluir(buscarEntidadePorId(id));
+        repositorio().delete(buscarEntidadePorId(id));
     }
 
     protected abstract T construirEntidade(C dto);
 
-    protected abstract List<T> listarEntidades();
+    protected abstract RepositorioBase<T, UUID> repositorio();
 
-    protected abstract T buscarEntidadePorId(UUID id);
+    protected abstract MapperResposta<T, R> mapperResposta();
 
-    protected abstract T salvar(T usuario);
-
-    protected abstract void excluir(T usuario);
-
-    protected abstract R mapearResposta(T usuario);
+    protected abstract RuntimeException erroUsuarioNaoEncontrado(UUID id);
 
     protected abstract boolean existeEmail(String email);
 
@@ -108,6 +106,11 @@ public abstract class UsuarioService<T extends Usuario, C, A, R> {
     }
 
     protected void aposCriar(T usuario, C dto) {
+    }
+
+    private T buscarEntidadePorId(UUID id) {
+        return repositorio().findById(id)
+                .orElseThrow(() -> erroUsuarioNaoEncontrado(id));
     }
 
     private void validarEmailDisponivel(String email) {

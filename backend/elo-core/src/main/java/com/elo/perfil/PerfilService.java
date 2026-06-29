@@ -1,5 +1,7 @@
 package com.elo.perfil;
 
+import com.elo.porta.MapperResposta;
+import com.elo.persistencia.RepositorioBase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -9,7 +11,7 @@ public abstract class PerfilService<U, P extends Perfil, A, R> {
     @Transactional(readOnly = true)
     public R buscarPerfil(UUID usuarioId) {
         U usuario = buscarDonoPerfil(usuarioId);
-        return mapearResposta(usuario, obterPerfil(usuario));
+        return mapperResposta().paraResposta(usuario);
     }
 
     @Transactional
@@ -26,11 +28,15 @@ public abstract class PerfilService<U, P extends Perfil, A, R> {
         }
 
         aplicarDadosPerfil(perfil, dto);
-        U salvo = salvarDonoPerfil(usuario);
-        return mapearResposta(salvo, obterPerfil(salvo));
+        U salvo = repositorioDonoPerfil().save(usuario);
+        return mapperResposta().paraResposta(salvo);
     }
 
-    protected abstract U buscarDonoPerfil(UUID usuarioId);
+    protected abstract RepositorioBase<U, UUID> repositorioDonoPerfil();
+
+    protected abstract MapperResposta<U, R> mapperResposta();
+
+    protected abstract RuntimeException erroDonoPerfilNaoEncontrado(UUID usuarioId);
 
     protected abstract P obterPerfil(U usuario);
 
@@ -44,7 +50,8 @@ public abstract class PerfilService<U, P extends Perfil, A, R> {
 
     protected abstract void aplicarDadosPerfil(P perfil, A dto);
 
-    protected abstract U salvarDonoPerfil(U usuario);
-
-    protected abstract R mapearResposta(U usuario, P perfil);
+    private U buscarDonoPerfil(UUID usuarioId) {
+        return repositorioDonoPerfil().findById(usuarioId)
+                .orElseThrow(() -> erroDonoPerfilNaoEncontrado(usuarioId));
+    }
 }
