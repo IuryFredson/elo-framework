@@ -1,7 +1,6 @@
 package com.apto.service;
 
 import com.apto.dto.request.CriarManifestacaoInteresseRequestDTO;
-import com.apto.dto.response.ContatoLiberadoResponseDTO;
 import com.apto.dto.response.ManifestacaoInteresseDetalheResponseDTO;
 import com.apto.dto.response.ManifestacaoInteresseResponseDTO;
 import com.apto.exception.AcessoNegadoException;
@@ -15,22 +14,25 @@ import com.apto.mapper.ManifestacaoInteresseMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.UsuarioUniversitario;
-import com.apto.model.enums.StatusAnuncio;
-import com.elo.manifestacao.StatusManifestacaoInteresse;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
+import com.elo.manifestacao.StatusManifestacaoInteresse;
+import com.elo.persistencia.RepositorioBase;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
-public class ManifestacaoInteresseService {
-
-    private static final Set<StatusManifestacaoInteresse> STATUS_ATIVOS =
-            Set.of(StatusManifestacaoInteresse.PENDENTE, StatusManifestacaoInteresse.ACEITA);
+public class ManifestacaoInteresseService extends com.elo.manifestacao.ManifestacaoInteresseService<
+        ManifestacaoInteresse,
+        Anuncio,
+        UsuarioUniversitario,
+        CriarManifestacaoInteresseRequestDTO,
+        ManifestacaoInteresseResponseDTO,
+        ManifestacaoInteresseDetalheResponseDTO> {
 
     private final ManifestacaoInteresseRepository manifestacaoRepository;
     private final AnuncioService anuncioService;
@@ -47,128 +49,169 @@ public class ManifestacaoInteresseService {
         this.manifestacaoMapper = manifestacaoMapper;
     }
 
-    public ManifestacaoInteresseDetalheResponseDTO criar(CriarManifestacaoInteresseRequestDTO dto) {
-        Anuncio anuncio = anuncioService.buscarEntidadePorId(dto.anuncioId());
-
-        UsuarioUniversitario interessado = universitarioRepository.findById(dto.interessadoId())
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(
-                        "Usuário universitário não encontrado com id: " + dto.interessadoId()));
-
-        if (anuncio.getStatus() != StatusAnuncio.ATIVO) {
-            throw new AnuncioNaoAtivoException(
-                    "Não é possível manifestar interesse em um anúncio que não está ativo.");
-        }
-
-        if (anuncio.getAnunciante().getUsuario().getId().equals(interessado.getId())) {
-            throw new ManifestacaoInteresseInvalidaException(
-                    "Não é possível manifestar interesse no próprio anúncio.");
-        }
-
-        if (manifestacaoRepository.existsByAnuncio_IdAndInteressado_IdAndStatusIn(
-                anuncio.getId(), interessado.getId(), STATUS_ATIVOS)) {
-            throw new ManifestacaoInteresseDuplicadaException(
-                    "Já existe uma manifestação de interesse ativa deste usuário para este anúncio.");
-        }
-
-        ManifestacaoInteresse manifestacao = new ManifestacaoInteresse();
-        manifestacao.setAnuncio(anuncio);
-        manifestacao.setInteressado(interessado);
-        manifestacao.setStatus(StatusManifestacaoInteresse.PENDENTE);
-        manifestacao.setMensagem(dto.mensagem());
-        manifestacao.setDataManifestacao(LocalDateTime.now());
-
-        ManifestacaoInteresse salva = manifestacaoRepository.save(manifestacao);
-        return manifestacaoMapper.toDetalheDTO(salva);
-    }
-
-    public ManifestacaoInteresseDetalheResponseDTO aceitar(UUID id, UUID anuncianteId) {
-        ManifestacaoInteresse manifestacao = buscarEntidadePorId(id);
-        validarAnunciante(manifestacao, anuncianteId);
-        validarTransicaoDePendente(manifestacao);
-
-        manifestacao.setStatus(StatusManifestacaoInteresse.ACEITA);
-        manifestacao.setDataResposta(LocalDateTime.now());
-        return manifestacaoMapper.toDetalheDTO(manifestacaoRepository.save(manifestacao));
-    }
-
-    public ManifestacaoInteresseDetalheResponseDTO recusar(UUID id, UUID anuncianteId) {
-        ManifestacaoInteresse manifestacao = buscarEntidadePorId(id);
-        validarAnunciante(manifestacao, anuncianteId);
-        validarTransicaoDePendente(manifestacao);
-
-        manifestacao.setStatus(StatusManifestacaoInteresse.RECUSADA);
-        manifestacao.setDataResposta(LocalDateTime.now());
-        return manifestacaoMapper.toDetalheDTO(manifestacaoRepository.save(manifestacao));
-    }
-
-    public ManifestacaoInteresseDetalheResponseDTO cancelar(UUID id, UUID interessadoId) {
-        ManifestacaoInteresse manifestacao = buscarEntidadePorId(id);
-
-        if (!manifestacao.getInteressado().getId().equals(interessadoId)) {
-            throw new AcessoNegadoException(
-                    "Usuário não tem permissão para cancelar esta manifestação de interesse.");
-        }
-
-        validarTransicaoDePendente(manifestacao);
-
-        manifestacao.setStatus(StatusManifestacaoInteresse.CANCELADA);
-        manifestacao.setDataResposta(LocalDateTime.now());
-        return manifestacaoMapper.toDetalheDTO(manifestacaoRepository.save(manifestacao));
-    }
-
     public List<ManifestacaoInteresseResponseDTO> listarPorAnuncio(UUID anuncioId, UUID anuncianteId) {
-        Anuncio anuncio = anuncioService.buscarEntidadePorId(anuncioId);
-
-        if (!anuncio.getAnunciante().getUsuario().getId().equals(anuncianteId)) {
-            throw new AcessoNegadoException(
-                    "Usuário não tem permissão para visualizar as manifestações deste anúncio.");
-        }
-
-        return manifestacaoRepository.findByAnuncio_IdOrderByDataManifestacaoDesc(anuncioId)
-                .stream()
-                .map(manifestacaoMapper::toResponseDTO)
-                .toList();
+        return listarPorOferta(anuncioId, anuncianteId);
     }
 
-    public List<ManifestacaoInteresseResponseDTO> listarPorInteressado(UUID interessadoId) {
-        return manifestacaoRepository.findByInteressado_IdOrderByDataManifestacaoDesc(interessadoId)
-                .stream()
-                .map(manifestacaoMapper::toResponseDTO)
-                .toList();
+    @Override
+    protected RepositorioBase<ManifestacaoInteresse, UUID> repositorio() {
+        return manifestacaoRepository;
     }
 
-    public ManifestacaoInteresseDetalheResponseDTO buscarPorId(UUID id, UUID solicitanteId) {
-        ManifestacaoInteresse manifestacao = buscarEntidadePorId(id);
+    @Override
+    protected UUID ofertaId(CriarManifestacaoInteresseRequestDTO dto) {
+        return dto.anuncioId();
+    }
 
-        UUID interessadoId = manifestacao.getInteressado().getId();
-        UUID anuncianteId = manifestacao.getAnuncio().getAnunciante().getUsuario().getId();
+    @Override
+    protected UUID interessadoId(CriarManifestacaoInteresseRequestDTO dto) {
+        return dto.interessadoId();
+    }
 
-        if (!solicitanteId.equals(interessadoId) && !solicitanteId.equals(anuncianteId)) {
-            throw new AcessoNegadoException(
-                    "Usuário não tem permissão para visualizar esta manifestação de interesse.");
-        }
+    @Override
+    protected Anuncio buscarOferta(UUID ofertaId) {
+        return anuncioService.buscarEntidadePorId(ofertaId);
+    }
 
+    @Override
+    protected UsuarioUniversitario buscarInteressado(UUID interessadoId) {
+        return universitarioRepository.findById(interessadoId)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException(
+                        "Usuário universitário não encontrado com id: " + interessadoId));
+    }
+
+    @Override
+    protected ManifestacaoInteresse construirManifestacao(
+            Anuncio oferta,
+            UsuarioUniversitario interessado,
+            CriarManifestacaoInteresseRequestDTO dto) {
+        return new ManifestacaoInteresse();
+    }
+
+    @Override
+    protected void aplicarCriacao(
+            ManifestacaoInteresse manifestacao,
+            Anuncio oferta,
+            UsuarioUniversitario interessado,
+            CriarManifestacaoInteresseRequestDTO dto,
+            StatusManifestacaoInteresse status,
+            LocalDateTime dataManifestacao) {
+        manifestacao.setAnuncio(oferta);
+        manifestacao.setInteressado(interessado);
+        manifestacao.setStatus(status);
+        manifestacao.setMensagem(dto.mensagem());
+        manifestacao.setDataManifestacao(dataManifestacao);
+    }
+
+    @Override
+    protected void aplicarResposta(
+            ManifestacaoInteresse manifestacao,
+            StatusManifestacaoInteresse status,
+            LocalDateTime dataResposta) {
+        manifestacao.setStatus(status);
+        manifestacao.setDataResposta(dataResposta);
+    }
+
+    @Override
+    protected boolean existeManifestacaoAtiva(
+            UUID ofertaId,
+            UUID interessadoId,
+            Collection<StatusManifestacaoInteresse> statusAtivos) {
+        return manifestacaoRepository.existsByAnuncio_IdAndInteressado_IdAndStatusIn(
+                ofertaId,
+                interessadoId,
+                statusAtivos);
+    }
+
+    @Override
+    protected List<ManifestacaoInteresse> buscarPorOfertaOrdenado(UUID ofertaId) {
+        return manifestacaoRepository.findByAnuncio_IdOrderByDataManifestacaoDesc(ofertaId);
+    }
+
+    @Override
+    protected List<ManifestacaoInteresse> buscarPorInteressadoOrdenado(UUID interessadoId) {
+        return manifestacaoRepository.findByInteressado_IdOrderByDataManifestacaoDesc(interessadoId);
+    }
+
+    @Override
+    protected List<ManifestacaoInteresse> buscarPorOfertaEStatus(
+            UUID ofertaId,
+            StatusManifestacaoInteresse status) {
+        return manifestacaoRepository.findByAnuncio_IdAndStatus(ofertaId, status);
+    }
+
+    @Override
+    protected UUID publicadorId(ManifestacaoInteresse manifestacao) {
+        return manifestacao.getAnuncio().getPublicadorId();
+    }
+
+    @Override
+    protected ManifestacaoInteresseResponseDTO mapearResumo(ManifestacaoInteresse manifestacao) {
+        return manifestacaoMapper.toResponseDTO(manifestacao);
+    }
+
+    @Override
+    protected ManifestacaoInteresseDetalheResponseDTO mapearDetalhe(ManifestacaoInteresse manifestacao) {
         return manifestacaoMapper.toDetalheDTO(manifestacao);
     }
 
-    private ManifestacaoInteresse buscarEntidadePorId(UUID id) {
-        return manifestacaoRepository.findById(id)
-                .orElseThrow(() -> new ManifestacaoInteresseNaoEncontradaException(
-                        "Manifestação de interesse não encontrada com o id: " + id));
+    @Override
+    protected RuntimeException erroManifestacaoNaoEncontrada(UUID id) {
+        return new ManifestacaoInteresseNaoEncontradaException(
+                "Manifestação de interesse não encontrada com o id: " + id);
     }
 
-    private void validarAnunciante(ManifestacaoInteresse manifestacao, UUID anuncianteId) {
-        if (!manifestacao.getAnuncio().getAnunciante().getUsuario().getId().equals(anuncianteId)) {
-            throw new AcessoNegadoException(
-                    "Usuário não tem permissão para responder esta manifestação de interesse.");
-        }
+    @Override
+    protected RuntimeException erroOfertaInativa() {
+        return new AnuncioNaoAtivoException(
+                "Não é possível manifestar interesse em um anúncio que não está ativo.");
     }
 
-    private void validarTransicaoDePendente(ManifestacaoInteresse manifestacao) {
-        if (manifestacao.getStatus() != StatusManifestacaoInteresse.PENDENTE) {
-            throw new TransicaoInvalidaManifestacaoException(
-                    "Transição inválida: manifestação não está em PENDENTE.");
-        }
+    @Override
+    protected RuntimeException erroInteresseProprio() {
+        return new ManifestacaoInteresseInvalidaException(
+                "Não é possível manifestar interesse no próprio anúncio.");
     }
 
+    @Override
+    protected RuntimeException erroManifestacaoDuplicada() {
+        return new ManifestacaoInteresseDuplicadaException(
+                "Já existe uma manifestação de interesse ativa deste usuário para este anúncio.");
+    }
+
+    @Override
+    protected RuntimeException erroAcessoNegado() {
+        return new AcessoNegadoException(
+                "Usuário não tem permissão para acessar esta manifestação de interesse.");
+    }
+
+    @Override
+    protected RuntimeException erroAcessoNegadoResposta() {
+        return new AcessoNegadoException(
+                "Usuário não tem permissão para responder esta manifestação de interesse.");
+    }
+
+    @Override
+    protected RuntimeException erroAcessoNegadoCancelamento() {
+        return new AcessoNegadoException(
+                "Usuário não tem permissão para cancelar esta manifestação de interesse.");
+    }
+
+    @Override
+    protected RuntimeException erroAcessoNegadoListagemOferta() {
+        return new AcessoNegadoException(
+                "Usuário não tem permissão para visualizar as manifestações deste anúncio.");
+    }
+
+    @Override
+    protected RuntimeException erroAcessoNegadoVisualizacao() {
+        return new AcessoNegadoException(
+                "Usuário não tem permissão para visualizar esta manifestação de interesse.");
+    }
+
+    @Override
+    protected RuntimeException erroTransicaoInvalida() {
+        return new TransicaoInvalidaManifestacaoException(
+                "Transição inválida: manifestação não está em PENDENTE.");
+    }
 }

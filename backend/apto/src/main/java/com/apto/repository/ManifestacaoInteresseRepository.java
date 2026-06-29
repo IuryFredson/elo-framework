@@ -2,13 +2,13 @@ package com.apto.repository;
 
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.elo.manifestacao.StatusManifestacaoInteresse;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.elo.persistencia.RepositorioBase;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-public interface ManifestacaoInteresseRepository extends JpaRepository<ManifestacaoInteresse, UUID> {
+public interface ManifestacaoInteresseRepository extends RepositorioBase<ManifestacaoInteresse, UUID> {
 
     boolean existsByAnuncio_IdAndInteressado_IdAndStatusIn(
             UUID anuncioId,
