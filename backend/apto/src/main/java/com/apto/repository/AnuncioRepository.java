@@ -5,9 +5,9 @@ import com.apto.model.entity.Moradia;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
+import com.elo.persistencia.RepositorioBase;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface AnuncioRepository extends JpaRepository<Anuncio, UUID> {
+public interface AnuncioRepository extends RepositorioBase<Anuncio, UUID> {
     Optional<Anuncio> findByAnunciante_Usuario_Id(UUID usuarioId);
     Boolean existsByMoradia(Moradia moradia);
     Page<Anuncio> findByStatus(StatusAnuncio status, Pageable pageable);

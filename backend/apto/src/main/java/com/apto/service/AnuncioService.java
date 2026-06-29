@@ -9,8 +9,8 @@ import com.apto.dto.response.PaginaResponseDTO;
 import com.apto.event.AnuncioIndisponibilizadoEvent;
 import com.apto.event.MotivoIndisponibilizacaoAnuncio;
 import com.apto.exception.AcessoNegadoException;
-import com.apto.exception.AnuncioNaoEncontradoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
+import com.apto.exception.AnuncioNaoEncontradoException;
 import com.apto.exception.MoradiaAssociadaComAnuncioException;
 import com.apto.exception.MoradiaNaoEncontradaException;
 import com.apto.mapper.AnuncioMapper;
@@ -23,6 +23,7 @@ import com.apto.repository.AnuncioRepository;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.MoradiaRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
+import com.elo.oferta.OfertaService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-public class AnuncioService {
+public class AnuncioService extends OfertaService<
+        Anuncio,
+        CriarAnuncioRequestDTO,
+        AtualizarAnuncioRequestDTO,
+        AnuncioResponseDTO,
+        StatusAnuncio> {
 
     private final AnuncioRepository anuncioRepository;
     private final MoradiaRepository moradiaRepository;
@@ -55,8 +61,23 @@ public class AnuncioService {
         this.anuncioMapper = anuncioMapper;
     }
 
-    public AnuncioResponseDTO criar(CriarAnuncioRequestDTO dto) {
-        // Busca direta pelo perfil — independente se é Locador ou Universitário
+    @Override
+    protected AnuncioRepository repositorio() {
+        return anuncioRepository;
+    }
+
+    @Override
+    protected AnuncioMapper mapperResposta() {
+        return anuncioMapper;
+    }
+
+    @Override
+    protected RuntimeException erroOfertaNaoEncontrada(UUID id) {
+        return new AnuncioNaoEncontradoException("Anúncio não encontrado com o id: " + id);
+    }
+
+    @Override
+    protected Anuncio construirOferta(CriarAnuncioRequestDTO dto) {
         PerfilAnunciante anunciante = perfilAnuncianteRepository
                 .findByUsuario_Id(dto.anuncianteId())
                 .orElseThrow(() -> new AnuncianteNaoEncontradoException(
@@ -85,72 +106,78 @@ public class AnuncioService {
         anuncio.setStatus(StatusAnuncio.ATIVO);
         anuncio.setMoradia(moradia);
         anuncio.setDataPublicacao(LocalDate.now());
-
-        return anuncioMapper.toResponseDTO(anuncioRepository.save(anuncio));
+        return anuncio;
     }
 
-    public List<AnuncioResponseDTO> listarTodos() {
-        return anuncioRepository.findAll()
-                .stream()
-                .map(anuncioMapper::toResponseDTO)
-                .toList();
-    }
-
-    public AnuncioResponseDTO buscarPorId(UUID id) {
-        return anuncioMapper.toResponseDTO(buscarEntidadePorId(id));
-    }
-
-    public Anuncio buscarEntidadePorId(UUID id) {
-        return anuncioRepository.findById(id)
-                .orElseThrow(() -> new AnuncioNaoEncontradoException(
-                        "Anúncio não encontrado com o id: " + id));
-    }
-
-    public void deletar(UUID id) {
-        Anuncio anuncio = buscarEntidadePorId(id);
-        StatusAnuncio statusAnterior = anuncio.getStatus();
-
-        if (manifestacaoRepository.existsByAnuncio_Id(id)) {
-            anuncio.setStatus(StatusAnuncio.ENCERRADO);
-            anuncioRepository.save(anuncio);
-            eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
-                    anuncio.getId(),
-                    statusAnterior,
-                    StatusAnuncio.ENCERRADO,
-                    MotivoIndisponibilizacaoAnuncio.DELETADO));
-            return;
-        }
-
-        anuncioRepository.delete(anuncio);
-    }
-
-    public AnuncioResponseDTO atualizar(UUID id, UUID usuarioId, AtualizarAnuncioRequestDTO dto) {
-        Anuncio anuncio = buscarEntidadePorId(id);
-
-        // Compara o usuário dono do perfil, não o perfil diretamente
-        if (!anuncio.getAnuncianteUsuarioId().equals(usuarioId)) {
+    @Override
+    protected void validarAtualizacao(
+            Anuncio anuncio,
+            UUID publicadorId,
+            AtualizarAnuncioRequestDTO dto) {
+        if (!anuncio.getAnuncianteUsuarioId().equals(publicadorId)) {
             throw new AcessoNegadoException(
                     "Usuário não tem permissão para editar este anúncio.");
         }
+    }
 
+    @Override
+    protected void aplicarAtualizacao(Anuncio anuncio, AtualizarAnuncioRequestDTO dto) {
         anuncio.setTitulo(dto.titulo());
         anuncio.setDescricao(dto.descricao());
         anuncio.setValorMensal(dto.valorMensal());
-        return anuncioMapper.toResponseDTO(anuncioRepository.save(anuncio));
     }
 
-    public AnuncioResponseDTO atualizarStatus(UUID id, StatusAnuncio status) {
-        Anuncio anuncio = buscarEntidadePorId(id);
-        StatusAnuncio statusAnterior = anuncio.getStatus();
+    @Override
+    protected StatusAnuncio obterStatus(Anuncio anuncio) {
+        return anuncio.getStatus();
+    }
+
+    @Override
+    protected void aplicarStatus(Anuncio anuncio, StatusAnuncio status) {
         anuncio.setStatus(status);
-        Anuncio salvo = anuncioRepository.save(anuncio);
-        publicarIndisponibilizacaoSeNecessario(salvo, statusAnterior, status);
-        return anuncioMapper.toResponseDTO(salvo);
+    }
+
+    @Override
+    protected void aposAlterarStatus(
+            Anuncio anuncio,
+            StatusAnuncio statusAnterior,
+            StatusAnuncio novoStatus) {
+        if (statusAnterior == novoStatus || novoStatus == StatusAnuncio.ATIVO) {
+            return;
+        }
+
+        MotivoIndisponibilizacaoAnuncio motivo = novoStatus == StatusAnuncio.PAUSADO
+                ? MotivoIndisponibilizacaoAnuncio.PAUSADO
+                : MotivoIndisponibilizacaoAnuncio.ENCERRADO;
+
+        publicarIndisponibilizacao(anuncio, statusAnterior, novoStatus, motivo);
+    }
+
+    @Override
+    protected boolean deveExcluirFisicamente(Anuncio anuncio) {
+        return !manifestacaoRepository.existsByAnuncio_Id(anuncio.getId());
+    }
+
+    @Override
+    protected void aplicarExclusaoLogica(Anuncio anuncio) {
+        anuncio.setStatus(StatusAnuncio.ENCERRADO);
+    }
+
+    @Override
+    protected void aposExcluirLogicamente(
+            Anuncio anuncio,
+            StatusAnuncio statusAnterior,
+            StatusAnuncio novoStatus) {
+        publicarIndisponibilizacao(
+                anuncio,
+                statusAnterior,
+                novoStatus,
+                MotivoIndisponibilizacaoAnuncio.DELETADO);
     }
 
     public PaginaResponseDTO<BuscaAnuncioResponseDTO> buscarAnuncios(
-            FiltroBuscaAnuncioDTO filtro, Pageable pageable) {
-
+            FiltroBuscaAnuncioDTO filtro,
+            Pageable pageable) {
         Page<Anuncio> pagina = anuncioRepository.buscarComFiltros(
                 filtro.valorMin(), filtro.valorMax(), filtro.bairro(),
                 filtro.tipoMoradia(), filtro.tipoAnuncio(), filtro.mobiliado(),
@@ -169,22 +196,15 @@ public class AnuncioService {
                 pagina.getSize());
     }
 
-    private void publicarIndisponibilizacaoSeNecessario(
+    private void publicarIndisponibilizacao(
             Anuncio anuncio,
             StatusAnuncio statusAnterior,
-            StatusAnuncio statusNovo) {
-        if (statusAnterior == statusNovo || statusNovo == StatusAnuncio.ATIVO) {
-            return;
-        }
-
-        MotivoIndisponibilizacaoAnuncio motivo = statusNovo == StatusAnuncio.PAUSADO
-                ? MotivoIndisponibilizacaoAnuncio.PAUSADO
-                : MotivoIndisponibilizacaoAnuncio.ENCERRADO;
-
+            StatusAnuncio novoStatus,
+            MotivoIndisponibilizacaoAnuncio motivo) {
         eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
                 anuncio.getId(),
                 statusAnterior,
-                statusNovo,
+                novoStatus,
                 motivo));
     }
 }
