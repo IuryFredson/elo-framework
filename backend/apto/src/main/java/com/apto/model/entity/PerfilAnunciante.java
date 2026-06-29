@@ -1,5 +1,6 @@
 package com.apto.model.entity;
 
+import com.elo.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,3 +26,5 @@ public class PerfilAnunciante {
     @Column(nullable = false)
     private boolean ativo = true;
 }
+
+

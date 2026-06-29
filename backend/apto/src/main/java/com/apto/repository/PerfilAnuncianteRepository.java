@@ -1,7 +1,7 @@
 package com.apto.repository;
 
 import com.apto.model.entity.PerfilAnunciante;
-import com.apto.model.entity.Usuario;
+import com.elo.usuario.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

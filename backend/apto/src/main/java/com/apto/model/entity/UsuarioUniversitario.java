@@ -1,6 +1,7 @@
 package com.apto.model.entity;
 
 import com.apto.model.enums.Genero;
+import com.elo.usuario.Usuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -43,3 +44,4 @@ public class UsuarioUniversitario extends Usuario {
         return perfilAnunciante != null && perfilAnunciante.isAtivo();
     }
 }
+

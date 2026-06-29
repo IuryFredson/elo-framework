@@ -1,5 +1,6 @@
 package com.apto.model.entity;
 
+import com.elo.usuario.Usuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
@@ -24,3 +25,4 @@ public class Locador extends Usuario {
     @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
     private PerfilAnunciante perfilAnunciante;
 }
+

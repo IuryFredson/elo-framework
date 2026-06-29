@@ -11,13 +11,14 @@ import com.apto.mapper.UsuarioUniversitarioMapper;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.UsuarioRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
+import com.elo.usuario.UsuarioService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
-public class UsuarioUniversitarioService {
+public class UsuarioUniversitarioService extends UsuarioService<UsuarioUniversitario, CriarUsuarioUniversitarioRequestDTO, AtualizarUsuarioUniversitarioRequestDTO, UsuarioUniversitarioResponseDTO> {
 
     private final UsuarioUniversitarioRepository repository;
     private final UsuarioRepository usuarioRepository;
@@ -31,94 +32,119 @@ public class UsuarioUniversitarioService {
         this.usuarioMapper = usuarioMapper;
     }
 
-    public UsuarioUniversitarioResponseDTO criar(CriarUsuarioUniversitarioRequestDTO dto) {
-        validarDuplicidadeEmail(dto.email());
-        validarDuplicidadeEmailInstitucional(dto.emailInstitucional());
-
-        UsuarioUniversitario usuario = new UsuarioUniversitario();
-        usuario.setNome(dto.nome());
-        usuario.setEmail(dto.email());
-        usuario.setTelefone(dto.telefone());
-        usuario.setAtivo(true);
-        usuario.setEmailInstitucional(dto.emailInstitucional());
-        usuario.setCurso(dto.curso());
-        usuario.setDataNascimento(dto.dataNascimento());
-        usuario.setGenero(dto.genero());
-
-        UsuarioUniversitario salvo = repository.save(usuario);
-        return usuarioMapper.toResponseDTO(salvo);
-    }
-
-    public List<UsuarioUniversitarioResponseDTO> listarTodos() {
-        return repository.findAll()
-                .stream()
-                .map(usuarioMapper::toResponseDTO)
-                .toList();
-    }
-
-    public UsuarioUniversitarioResponseDTO buscarPorId(UUID id) {
-        UsuarioUniversitario usuario = buscarEntidadePorId(id);
-        return usuarioMapper.toResponseDTO(usuario);
-    }
-
-    public UsuarioUniversitarioResponseDTO atualizar(UUID id, AtualizarUsuarioUniversitarioRequestDTO dto) {
-        UsuarioUniversitario usuario = buscarEntidadePorId(id);
-
-        if (!usuario.getEmail().equals(dto.email()) && usuarioRepository.existsByEmail(dto.email())) {
-            throw new EmailJaCadastradoException("Já existe usuário com o email: " + dto.email());
-        }
-
-        if (!usuario.getEmailInstitucional().equals(dto.emailInstitucional())
-                && repository.existsByEmailInstitucional(dto.emailInstitucional())) {
-            throw new EmailInstitucionalJaCadastradoException(
-                    "Já existe usuário com o email institucional: " + dto.emailInstitucional()
-            );
-        }
-
-        usuario.setNome(dto.nome());
-        usuario.setEmail(dto.email());
-        usuario.setTelefone(dto.telefone());
-        usuario.setEmailInstitucional(dto.emailInstitucional());
-        usuario.setCurso(dto.curso());
-        usuario.setDataNascimento(dto.dataNascimento());
-        usuario.setGenero(dto.genero());
-
-        UsuarioUniversitario atualizado = repository.save(usuario);
-        return usuarioMapper.toResponseDTO(atualizado);
-    }
-
     public UsuarioUniversitarioResponseDTO alterarStatus(UUID id, AlterarStatusUsuarioRequestDTO dto) {
-        UsuarioUniversitario usuario = buscarEntidadePorId(id);
-        usuario.setAtivo(dto.ativo());
-
-        UsuarioUniversitario atualizado = repository.save(usuario);
-        return usuarioMapper.toResponseDTO(atualizado);
+        return alterarStatus(id, dto.ativo());
     }
 
-    public void deletar(UUID id) {
-        UsuarioUniversitario usuario = buscarEntidadePorId(id);
-        repository.delete(usuario);
+    @Override
+    protected UsuarioUniversitario construirEntidade(CriarUsuarioUniversitarioRequestDTO dto) {
+        return new UsuarioUniversitario();
     }
 
-    private UsuarioUniversitario buscarEntidadePorId(UUID id) {
+    @Override
+    protected List<UsuarioUniversitario> listarEntidades() {
+        return repository.findAll();
+    }
+
+    @Override
+    protected UsuarioUniversitario buscarEntidadePorId(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() ->
-                        new UsuarioNaoEncontradoException("Usuário universitário não encontrado com id: " + id)
+                        new UsuarioNaoEncontradoException("Usuario universitario nao encontrado com id: " + id)
                 );
     }
 
-    private void validarDuplicidadeEmail(String email) {
-        if (usuarioRepository.existsByEmail(email)) {
-            throw new EmailJaCadastradoException("Já existe usuário com o email: " + email);
+    @Override
+    protected UsuarioUniversitario salvar(UsuarioUniversitario usuario) {
+        return repository.save(usuario);
+    }
+
+    @Override
+    protected void excluir(UsuarioUniversitario usuario) {
+        repository.delete(usuario);
+    }
+
+    @Override
+    protected UsuarioUniversitarioResponseDTO mapearResposta(UsuarioUniversitario usuario) {
+        return usuarioMapper.toResponseDTO(usuario);
+    }
+
+    @Override
+    protected boolean existeEmail(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
+
+    @Override
+    protected RuntimeException erroEmailDuplicado(String email) {
+        return new EmailJaCadastradoException("Ja existe usuario com o email: " + email);
+    }
+
+    @Override
+    protected String nomeCriacao(CriarUsuarioUniversitarioRequestDTO dto) {
+        return dto.nome();
+    }
+
+    @Override
+    protected String emailCriacao(CriarUsuarioUniversitarioRequestDTO dto) {
+        return dto.email();
+    }
+
+    @Override
+    protected String telefoneCriacao(CriarUsuarioUniversitarioRequestDTO dto) {
+        return dto.telefone();
+    }
+
+    @Override
+    protected String nomeAtualizacao(AtualizarUsuarioUniversitarioRequestDTO dto) {
+        return dto.nome();
+    }
+
+    @Override
+    protected String emailAtualizacao(AtualizarUsuarioUniversitarioRequestDTO dto) {
+        return dto.email();
+    }
+
+    @Override
+    protected String telefoneAtualizacao(AtualizarUsuarioUniversitarioRequestDTO dto) {
+        return dto.telefone();
+    }
+
+    @Override
+    protected void validarCriacaoEspecifica(CriarUsuarioUniversitarioRequestDTO dto) {
+        validarDuplicidadeEmailInstitucional(dto.emailInstitucional());
+    }
+
+    @Override
+    protected void validarAtualizacaoEspecifica(UsuarioUniversitario usuario, AtualizarUsuarioUniversitarioRequestDTO dto) {
+        if (!usuario.getEmailInstitucional().equals(dto.emailInstitucional())
+                && repository.existsByEmailInstitucional(dto.emailInstitucional())) {
+            throw new EmailInstitucionalJaCadastradoException(
+                    "Ja existe usuario com o email institucional: " + dto.emailInstitucional()
+            );
         }
+    }
+
+    @Override
+    protected void aplicarDadosEspecificosCriacao(UsuarioUniversitario usuario, CriarUsuarioUniversitarioRequestDTO dto) {
+        usuario.setEmailInstitucional(dto.emailInstitucional());
+        usuario.setCurso(dto.curso());
+        usuario.setDataNascimento(dto.dataNascimento());
+        usuario.setGenero(dto.genero());
+    }
+
+    @Override
+    protected void aplicarDadosEspecificosAtualizacao(UsuarioUniversitario usuario, AtualizarUsuarioUniversitarioRequestDTO dto) {
+        usuario.setEmailInstitucional(dto.emailInstitucional());
+        usuario.setCurso(dto.curso());
+        usuario.setDataNascimento(dto.dataNascimento());
+        usuario.setGenero(dto.genero());
     }
 
     private void validarDuplicidadeEmailInstitucional(String emailInstitucional) {
         if (repository.existsByEmailInstitucional(emailInstitucional)) {
             throw new EmailInstitucionalJaCadastradoException(
-                    "Já existe usuário com o email institucional: " + emailInstitucional
+                    "Ja existe usuario com o email institucional: " + emailInstitucional
             );
         }
     }
-
 }

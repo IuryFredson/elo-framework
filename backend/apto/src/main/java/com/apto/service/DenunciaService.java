@@ -6,6 +6,7 @@ import com.apto.exception.*;
 import com.apto.mapper.DenunciaMapper;
 import com.apto.model.entity.*;
 import com.elo.denuncia.StatusDenuncia;
+import com.elo.usuario.Usuario;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.DenunciaRepository;
 import com.apto.repository.LocadorRepository;
@@ -47,7 +48,7 @@ public class DenunciaService {
         Usuario denunciante = buscarUsuarioPorId(dto.denuncianteId());
 
         Anuncio anuncio = anuncioRepository.findById(dto.anuncioId())
-                .orElseThrow(() -> new AnuncioNaoEncontradoException("Anuncio não encontrado com id " + dto.anuncioId()));
+                .orElseThrow(() -> new AnuncioNaoEncontradoException("Anuncio nÃ£o encontrado com id " + dto.anuncioId()));
 
         LocalDateTime atual = LocalDateTime.now();
         Denuncia denuncia = new Denuncia();
@@ -65,7 +66,7 @@ public class DenunciaService {
         Denuncia denuncia = buscarEntidadePorId(id);
         StatusDenuncia statusAtual = denuncia.getStatusDenuncia();
         if(!transicaoValida(statusAtual, novoStatus)){
-            throw new TransicaoInvalidaStatusException("Transição inválida de Status " + statusAtual + " para " + novoStatus + ".");
+            throw new TransicaoInvalidaStatusException("TransiÃ§Ã£o invÃ¡lida de Status " + statusAtual + " para " + novoStatus + ".");
         }
         denuncia.setStatusDenuncia(novoStatus);
         denuncia.setStatusAtualizadoEm(LocalDateTime.now());
@@ -79,7 +80,7 @@ public class DenunciaService {
 
     public Denuncia buscarEntidadePorId(UUID id){
         return denunciaRepository.findById(id)
-                .orElseThrow( () -> new DenunciaNaoEncontradaException("Denuncia não encontrada com id " + id));
+                .orElseThrow( () -> new DenunciaNaoEncontradaException("Denuncia nÃ£o encontrada com id " + id));
     }
 
     public DenunciaResponseDTO buscarPorId(UUID id){
@@ -89,7 +90,7 @@ public class DenunciaService {
 
     public List<DenunciaResponseDTO> buscarPorAnuncioId(UUID anuncioId){
         Anuncio anuncio = anuncioRepository.findById(anuncioId)
-                .orElseThrow(() -> new AnuncioNaoEncontradoException("Anuncio não encontrado com id " + anuncioId));
+                .orElseThrow(() -> new AnuncioNaoEncontradoException("Anuncio nÃ£o encontrado com id " + anuncioId));
 
         return denunciaRepository.findByAnuncio(anuncio)
                 .stream()
@@ -110,7 +111,7 @@ public class DenunciaService {
         return denuncias.stream().map(denunciaMapper::toResponseDTO).toList();
     }
 
-    //valida se a ida do status atual para outro novo é válida
+    //valida se a ida do status atual para outro novo Ã© vÃ¡lida
     private boolean transicaoValida(StatusDenuncia atual, StatusDenuncia novo) {
         switch (atual) {
             case PENDENTE:
@@ -132,6 +133,7 @@ public class DenunciaService {
                 .map(locador -> (Usuario) locador)
                 .orElseGet(() -> universitarioRepository.findById(id)
                         .orElseThrow(() -> new UsuarioNaoEncontradoException(
-                                "Usuário não encontrado com id " + id)));
+                                "UsuÃ¡rio nÃ£o encontrado com id " + id)));
     }
 }
+

@@ -2,7 +2,7 @@ package com.apto.repository;
 
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Denuncia;
-import com.apto.model.entity.Usuario;
+import com.elo.usuario.Usuario;
 import com.elo.denuncia.StatusDenuncia;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,3 +14,4 @@ public interface DenunciaRepository extends JpaRepository<Denuncia, UUID> {
     List<Denuncia> findByDenunciante(Usuario denunciante);
     List<Denuncia> findByStatusDenuncia(StatusDenuncia statusDenuncia);
 }
+

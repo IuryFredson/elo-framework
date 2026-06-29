@@ -13,14 +13,14 @@ import com.apto.model.entity.PerfilAnunciante;
 import com.apto.repository.LocadorRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
 import com.apto.repository.UsuarioRepository;
+import com.elo.usuario.UsuarioService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
-public class LocadorService {
+public class LocadorService extends UsuarioService<Locador, CriarLocadorRequestDTO, AtualizarLocadorRequestDTO, LocadorResponseDTO> {
 
     private final LocadorRepository repository;
     private final UsuarioRepository usuarioRepository;
@@ -37,89 +37,120 @@ public class LocadorService {
         this.locadorMapper = locadorMapper;
     }
 
-    @Transactional
-    public LocadorResponseDTO criar(CriarLocadorRequestDTO dto) {
-        validarDuplicidadeEmail(dto.email());
+    public LocadorResponseDTO alterarStatus(UUID id, AlterarStatusUsuarioRequestDTO dto) {
+        return alterarStatus(id, dto.ativo());
+    }
+
+    @Override
+    protected Locador construirEntidade(CriarLocadorRequestDTO dto) {
+        return new Locador();
+    }
+
+    @Override
+    protected List<Locador> listarEntidades() {
+        return repository.findAll();
+    }
+
+    @Override
+    protected Locador buscarEntidadePorId(UUID id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new LocadorNaoEncontradoException(
+                        "Locador nao encontrado com id: " + id));
+    }
+
+    @Override
+    protected Locador salvar(Locador usuario) {
+        return repository.save(usuario);
+    }
+
+    @Override
+    protected void excluir(Locador usuario) {
+        repository.delete(usuario);
+    }
+
+    @Override
+    protected LocadorResponseDTO mapearResposta(Locador usuario) {
+        return locadorMapper.toResponseDTO(usuario);
+    }
+
+    @Override
+    protected boolean existeEmail(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
+
+    @Override
+    protected RuntimeException erroEmailDuplicado(String email) {
+        return new EmailJaCadastradoException("Ja existe locador com o email: " + email);
+    }
+
+    @Override
+    protected String nomeCriacao(CriarLocadorRequestDTO dto) {
+        return dto.nome();
+    }
+
+    @Override
+    protected String emailCriacao(CriarLocadorRequestDTO dto) {
+        return dto.email();
+    }
+
+    @Override
+    protected String telefoneCriacao(CriarLocadorRequestDTO dto) {
+        return dto.telefone();
+    }
+
+    @Override
+    protected String nomeAtualizacao(AtualizarLocadorRequestDTO dto) {
+        return dto.nome();
+    }
+
+    @Override
+    protected String emailAtualizacao(AtualizarLocadorRequestDTO dto) {
+        return dto.email();
+    }
+
+    @Override
+    protected String telefoneAtualizacao(AtualizarLocadorRequestDTO dto) {
+        return dto.telefone();
+    }
+
+    @Override
+    protected void validarCriacaoEspecifica(CriarLocadorRequestDTO dto) {
         validarDuplicidadeDocumento(dto.documentoIdentificacao());
-
-        Locador locador = new Locador();
-        locador.setNome(dto.nome());
-        locador.setEmail(dto.email());
-        locador.setTelefone(dto.telefone());
-        locador.setAtivo(true);
-        locador.setDocumentoIdentificacao(dto.documentoIdentificacao());
-        locador.setNomeExibicaoOuRazao(dto.nomeExibicaoOuRazao());
-
-        Locador salvo = repository.save(locador);
-
-        PerfilAnunciante perfil = new PerfilAnunciante();
-        perfil.setUsuario(salvo);
-        perfil.setAtivo(true);
-        perfilAnuncianteRepository.save(perfil);
-
-        return locadorMapper.toResponseDTO(salvo);
     }
 
-    public List<LocadorResponseDTO> listarTodos() {
-        return repository.findAll().stream().map(locadorMapper::toResponseDTO).toList();
-    }
-
-    public LocadorResponseDTO buscarPorId(UUID id) {
-        return locadorMapper.toResponseDTO(buscarEntidadePorId(id));
-    }
-
-    public LocadorResponseDTO atualizar(UUID id, AtualizarLocadorRequestDTO dto) {
-        Locador locador = buscarEntidadePorId(id);
-
-        if (!locador.getEmail().equals(dto.email())
-                && usuarioRepository.existsByEmail(dto.email())) {
-            throw new EmailJaCadastradoException(
-                    "Já existe locador com o email: " + dto.email());
-        }
-
+    @Override
+    protected void validarAtualizacaoEspecifica(Locador locador, AtualizarLocadorRequestDTO dto) {
         if (!locador.getDocumentoIdentificacao().equals(dto.documentoIdentificacao())
                 && repository.existsByDocumentoIdentificacao(dto.documentoIdentificacao())) {
             throw new DocumentoIdentificacaoJaCadastradoException(
-                    "Já existe locador com o documento: " + dto.documentoIdentificacao());
+                    "Ja existe locador com o documento: " + dto.documentoIdentificacao());
         }
+    }
 
-        locador.setNome(dto.nome());
-        locador.setEmail(dto.email());
-        locador.setTelefone(dto.telefone());
+    @Override
+    protected void aplicarDadosEspecificosCriacao(Locador locador, CriarLocadorRequestDTO dto) {
         locador.setDocumentoIdentificacao(dto.documentoIdentificacao());
         locador.setNomeExibicaoOuRazao(dto.nomeExibicaoOuRazao());
-
-        return locadorMapper.toResponseDTO(repository.save(locador));
     }
 
-    public LocadorResponseDTO alterarStatus(UUID id, AlterarStatusUsuarioRequestDTO dto) {
-        Locador locador = buscarEntidadePorId(id);
-        locador.setAtivo(dto.ativo());
-        return locadorMapper.toResponseDTO(repository.save(locador));
+    @Override
+    protected void aplicarDadosEspecificosAtualizacao(Locador locador, AtualizarLocadorRequestDTO dto) {
+        locador.setDocumentoIdentificacao(dto.documentoIdentificacao());
+        locador.setNomeExibicaoOuRazao(dto.nomeExibicaoOuRazao());
     }
 
-    public void deletar(UUID id) {
-        repository.delete(buscarEntidadePorId(id));
-    }
-
-    private Locador buscarEntidadePorId(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new LocadorNaoEncontradoException(
-                        "Locador não encontrado com id: " + id));
-    }
-
-    private void validarDuplicidadeEmail(String email) {
-        if (usuarioRepository.existsByEmail(email)) {
-            throw new EmailJaCadastradoException(
-                    "Já existe locador com o email: " + email);
-        }
+    @Override
+    protected void aposCriar(Locador locador, CriarLocadorRequestDTO dto) {
+        PerfilAnunciante perfil = new PerfilAnunciante();
+        perfil.setUsuario(locador);
+        perfil.setAtivo(true);
+        perfilAnuncianteRepository.save(perfil);
     }
 
     private void validarDuplicidadeDocumento(String documento) {
         if (repository.existsByDocumentoIdentificacao(documento)) {
             throw new DocumentoIdentificacaoJaCadastradoException(
-                    "Já existe locador com o documento: " + documento);
+                    "Ja existe locador com o documento: " + documento);
         }
     }
-
 }

@@ -1,6 +1,7 @@
 package com.apto.model.entity;
 
 import com.elo.denuncia.StatusDenuncia;
+import com.elo.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -61,3 +62,4 @@ public class Denuncia implements com.elo.denuncia.Denuncia {
         return statusDenuncia;
     }
 }
+

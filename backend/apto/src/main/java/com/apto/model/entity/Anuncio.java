@@ -3,6 +3,7 @@ package com.apto.model.entity;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.elo.oferta.Oferta;
+import com.elo.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

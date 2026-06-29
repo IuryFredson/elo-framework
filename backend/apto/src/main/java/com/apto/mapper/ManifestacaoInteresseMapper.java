@@ -4,7 +4,7 @@ import com.apto.dto.response.ContatoLiberadoResponseDTO;
 import com.apto.dto.response.ManifestacaoInteresseDetalheResponseDTO;
 import com.apto.dto.response.ManifestacaoInteresseResponseDTO;
 import com.apto.model.entity.ManifestacaoInteresse;
-import com.apto.model.entity.Usuario;
+import com.elo.usuario.Usuario;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.elo.manifestacao.StatusManifestacaoInteresse;
 import org.springframework.stereotype.Component;
@@ -71,3 +71,4 @@ public class ManifestacaoInteresseMapper {
         );
     }
 }
+
