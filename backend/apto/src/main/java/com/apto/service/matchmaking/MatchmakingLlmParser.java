@@ -1,6 +1,8 @@
 package com.apto.service.matchmaking;
 
 import com.apto.exception.GroqIntegracaoException;
+import com.elo.compatibilidade.OrigemCompatibilidade;
+import com.elo.compatibilidade.ResultadoCompatibilidade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -8,6 +10,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,6 +20,7 @@ import java.util.UUID;
 public class MatchmakingLlmParser {
 
     private final ObjectMapper objectMapper;
+
     public Map<UUID, ResultadoCompatibilidade> parse(String conteudoJson) {
         try {
             JsonNode raiz = objectMapper.readTree(conteudoJson);
@@ -40,8 +44,10 @@ public class MatchmakingLlmParser {
 
                 UUID id = UUID.fromString(idStr);
                 resultado.put(id, new ResultadoCompatibilidade(
+                        id,
                         percentual,
                         justificativa,
+                        List.of(),
                         OrigemCompatibilidade.LLM
                 ));
             }

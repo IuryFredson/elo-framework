@@ -2,15 +2,14 @@ package com.apto.service.matchmaking;
 
 import com.apto.dto.response.MatchmakingResponseDTO;
 import com.apto.exception.GroqIntegracaoException;
-import com.apto.integration.llm.GroqClient;
 import com.apto.mapper.MatchmakingMapper;
 import com.apto.model.entity.PerfilConvivencia;
 import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.model.enums.Genero;
 import com.apto.repository.UsuarioUniversitarioRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,8 +19,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,22 +29,25 @@ class MatchmakingServiceTest {
     private UsuarioUniversitarioRepository repository;
 
     @Mock
-    private GroqClient groqClient;
-
-    @Mock
     private CompatibilidadeDeterministicaCalculator compatibilidadeDeterministicaCalculator;
 
     @Mock
-    private MatchmakingPromptBuilder promptBuilder;
-
-    @Mock
-    private MatchmakingLlmParser parser;
+    private AptoCompatibilidadeLlmProvider aptoCompatibilidadeLlmProvider;
 
     @Spy
     private MatchmakingMapper matchmakingMapper = new MatchmakingMapper();
 
-    @InjectMocks
     private MatchmakingService matchmakingService;
+
+    @BeforeEach
+    void setUp() {
+        matchmakingService = new MatchmakingService(
+                repository,
+                compatibilidadeDeterministicaCalculator,
+                aptoCompatibilidadeLlmProvider,
+                matchmakingMapper
+        );
+    }
 
     @Test
     void deveUsarContratoDeCompatibilidadeNoFallbackDeterministico() {
@@ -63,9 +63,7 @@ class MatchmakingServiceTest {
         when(repository.findById(solicitanteId)).thenReturn(Optional.of(solicitante));
         when(repository.buscarCandidatosMatchmaking(solicitanteId)).thenReturn(List.of(candidato));
         when(compatibilidadeDeterministicaCalculator.preferenciaGeneroCompativel(solicitante, candidato)).thenReturn(true);
-        when(promptBuilder.montarSystemPrompt()).thenReturn("system");
-        when(promptBuilder.montarUserPrompt(solicitante, List.of(candidato))).thenReturn("user");
-        when(groqClient.completarChat(anyString(), anyString(), eq(true)))
+        when(aptoCompatibilidadeLlmProvider.calcular(solicitante, List.of(candidato)))
                 .thenThrow(new GroqIntegracaoException("LLM indisponivel"));
         when(compatibilidadeDeterministicaCalculator.calcular(
                 solicitante.getPerfilConvivencia(),
