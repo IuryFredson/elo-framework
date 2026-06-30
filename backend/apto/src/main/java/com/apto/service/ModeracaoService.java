@@ -9,16 +9,22 @@ import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Denuncia;
 import com.apto.model.enums.AcaoModeracaoAnuncio;
 import com.apto.model.enums.StatusAnuncio;
-import com.elo.denuncia.StatusDenuncia;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.DenunciaRepository;
+import com.elo.denuncia.StatusDenuncia;
+import com.elo.moderacao.AcaoModeracaoOferta;
+import com.elo.persistencia.RepositorioBase;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
-public class ModeracaoService {
+public class ModeracaoService extends com.elo.moderacao.ModeracaoService<
+        Denuncia,
+        Anuncio,
+        ModerarDenunciaRequestDTO,
+        ModeracaoResponseDTO> {
 
     private final DenunciaRepository denunciaRepository;
     private final AnuncioRepository anuncioRepository;
@@ -32,132 +38,79 @@ public class ModeracaoService {
         this.moderacaoMapper = moderacaoMapper;
     }
 
-    public ModeracaoResponseDTO moderar(UUID denunciaId, ModerarDenunciaRequestDTO dto) {
-        Denuncia denuncia = buscarDenunciaPorId(denunciaId);
-        Anuncio anuncio = denuncia.getAnuncio();
+    @Override
+    protected RepositorioBase<Denuncia, UUID> repositorioDenuncia() {
+        return denunciaRepository;
+    }
 
-        StatusDenuncia statusAnteriorDenuncia = denuncia.getStatusDenuncia();
-        StatusAnuncio statusAnteriorAnuncio = anuncio.getStatus();
+    @Override
+    protected RepositorioBase<Anuncio, UUID> repositorioOferta() {
+        return anuncioRepository;
+    }
 
-        validarDecisao(statusAnteriorDenuncia, dto.novoStatus(), dto.acaoAnuncio());
+    @Override
+    protected Anuncio ofertaDaDenuncia(Denuncia denuncia) {
+        return denuncia.getAnuncio();
+    }
 
-        aplicarDecisaoNaDenuncia(denuncia, dto.novoStatus());
-        aplicarAcaoNoAnuncio(anuncio, dto.acaoAnuncio(), dto.novoStatus());
+    @Override
+    protected StatusDenuncia novoStatus(ModerarDenunciaRequestDTO dto) {
+        return dto.novoStatus();
+    }
 
-        anuncioRepository.save(anuncio);
-        denunciaRepository.save(denuncia);
+    @Override
+    protected AcaoModeracaoOferta acaoOferta(ModerarDenunciaRequestDTO dto) {
+        return switch (dto.acaoAnuncio()) {
+            case NENHUMA -> AcaoModeracaoOferta.NENHUMA;
+            case PAUSAR_ANUNCIO -> AcaoModeracaoOferta.PAUSAR;
+            case ENCERRAR_ANUNCIO -> AcaoModeracaoOferta.ENCERRAR;
+        };
+    }
 
+    @Override
+    protected Object statusOferta(Anuncio oferta) {
+        return oferta.getStatus();
+    }
+
+    @Override
+    protected void aplicarStatusDenuncia(Denuncia denuncia, StatusDenuncia novoStatus, LocalDateTime atualizadoEm) {
+        denuncia.setStatusDenuncia(novoStatus);
+        denuncia.setStatusAtualizadoEm(atualizadoEm);
+    }
+
+    @Override
+    protected void pausarOferta(Anuncio oferta) {
+        oferta.setStatus(StatusAnuncio.PAUSADO);
+    }
+
+    @Override
+    protected void encerrarOferta(Anuncio oferta) {
+        oferta.setStatus(StatusAnuncio.ENCERRADO);
+    }
+
+    @Override
+    protected ModeracaoResponseDTO mapearResposta(
+            Denuncia denuncia,
+            Anuncio oferta,
+            StatusDenuncia statusAnteriorDenuncia,
+            Object statusAnteriorOferta,
+            ModerarDenunciaRequestDTO dto,
+            LocalDateTime moderadoEm) {
         return moderacaoMapper.toResponseDTO(
                 denuncia,
-                anuncio,
+                oferta,
                 statusAnteriorDenuncia,
-                statusAnteriorAnuncio,
+                (StatusAnuncio) statusAnteriorOferta,
                 dto);
     }
 
-    private Denuncia buscarDenunciaPorId(UUID denunciaId) {
-        return denunciaRepository.findById(denunciaId)
-                .orElseThrow(() ->
-                        new DenunciaNaoEncontradaException("Denúncia não encontrada com id: " + denunciaId)
-                );
+    @Override
+    protected RuntimeException erroDenunciaNaoEncontrada(UUID id) {
+        return new DenunciaNaoEncontradaException("Denúncia não encontrada com id: " + id);
     }
 
-    private void aplicarDecisaoNaDenuncia(Denuncia denuncia, StatusDenuncia novoStatus) {
-        denuncia.setStatusDenuncia(novoStatus);
-        denuncia.setStatusAtualizadoEm(LocalDateTime.now());
-    }
-
-    private void aplicarAcaoNoAnuncio(Anuncio anuncio,
-                                      AcaoModeracaoAnuncio acao,
-                                      StatusDenuncia novoStatusDenuncia) {
-
-        if (novoStatusDenuncia != StatusDenuncia.PROCEDENTE) {
-            return;
-        }
-
-        switch (acao) {
-            case NENHUMA -> {
-            }
-            case PAUSAR_ANUNCIO -> anuncio.setStatus(StatusAnuncio.PAUSADO);
-            case ENCERRAR_ANUNCIO -> anuncio.setStatus(StatusAnuncio.ENCERRADO);
-        }
-    }
-
-    private void validarDecisao(StatusDenuncia statusAtual,
-                                StatusDenuncia novoStatus,
-                                AcaoModeracaoAnuncio acaoAnuncio) {
-
-        if (statusAtual == StatusDenuncia.ARQUIVADA) {
-            throw new ModeracaoInvalidaException("Não é possível moderar uma denúncia arquivada.");
-        }
-
-        switch (novoStatus) {
-            case EM_ANALISE -> validarEntradaEmAnalise(statusAtual, acaoAnuncio);
-            case IMPROCEDENTE -> validarImprocedencia(statusAtual, acaoAnuncio);
-            case PROCEDENTE -> validarProcedencia(statusAtual, acaoAnuncio);
-            case ARQUIVADA -> validarArquivamento(statusAtual, acaoAnuncio);
-            case PENDENTE -> throw new ModeracaoInvalidaException("Não é permitido retornar denúncia para PENDENTE.");
-        }
-    }
-
-    private void validarEntradaEmAnalise(StatusDenuncia statusAtual,
-                                         AcaoModeracaoAnuncio acaoAnuncio) {
-        if (statusAtual != StatusDenuncia.PENDENTE) {
-            throw new ModeracaoInvalidaException(
-                    "Só denúncias PENDENTES podem ser colocadas EM_ANALISE."
-            );
-        }
-
-        if (acaoAnuncio != AcaoModeracaoAnuncio.NENHUMA) {
-            throw new ModeracaoInvalidaException(
-                    "Não é permitido aplicar ação ao anúncio ao colocar denúncia EM_ANALISE."
-            );
-        }
-    }
-
-    private void validarImprocedencia(StatusDenuncia statusAtual,
-                                      AcaoModeracaoAnuncio acaoAnuncio) {
-        if (statusAtual != StatusDenuncia.EM_ANALISE) {
-            throw new ModeracaoInvalidaException(
-                    "Só denúncias EM_ANALISE podem ser julgadas como IMPROCEDENTE."
-            );
-        }
-
-        if (acaoAnuncio != AcaoModeracaoAnuncio.NENHUMA) {
-            throw new ModeracaoInvalidaException(
-                    "Denúncia IMPROCEDENTE não pode aplicar ação ao anúncio."
-            );
-        }
-    }
-
-    private void validarProcedencia(StatusDenuncia statusAtual,
-                                    AcaoModeracaoAnuncio acaoAnuncio) {
-        if (statusAtual != StatusDenuncia.EM_ANALISE) {
-            throw new ModeracaoInvalidaException(
-                    "Só denúncias EM_ANALISE podem ser julgadas como PROCEDENTE."
-            );
-        }
-
-        if (acaoAnuncio == AcaoModeracaoAnuncio.NENHUMA) {
-            throw new ModeracaoInvalidaException(
-                    "Denúncia PROCEDENTE deve aplicar uma ação ao anúncio."
-            );
-        }
-    }
-
-    private void validarArquivamento(StatusDenuncia statusAtual,
-                                     AcaoModeracaoAnuncio acaoAnuncio) {
-        if (statusAtual != StatusDenuncia.PROCEDENTE
-                && statusAtual != StatusDenuncia.IMPROCEDENTE) {
-            throw new ModeracaoInvalidaException(
-                    "Só denúncias PROCEDENTE ou IMPROCEDENTE podem ser arquivadas."
-            );
-        }
-
-        if (acaoAnuncio != AcaoModeracaoAnuncio.NENHUMA) {
-            throw new ModeracaoInvalidaException(
-                    "Arquivamento não pode aplicar ação ao anúncio."
-            );
-        }
+    @Override
+    protected RuntimeException erroModeracaoInvalida(String mensagem) {
+        return new ModeracaoInvalidaException(mensagem);
     }
 }

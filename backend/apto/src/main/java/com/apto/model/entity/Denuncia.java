@@ -1,8 +1,18 @@
 package com.apto.model.entity;
 
+import com.apto.model.enums.CriterioDenunciaApto;
 import com.elo.denuncia.StatusDenuncia;
 import com.elo.usuario.Usuario;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -38,10 +48,14 @@ public class Denuncia implements com.elo.denuncia.Denuncia {
     private String corpo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name= "status_denuncia",nullable = false)
+    @Column(name = "criterio_denuncia")
+    private CriterioDenunciaApto criterio;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_denuncia", nullable = false)
     private StatusDenuncia statusDenuncia;
 
-    @Column(name="criado_em", nullable = false)
+    @Column(name = "criado_em", nullable = false)
     private LocalDateTime criadoEm;
 
     @Column(name = "status_atualizado_em")
@@ -61,5 +75,9 @@ public class Denuncia implements com.elo.denuncia.Denuncia {
     public StatusDenuncia getStatus() {
         return statusDenuncia;
     }
-}
 
+    @Override
+    public String getCriterioCodigo() {
+        return criterio == null ? null : criterio.codigo();
+    }
+}

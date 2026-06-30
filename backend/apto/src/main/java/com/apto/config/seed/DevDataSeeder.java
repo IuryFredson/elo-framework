@@ -398,6 +398,7 @@ public class DevDataSeeder implements CommandLineRunner {
         d1.setAnuncio(anuncios.get(2));
         d1.setTitulo("Anúncio com foto desatualizada");
         d1.setCorpo("As fotos da casa não correspondem ao estado atual do imóvel.");
+        d1.setCriterio(com.apto.model.enums.CriterioDenunciaApto.ANUNCIO_ENGANOSO);
         d1.setStatusDenuncia(StatusDenuncia.PENDENTE);
         d1.setCriadoEm(LocalDateTime.now().minusDays(1));
 
@@ -406,6 +407,7 @@ public class DevDataSeeder implements CommandLineRunner {
         d2.setAnuncio(anuncios.get(2));
         d2.setTitulo("Cobrança de taxa não declarada");
         d2.setCorpo("Após a manifestação de interesse, foi cobrada uma taxa que não constava no anúncio.");
+        d2.setCriterio(com.apto.model.enums.CriterioDenunciaApto.PRECO_ABUSIVO);
         d2.setStatusDenuncia(StatusDenuncia.PROCEDENTE);
         d2.setCriadoEm(LocalDateTime.now().minusDays(8));
         d2.setStatusAtualizadoEm(LocalDateTime.now().minusDays(2));

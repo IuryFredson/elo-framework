@@ -14,4 +14,6 @@ public interface Denuncia {
 	UUID getOfertaId();
 
 	StatusDenuncia getStatus();
+
+	String getCriterioCodigo();
 }

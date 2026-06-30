@@ -1,6 +1,7 @@
 package com.apto.dto.response;
 
 
+import com.apto.model.enums.CriterioDenunciaApto;
 import com.elo.denuncia.StatusDenuncia;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ public record DenunciaResponseDTO(
         UUID anuncioId,
         String titulo,
         String corpo,
+        CriterioDenunciaApto criterio,
         StatusDenuncia statusDenuncia,
         LocalDateTime criadoEm
 ) {}

@@ -14,6 +14,7 @@ public class DenunciaMapper {
                 denuncia.getAnuncio().getId(),
                 denuncia.getTitulo(),
                 denuncia.getCorpo(),
+                denuncia.getCriterio() == null ? com.apto.model.enums.CriterioDenunciaApto.OUTRO : denuncia.getCriterio(),
                 denuncia.getStatusDenuncia(),
                 denuncia.getCriadoEm()
         );
