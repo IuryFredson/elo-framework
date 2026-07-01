@@ -5,6 +5,7 @@ import com.apto.dto.response.ManifestacaoInteresseDetalheResponseDTO;
 import com.apto.dto.response.ManifestacaoInteresseResponseDTO;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AnuncioNaoAtivoException;
+import com.apto.exception.AnuncioNaoEncontradoException;
 import com.apto.exception.ManifestacaoInteresseDuplicadaException;
 import com.apto.exception.ManifestacaoInteresseInvalidaException;
 import com.apto.exception.ManifestacaoInteresseNaoEncontradaException;
@@ -14,6 +15,7 @@ import com.apto.mapper.ManifestacaoInteresseMapper;
 import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.ManifestacaoInteresse;
 import com.apto.model.entity.UsuarioUniversitario;
+import com.apto.repository.AnuncioRepository;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import com.elo.manifestacao.StatusManifestacaoInteresse;
@@ -35,16 +37,16 @@ public class ManifestacaoInteresseService extends com.elo.manifestacao.Manifesta
         ManifestacaoInteresseDetalheResponseDTO> {
 
     private final ManifestacaoInteresseRepository manifestacaoRepository;
-    private final AnuncioService anuncioService;
+    private final AnuncioRepository anuncioRepository;
     private final UsuarioUniversitarioRepository universitarioRepository;
     private final ManifestacaoInteresseMapper manifestacaoMapper;
 
     public ManifestacaoInteresseService(ManifestacaoInteresseRepository manifestacaoRepository,
-                                        AnuncioService anuncioService,
+                                        AnuncioRepository anuncioRepository,
                                         UsuarioUniversitarioRepository universitarioRepository,
                                         ManifestacaoInteresseMapper manifestacaoMapper) {
         this.manifestacaoRepository = manifestacaoRepository;
-        this.anuncioService = anuncioService;
+        this.anuncioRepository = anuncioRepository;
         this.universitarioRepository = universitarioRepository;
         this.manifestacaoMapper = manifestacaoMapper;
     }
@@ -70,7 +72,9 @@ public class ManifestacaoInteresseService extends com.elo.manifestacao.Manifesta
 
     @Override
     protected Anuncio buscarOferta(UUID ofertaId) {
-        return anuncioService.buscarEntidadePorId(ofertaId);
+        return anuncioRepository.findById(ofertaId)
+                .orElseThrow(() -> new AnuncioNaoEncontradoException(
+                        "Anúncio não encontrado com o id: " + ofertaId));
     }
 
     @Override

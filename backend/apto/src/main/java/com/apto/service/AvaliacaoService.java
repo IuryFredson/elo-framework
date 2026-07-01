@@ -4,8 +4,6 @@ import com.apto.dto.request.AtualizarAvaliacaoRequestDTO;
 import com.apto.dto.request.CriarAvaliacaoRequestDTO;
 import com.apto.dto.response.AvaliacaoResponseDTO;
 import com.apto.dto.response.ResumoAvaliacoesAnuncianteResponseDTO;
-import com.apto.event.AvaliacaoAlteradaEvent;
-import com.apto.event.TipoOperacaoAvaliacao;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AvaliacaoDuplicadaException;
 import com.apto.exception.AvaliacaoInvalidaException;
@@ -20,7 +18,6 @@ import com.apto.model.entity.UsuarioUniversitario;
 import com.apto.repository.AvaliacaoRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
-import com.apto.observer.DomainEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,20 +31,20 @@ public class AvaliacaoService {
     private final UsuarioUniversitarioRepository universitarioRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final AnuncioService anuncioService;
-    private final DomainEventPublisher eventPublisher;
+    private final ReputacaoCalculoService reputacaoCalculoService;
     private final AvaliacaoMapper avaliacaoMapper;
 
     public AvaliacaoService(AvaliacaoRepository avaliacaoRepository,
                             UsuarioUniversitarioRepository universitarioRepository,
                             PerfilAnuncianteRepository perfilAnuncianteRepository,
                             AnuncioService anuncioService,
-                            DomainEventPublisher eventPublisher,
+                            ReputacaoCalculoService reputacaoCalculoService,
                             AvaliacaoMapper avaliacaoMapper) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.universitarioRepository = universitarioRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.anuncioService = anuncioService;
-        this.eventPublisher = eventPublisher;
+        this.reputacaoCalculoService = reputacaoCalculoService;
         this.avaliacaoMapper = avaliacaoMapper;
     }
 
@@ -93,7 +90,7 @@ public class AvaliacaoService {
         avaliacao.setAtiva(true);
 
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
-        publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.CRIADA);
+        recalcularReputacao(salva);
         return avaliacaoMapper.toResponseDTO(salva);
     }
 
@@ -145,7 +142,7 @@ public class AvaliacaoService {
         avaliacao.setComentario(dto.comentario());
 
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
-        publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.ATUALIZADA);
+        recalcularReputacao(salva);
         return avaliacaoMapper.toResponseDTO(salva);
     }
 
@@ -154,7 +151,7 @@ public class AvaliacaoService {
         validarDonoDaAvaliacao(avaliacao, avaliadorId);
         avaliacao.setAtiva(false);
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
-        publicarAvaliacaoAlterada(salva, TipoOperacaoAvaliacao.DESATIVADA);
+        recalcularReputacao(salva);
     }
 
     public ResumoAvaliacoesAnuncianteResponseDTO resumoPorAnunciante(UUID perfilAnuncianteId) {
@@ -189,10 +186,8 @@ public class AvaliacaoService {
         }
     }
 
-    private void publicarAvaliacaoAlterada(Avaliacao avaliacao, TipoOperacaoAvaliacao tipoOperacao) {
-        eventPublisher.publish(new AvaliacaoAlteradaEvent(
-                avaliacao.getId(),
-                avaliacao.getAnuncianteAvaliado().getId(),
-                tipoOperacao));
+    private void recalcularReputacao(Avaliacao avaliacao) {
+        reputacaoCalculoService.calcularReputacaoEAtualizar(
+                avaliacao.getAnuncianteAvaliado().getId());
     }
 }

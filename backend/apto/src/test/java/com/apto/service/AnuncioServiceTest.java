@@ -3,8 +3,6 @@ package com.apto.service;
 import com.apto.dto.request.AtualizarAnuncioRequestDTO;
 import com.apto.dto.request.CriarAnuncioRequestDTO;
 import com.apto.dto.response.AnuncioResponseDTO;
-import com.apto.event.AnuncioIndisponibilizadoEvent;
-import com.apto.event.MotivoIndisponibilizacaoAnuncio;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.AnuncioNaoEncontradoException;
@@ -18,7 +16,6 @@ import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
-import com.apto.observer.DomainEventPublisher;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.MoradiaRepository;
@@ -61,7 +58,7 @@ class AnuncioServiceTest {
     private ManifestacaoInteresseRepository manifestacaoRepository;
 
     @Mock
-    private DomainEventPublisher eventPublisher;
+    private ManifestacaoInteresseService manifestacaoInteresseService;
 
     @Spy
     private AnuncioMapper anuncioMapper = new AnuncioMapper();
@@ -241,11 +238,7 @@ class AnuncioServiceTest {
         assertEquals(StatusAnuncio.ENCERRADO, anuncio.getStatus());
         verify(anuncioRepository).save(anuncio);
         verify(anuncioRepository, never()).delete(any());
-        verify(eventPublisher).publish(new AnuncioIndisponibilizadoEvent(
-                anuncioId,
-                StatusAnuncio.ATIVO,
-                StatusAnuncio.ENCERRADO,
-                MotivoIndisponibilizacaoAnuncio.DELETADO));
+        verify(manifestacaoInteresseService).cancelarPendentesDaOferta(anuncioId);
     }
 
     @Test
@@ -293,8 +286,7 @@ class AnuncioServiceTest {
 
         assertNotNull(response);
         verify(anuncioRepository).save(anuncio);
-        verify(eventPublisher).publish(new AnuncioIndisponibilizadoEvent(
-                anuncioId, StatusAnuncio.ATIVO, StatusAnuncio.PAUSADO, MotivoIndisponibilizacaoAnuncio.PAUSADO));
+        verify(manifestacaoInteresseService).cancelarPendentesDaOferta(anuncioId);
     }
 
     @Test

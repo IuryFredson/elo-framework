@@ -23,6 +23,7 @@ import com.apto.model.enums.StatusAnuncio;
 import com.elo.manifestacao.StatusManifestacaoInteresse;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
+import com.apto.repository.AnuncioRepository;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +62,7 @@ class ManifestacaoInteresseServiceTest {
     private ManifestacaoInteresseRepository manifestacaoRepository;
 
     @Mock
-    private AnuncioService anuncioService;
+    private AnuncioRepository anuncioRepository;
 
     @Mock
     private UsuarioUniversitarioRepository universitarioRepository;
@@ -148,7 +149,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void deveCriarManifestacaoComDadosValidos() {
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.of(interessado));
         when(manifestacaoRepository.existsByAnuncio_IdAndInteressado_IdAndStatusIn(
                 eq(anuncioId), eq(interessadoId), anyCollection())).thenReturn(false);
@@ -174,8 +175,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void naoDeveCriarManifestacaoSeAnuncioNaoExistir() {
-        when(anuncioService.buscarEntidadePorId(anuncioId))
-                .thenThrow(new AnuncioNaoEncontradoException("Anuncio não encontrado"));
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
 
         assertThrows(AnuncioNaoEncontradoException.class,
                 () -> manifestacaoInteresseService.criar(criarDTO));
@@ -184,7 +184,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void naoDeveCriarManifestacaoSeInteressadoNaoExistir() {
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.empty());
 
         assertThrows(UsuarioNaoEncontradoException.class,
@@ -195,7 +195,7 @@ class ManifestacaoInteresseServiceTest {
     @Test
     void naoDeveCriarManifestacaoSeAnuncioNaoEstiverAtivo() {
         anuncio.setStatus(StatusAnuncio.PAUSADO);
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.of(interessado));
 
         assertThrows(AnuncioNaoAtivoException.class,
@@ -211,7 +211,7 @@ class ManifestacaoInteresseServiceTest {
         perfilDoInteressado.setAtivo(true);
         anuncio.setAnunciante(perfilDoInteressado);
 
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.of(interessado));
 
         assertThrows(ManifestacaoInteresseInvalidaException.class,
@@ -221,7 +221,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void naoDeveCriarManifestacaoSeJaExistirAtiva() {
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.of(interessado));
         when(manifestacaoRepository.existsByAnuncio_IdAndInteressado_IdAndStatusIn(
                 eq(anuncioId), eq(interessadoId), anyCollection())).thenReturn(true);
@@ -233,7 +233,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void deveConsultarDuplicidadeComPendenteEAceita() {
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(universitarioRepository.findById(interessadoId)).thenReturn(Optional.of(interessado));
         when(manifestacaoRepository.existsByAnuncio_IdAndInteressado_IdAndStatusIn(
                 eq(anuncioId), eq(interessadoId), anyCollection())).thenReturn(false);
@@ -399,7 +399,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void deveListarManifestacoesDoAnuncioParaAnunciante() {
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
         when(manifestacaoRepository.findByAnuncio_IdOrderByDataManifestacaoDesc(anuncioId))
                 .thenReturn(List.of(manifestacao));
 
@@ -412,7 +412,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void naoDeveListarManifestacoesQuandoSolicitanteNaoForAnunciante() {
-        when(anuncioService.buscarEntidadePorId(anuncioId)).thenReturn(anuncio);
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.of(anuncio));
 
         assertThrows(AcessoNegadoException.class,
                 () -> manifestacaoInteresseService.listarPorAnuncio(anuncioId, UUID.randomUUID()));
@@ -421,8 +421,7 @@ class ManifestacaoInteresseServiceTest {
 
     @Test
     void naoDeveListarPorAnuncioQuandoAnuncioNaoExistir() {
-        when(anuncioService.buscarEntidadePorId(anuncioId))
-                .thenThrow(new AnuncioNaoEncontradoException("Anuncio não encontrado"));
+        when(anuncioRepository.findById(anuncioId)).thenReturn(Optional.empty());
 
         assertThrows(AnuncioNaoEncontradoException.class,
                 () -> manifestacaoInteresseService.listarPorAnuncio(anuncioId, anuncianteUsuarioId));

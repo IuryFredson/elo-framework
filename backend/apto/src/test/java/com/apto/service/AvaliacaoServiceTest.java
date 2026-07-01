@@ -4,8 +4,6 @@ import com.apto.dto.request.AtualizarAvaliacaoRequestDTO;
 import com.apto.dto.request.CriarAvaliacaoRequestDTO;
 import com.apto.dto.response.AvaliacaoResponseDTO;
 import com.apto.dto.response.ResumoAvaliacoesAnuncianteResponseDTO;
-import com.apto.event.AvaliacaoAlteradaEvent;
-import com.apto.event.TipoOperacaoAvaliacao;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.AvaliacaoDuplicadaException;
@@ -23,7 +21,6 @@ import com.apto.model.enums.Genero;
 import com.apto.model.enums.StatusAnuncio;
 import com.apto.model.enums.TipoAnuncio;
 import com.apto.model.enums.TipoMoradia;
-import com.apto.observer.DomainEventPublisher;
 import com.apto.repository.AvaliacaoRepository;
 import com.apto.repository.PerfilAnuncianteRepository;
 import com.apto.repository.UsuarioUniversitarioRepository;
@@ -68,7 +65,7 @@ class AvaliacaoServiceTest {
     private AnuncioService anuncioService;
 
     @Mock
-    private DomainEventPublisher eventPublisher;
+    private ReputacaoCalculoService reputacaoCalculoService;
 
     @Spy
     private AvaliacaoMapper avaliacaoMapper = new AvaliacaoMapper();
@@ -182,8 +179,7 @@ class AvaliacaoServiceTest {
         assertEquals(perfilAnuncianteId, response.anuncianteAvaliadoId());
         assertEquals(moradiaId, response.moradiaId());
         verify(avaliacaoRepository).save(any(Avaliacao.class));
-        verify(eventPublisher).publish(new AvaliacaoAlteradaEvent(
-                avaliacaoId, perfilAnuncianteId, TipoOperacaoAvaliacao.CRIADA));
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(perfilAnuncianteId);
     }
 
     @Test
@@ -271,8 +267,7 @@ class AvaliacaoServiceTest {
         AvaliacaoResponseDTO response = avaliacaoService.criar(criarDTO);
         assertNotNull(response);
         verify(avaliacaoRepository).save(any(Avaliacao.class));
-        verify(eventPublisher).publish(new AvaliacaoAlteradaEvent(
-                avaliacaoUniv.getId(), perfilUniv.getId(), TipoOperacaoAvaliacao.CRIADA));
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(perfilUniv.getId());
     }
 
     @Test
@@ -345,8 +340,7 @@ class AvaliacaoServiceTest {
         assertEquals(4, response.notaGeral());
         assertEquals("Comentário atualizado", response.comentario());
         verify(avaliacaoRepository).save(avaliacao);
-        verify(eventPublisher).publish(new AvaliacaoAlteradaEvent(
-                avaliacaoId, perfilAnuncianteId, TipoOperacaoAvaliacao.ATUALIZADA));
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(perfilAnuncianteId);
     }
 
     @Test
@@ -368,8 +362,7 @@ class AvaliacaoServiceTest {
         ArgumentCaptor<Avaliacao> captor = ArgumentCaptor.forClass(Avaliacao.class);
         verify(avaliacaoRepository).save(captor.capture());
         assertFalse(captor.getValue().getAtiva());
-        verify(eventPublisher).publish(new AvaliacaoAlteradaEvent(
-                avaliacaoId, perfilAnuncianteId, TipoOperacaoAvaliacao.DESATIVADA));
+        verify(reputacaoCalculoService).calcularReputacaoEAtualizar(perfilAnuncianteId);
     }
 
     @Test

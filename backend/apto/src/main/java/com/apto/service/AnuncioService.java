@@ -6,8 +6,6 @@ import com.apto.dto.request.FiltroBuscaAnuncioDTO;
 import com.apto.dto.response.AnuncioResponseDTO;
 import com.apto.dto.response.BuscaAnuncioResponseDTO;
 import com.apto.dto.response.PaginaResponseDTO;
-import com.apto.event.AnuncioIndisponibilizadoEvent;
-import com.apto.event.MotivoIndisponibilizacaoAnuncio;
 import com.apto.exception.AcessoNegadoException;
 import com.apto.exception.AnuncianteNaoEncontradoException;
 import com.apto.exception.AnuncioNaoEncontradoException;
@@ -18,7 +16,6 @@ import com.apto.model.entity.Anuncio;
 import com.apto.model.entity.Moradia;
 import com.apto.model.entity.PerfilAnunciante;
 import com.apto.model.enums.StatusAnuncio;
-import com.apto.observer.DomainEventPublisher;
 import com.apto.repository.AnuncioRepository;
 import com.apto.repository.ManifestacaoInteresseRepository;
 import com.apto.repository.MoradiaRepository;
@@ -44,20 +41,20 @@ public class AnuncioService extends OfertaService<
     private final MoradiaRepository moradiaRepository;
     private final PerfilAnuncianteRepository perfilAnuncianteRepository;
     private final ManifestacaoInteresseRepository manifestacaoRepository;
-    private final DomainEventPublisher eventPublisher;
+    private final ManifestacaoInteresseService manifestacaoInteresseService;
     private final AnuncioMapper anuncioMapper;
 
     public AnuncioService(AnuncioRepository anuncioRepository,
                           MoradiaRepository moradiaRepository,
                           PerfilAnuncianteRepository perfilAnuncianteRepository,
                           ManifestacaoInteresseRepository manifestacaoRepository,
-                          DomainEventPublisher eventPublisher,
+                          ManifestacaoInteresseService manifestacaoInteresseService,
                           AnuncioMapper anuncioMapper) {
         this.anuncioRepository = anuncioRepository;
         this.moradiaRepository = moradiaRepository;
         this.perfilAnuncianteRepository = perfilAnuncianteRepository;
         this.manifestacaoRepository = manifestacaoRepository;
-        this.eventPublisher = eventPublisher;
+        this.manifestacaoInteresseService = manifestacaoInteresseService;
         this.anuncioMapper = anuncioMapper;
     }
 
@@ -146,11 +143,7 @@ public class AnuncioService extends OfertaService<
             return;
         }
 
-        MotivoIndisponibilizacaoAnuncio motivo = novoStatus == StatusAnuncio.PAUSADO
-                ? MotivoIndisponibilizacaoAnuncio.PAUSADO
-                : MotivoIndisponibilizacaoAnuncio.ENCERRADO;
-
-        publicarIndisponibilizacao(anuncio, statusAnterior, novoStatus, motivo);
+        cancelarManifestacoesPendentes(anuncio);
     }
 
     @Override
@@ -168,11 +161,7 @@ public class AnuncioService extends OfertaService<
             Anuncio anuncio,
             StatusAnuncio statusAnterior,
             StatusAnuncio novoStatus) {
-        publicarIndisponibilizacao(
-                anuncio,
-                statusAnterior,
-                novoStatus,
-                MotivoIndisponibilizacaoAnuncio.DELETADO);
+        cancelarManifestacoesPendentes(anuncio);
     }
 
     public PaginaResponseDTO<BuscaAnuncioResponseDTO> buscarAnuncios(
@@ -196,15 +185,7 @@ public class AnuncioService extends OfertaService<
                 pagina.getSize());
     }
 
-    private void publicarIndisponibilizacao(
-            Anuncio anuncio,
-            StatusAnuncio statusAnterior,
-            StatusAnuncio novoStatus,
-            MotivoIndisponibilizacaoAnuncio motivo) {
-        eventPublisher.publish(new AnuncioIndisponibilizadoEvent(
-                anuncio.getId(),
-                statusAnterior,
-                novoStatus,
-                motivo));
+    private void cancelarManifestacoesPendentes(Anuncio anuncio) {
+        manifestacaoInteresseService.cancelarPendentesDaOferta(anuncio.getId());
     }
 }

@@ -29,13 +29,16 @@ public class ModeracaoService extends com.elo.moderacao.ModeracaoService<
     private final DenunciaRepository denunciaRepository;
     private final AnuncioRepository anuncioRepository;
     private final ModeracaoMapper moderacaoMapper;
+    private final ManifestacaoInteresseService manifestacaoInteresseService;
 
     public ModeracaoService(DenunciaRepository denunciaRepository,
                             AnuncioRepository anuncioRepository,
-                            ModeracaoMapper moderacaoMapper) {
+                            ModeracaoMapper moderacaoMapper,
+                            ManifestacaoInteresseService manifestacaoInteresseService) {
         this.denunciaRepository = denunciaRepository;
         this.anuncioRepository = anuncioRepository;
         this.moderacaoMapper = moderacaoMapper;
+        this.manifestacaoInteresseService = manifestacaoInteresseService;
     }
 
     @Override
@@ -81,11 +84,13 @@ public class ModeracaoService extends com.elo.moderacao.ModeracaoService<
     @Override
     protected void pausarOferta(Anuncio oferta) {
         oferta.setStatus(StatusAnuncio.PAUSADO);
+        manifestacaoInteresseService.cancelarPendentesDaOferta(oferta.getId());
     }
 
     @Override
     protected void encerrarOferta(Anuncio oferta) {
         oferta.setStatus(StatusAnuncio.ENCERRADO);
+        manifestacaoInteresseService.cancelarPendentesDaOferta(oferta.getId());
     }
 
     @Override
