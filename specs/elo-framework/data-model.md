@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-Descrever o modelo conceitual do Elo Framework e o mapeamento das instancias Apto, Study Buddy e Mentor Match.
+Descrever o modelo final do Elo Framework e como o Apto instancia esse modelo.
 
-Este arquivo nao define obrigatoriamente tabelas novas. Ele define os conceitos que devem orientar o design e a implementacao.
+Este documento não define todas as tabelas do banco. Ele descreve os conceitos do framework, os contratos do core e as entidades concretas do Apto.
 
 ## Modelo Conceitual do Framework
 
@@ -18,256 +18,259 @@ Usuario
 Usuario
   manifesta interesse em Oferta
 
-Compatibilidade
-  compara Perfis usando Criterios do dominio
+Usuario
+  denuncia Oferta
+
+Moderacao
+  avalia Denuncia e pode alterar Oferta
+
+Matching
+  compara Perfis usando criterios da instancia
 ```
 
-## Entidades Conceituais
+## Conceitos do Core
 
 ### Usuario
 
 Representa um participante da plataforma.
 
-Atributos conceituais:
+Atributos no core:
 
 - id;
 - nome;
 - email;
 - telefone;
-- status ativo/inativo.
+- ativo.
 
-No Apto atual:
+No Apto:
 
-- `Usuario`;
 - `UsuarioUniversitario`;
 - `Locador`.
 
 ### Perfil
 
-Representa os dados usados para busca, recomendacao ou compatibilidade.
+Representa dados da instância usados por busca, recomendação ou compatibilidade.
 
-Atributos conceituais:
+Contrato no core:
 
-- id;
-- usuario;
-- tipo de perfil;
-- atributos especificos do dominio.
+- `Perfil`.
 
-Varia por instancia:
+No Apto:
 
-- Apto: perfil de convivencia.
-- Study Buddy: perfil academico.
-- Mentor Match: perfil de mentoria.
+- `PerfilConvivencia`.
+
+Ponto flexível:
+
+- dados do perfil.
 
 ### Oferta
 
-Representa uma oportunidade publicada por um usuario.
+Representa algo publicado por um usuário.
 
-Atributos conceituais:
+Contrato no core:
 
-- id;
-- publicador;
-- titulo;
-- descricao;
-- status;
-- data de publicacao;
-- dados especificos do dominio.
+- `Oferta`.
 
-Varia por instancia:
+No Apto:
 
-- Apto: moradia ou vaga.
-- Study Buddy: grupo de estudo.
-- Mentor Match: sessao ou programa de mentoria.
+- `Anuncio`.
 
-### Interacao
+A oferta concreta do Apto usa:
 
-Representa o registro da **Manifestacao de Interesse** de um usuario em uma oferta.
+- `PerfilAnunciante` como publicador;
+- `Moradia` como dados específicos da moradia;
+- `TipoAnuncio`;
+- `StatusAnuncio`;
+- valor mensal e data de publicação.
 
-Atributos conceituais:
+Ponto flexível:
 
-- id;
-- interessado;
-- oferta relacionada;
-- status;
-- mensagem;
-- data de criacao;
-- data de resposta.
+- tipo de oferta publicada.
 
-Ponto importante:
+### Manifestação de Interesse
 
-- A Manifestacao de Interesse e o mecanismo fixo de interacao.
-- O que varia e o tipo de oferta pela qual o usuario manifesta interesse.
+Representa o mecanismo fixo de interesse em uma oferta.
 
-### Compatibilidade
+Contrato no core:
 
-Representa o resultado da comparacao entre perfis.
+- `ManifestacaoInteresse`.
 
-Atributos conceituais:
+Estados no core:
 
-- percentual;
-- justificativa;
-- criterios atendidos;
-- origem do calculo, quando aplicavel.
+- `PENDENTE`;
+- `ACEITA`;
+- `RECUSADA`;
+- `CANCELADA`.
 
-Varia por instancia:
+No Apto:
 
-- Apto: rotina e convivencia.
-- Study Buddy: disciplina e horario.
-- Mentor Match: area e objetivo.
+- `ManifestacaoInteresse` entre `UsuarioUniversitario` interessado e `Anuncio`.
 
-## Mapeamento por Instancia
+Ponto fixo:
 
-| Conceito | Apto | Study Buddy | Mentor Match |
-| --- | --- | --- | --- |
-| Usuario | Universitario ou locador | Estudante | Mentor ou mentorado |
-| Perfil | Perfil de convivencia | Perfil academico | Perfil de mentoria |
-| Oferta | Moradia ou vaga | Grupo de estudo | Sessao de mentoria |
-| Interacao | Manifestacao de interesse em moradia ou vaga | Manifestacao de interesse em grupo de estudo | Manifestacao de interesse em sessao de mentoria |
-| Compatibilidade | Rotina e convivencia | Disciplina, horario, objetivo e nivel | Area, objetivo, experiencia e disponibilidade |
+- Manifestação de Interesse não varia como mecanismo.
+
+### Denúncia
+
+Representa denúncia de uma oferta.
+
+Contrato no core:
+
+- `Denuncia`.
+
+Estados no core:
+
+- `PENDENTE`;
+- `EM_ANALISE`;
+- `PROCEDENTE`;
+- `IMPROCEDENTE`;
+- `ARQUIVADA`.
+
+No Apto:
+
+- `Denuncia` associada a `Anuncio` e `Usuario` denunciante.
+- `CriterioDenunciaApto` define critérios específicos.
+
+### Compatibilidade e Matching
+
+Representa comparação entre perfis e ordenação de candidatos.
+
+Contratos no core:
+
+- `CompatibilidadeStrategy<P>`;
+- `MatchingService<U, P>`;
+- `ProvedorCompatibilidadeLlm<U, P>`;
+- `ResultadoCompatibilidade`;
+- `ResultadoMatching`.
+
+No Apto:
+
+- `CompatibilidadeDeterministicaCalculator` calcula compatibilidade por convivência;
+- `AptoCompatibilidadeLlmProvider` integra Groq, prompt e parser;
+- `MatchmakingService` mapeia o resultado para DTOs públicos.
 
 ## Modelo Atual do Apto
 
-### Usuario
+### Usuários
 
-`Usuario` e uma entidade abstrata.
+`Usuario` está no core como entidade abstrata JPA.
 
-Especializacoes:
+Especializações no Apto:
 
 - `UsuarioUniversitario`;
 - `Locador`.
 
-### Perfil
+### Perfil de Convivência
 
-`UsuarioUniversitario` possui `PerfilConvivencia`.
+`PerfilConvivencia` implementa `Perfil` e contém:
 
-`PerfilConvivencia` contem:
-
-- horario de sono;
-- nivel de barulho aceitavel;
-- frequencia de visitas;
-- nivel de organizacao;
+- horário de sono;
+- nível de barulho aceitável;
+- frequência de visitas;
+- nível de organização;
 - rotina de estudos;
-- consumo de alcool;
+- consumo de álcool;
 - fumante;
 - aceita animais;
-- preferencia de genero;
-- descricao livre.
+- preferência de gênero;
+- descrição livre.
 
-### Oferta
+### Perfil Anunciante
 
-`Anuncio` representa a oferta publicada.
+`PerfilAnunciante` é específico do Apto.
 
-`Anuncio` esta associado a:
+Responsabilidade:
 
-- `PerfilAnunciante`;
-- `Moradia`;
-- tipo de anuncio;
-- status;
-- valor mensal.
+- representar o papel de publicador de anúncios;
+- permitir que `Locador` e `UsuarioUniversitario` publiquem anúncios.
 
-### Interacao
+Esse conceito não é parte obrigatória do core.
 
-`ManifestacaoInteresse` representa a interacao entre interessado e anuncio.
+### Anúncio e Moradia
+
+`Anuncio` implementa `Oferta`.
+
+`Moradia` contém os dados específicos do domínio:
+
+- tipo;
+- bairro;
+- endereço resumido;
+- mobiliado;
+- aceita animais;
+- quantidade de vagas;
+- regras.
+
+### Manifestação de Interesse
+
+`ManifestacaoInteresse` implementa o contrato fixo do core.
 
 Ela possui:
 
-- anuncio;
-- usuario interessado;
+- anúncio;
+- interessado;
 - status;
 - mensagem;
-- data de manifestacao;
+- data de manifestação;
 - data de resposta.
 
-### Compatibilidade
+### Denúncia e Moderação
 
-`MatchmakingService` busca colegas compativeis.
+`Denuncia` implementa `Denuncia` do core.
 
-`CompatibilidadeDeterministicaCalculator` calcula compatibilidade por:
+`CriterioDenunciaApto` implementa `CriterioDenuncia` com:
 
-- horario de sono;
-- nivel de barulho;
-- organizacao;
-- frequencia de visitas;
-- rotina de estudos;
-- fumante;
-- alcool;
-- animais;
-- preferencia de genero.
+- `ANUNCIO_ENGANOSO`;
+- `PRECO_ABUSIVO`;
+- `IMOVEL_INEXISTENTE`;
+- `CONTEUDO_INAPROPRIADO`;
+- `OUTRO`.
 
-## Modelo Proposto para Study Buddy
+`ModeracaoService` aplica decisões sobre denúncia e pode pausar ou encerrar o anúncio.
 
-### Perfil Academico
+### Avaliação e Reputação
 
-Atributos conceituais:
+Avaliação e reputação são específicas do Apto.
 
-- curso;
-- disciplina;
-- disponibilidade;
-- objetivo de estudo;
-- nivel de conhecimento.
+Entidades:
 
-### Oferta de Grupo de Estudo
+- `Avaliacao`;
+- `ReputacaoAnunciante`.
 
-Atributos conceituais:
+Essas entidades não são contratos do framework.
 
-- titulo;
-- disciplina;
-- horario;
-- quantidade de vagas;
-- formato.
+### Notificações e Observers
 
-### Compatibilidade Academica
+O mecanismo de Observer/Event Publisher e as notificações de anúncio indisponível foram removidos.
 
-Criterios:
+Cancelamentos e recálculos passaram a ser chamadas diretas:
 
-- mesma disciplina;
-- horario compativel;
-- objetivo semelhante;
-- nivel de conhecimento compativel.
+- `AnuncioService` e `ModeracaoService` cancelam manifestações pendentes;
+- `AvaliacaoService` recalcula reputação diretamente.
 
-## Modelo Proposto para Mentor Match
+## Exemplos Futuros Fora do Escopo
 
-### Perfil de Mentoria
+Uma futura instância Study Buddy poderia usar:
 
-Atributos conceituais:
+- perfil acadêmico;
+- oferta de grupo de estudo;
+- compatibilidade por disciplina, horário, objetivo e nível.
 
-- papel;
-- area de interesse;
-- objetivo;
-- experiencia;
-- disponibilidade.
+Uma futura instância Mentor Match poderia usar:
 
-### Oferta de Mentoria
+- perfil de mentoria;
+- oferta de sessão ou programa de mentoria;
+- compatibilidade por área, objetivo, experiência e disponibilidade.
 
-Atributos conceituais:
+Esses exemplos não possuem implementação nesta entrega.
 
-- titulo;
-- area;
-- formato;
-- duracao;
-- disponibilidade.
+## Persistência
 
-### Compatibilidade de Mentoria
+A persistência concreta pertence a cada instância.
 
-Criterios:
+No Apto:
 
-- papeis complementares;
-- mesma area;
-- objetivo alinhado;
-- experiencia adequada;
-- disponibilidade compativel.
+- repositories concretos ficam em `com.apto.repository`;
+- entidades específicas ficam em `com.apto.model.entity`;
+- o core usa `RepositorioBase` como porta mínima para templates.
 
-## Observacao Sobre Persistencia
-
-Este modelo nao exige que Study Buddy e Mentor Match tenham persistencia completa em banco.
-
-Para demonstracao academica, as instancias podem ser implementadas inicialmente como:
-
-- objetos de dominio simples;
-- DTOs;
-- estrategias de compatibilidade;
-- testes unitarios;
-- endpoints demonstrativos, se necessario.
-
-Persistencia deve ser adicionada apenas se for requisito da apresentacao ou da avaliacao.
-
+O core não define tabelas específicas de moradia, avaliação, reputação ou notificação.

@@ -2,178 +2,213 @@
 
 ## Objetivo
 
-Evoluir o Apto, aplicacao da Fase 1, para o **Elo Framework**, um framework para plataformas baseadas em perfis, ofertas e compatibilidade.
+Evoluir o Apto, aplicação da Fase 1 da disciplina Projeto Detalhado de Software, para o **Elo Framework** na Fase 2.
 
-O objetivo principal e demonstrar, em contexto academico, que a aplicacao original pode ser reorganizada em torno de pontos fixos reutilizaveis e pontos variaveis especializados por dominio.
+O Elo Framework é um framework Spring/JPA híbrido para plataformas baseadas em usuários, perfis, ofertas, manifestação de interesse e compatibilidade. O núcleo fica em `backend/elo-core` e controla fluxos comuns por Template Method. A aplicação Apto fica em `backend/apto` e instancia os pontos flexíveis com regras do domínio de moradias universitárias.
 
-## Descricao do Framework
-
-**Nome:** Elo Framework
-
-**Descricao:** Framework para Plataformas Baseadas em Perfis, Ofertas e Compatibilidade.
-
-O framework deve apoiar aplicacoes em que:
-
-- usuarios possuem perfis;
-- ofertas sao publicadas;
-- interacoes sao registradas;
-- compatibilidade e calculada conforme regras de cada dominio.
-
-## Escopo
+## Escopo Final
 
 ### Dentro do escopo
 
-- Preservar o Apto como instancia original.
-- Evidenciar os pontos fixos do framework.
-- Evidenciar os pontos variaveis do framework.
-- Definir como Study Buddy e Mentor Match instanciam o framework.
-- Refatorar ou organizar o backend apenas o suficiente para demonstrar reuso e extensibilidade.
-- Manter testes ou validacoes que comprovem os pontos de extensao.
+- Preservar o Apto como aplicação funcional.
+- Extrair contratos e fluxos comuns para `elo-core`.
+- Demonstrar, no código e no diagrama, que o Apto instancia o framework.
+- Manter dependência unidirecional: `apto -> elo-core`.
+- Documentar hooks obrigatórios para uma futura instância.
+- Validar a arquitetura com testes do core usando implementações falsas e testes de regressão do Apto.
 
 ### Fora do escopo
 
-- Autenticacao real.
-- Deploy de producao.
-- Reescrita completa do dominio.
-- Transformar todo o sistema em uma biblioteca generica perfeita.
-- Criar instancias alem de Apto, Study Buddy e Mentor Match.
-- Expandir reputacao, moderacao ou eventos como pontos obrigatorios do framework.
+- Autenticação real.
+- Deploy de produção.
+- Novo frontend.
+- Reescrita completa do domínio.
+- Implementação de Study Buddy.
+- Implementação de Mentor Match.
+- Generalização de avaliação, reputação ou moradia como pontos obrigatórios do framework.
 
 ## Pontos Fixos
 
-Os pontos fixos sao funcionalidades comuns a todas as instancias:
+Os pontos fixos são comportamentos controlados pelo framework:
 
-1. Cadastro e gestao de usuarios.
-2. Cadastro de perfis.
-3. Publicacao de ofertas.
-4. Registro de interacoes.
-5. Calculo de compatibilidade.
+1. Cadastro e gestão de usuários.
+2. Cadastro e atualização de perfis.
+3. Publicação e gestão de ofertas.
+4. Manifestação de Interesse.
+5. Denúncia e moderação de ofertas.
+6. Cálculo de compatibilidade e matching.
 
-## Pontos Variaveis
+## Pontos Flexíveis
 
-Os pontos variaveis sao especializacoes por dominio:
+Os pontos flexíveis são especializações fornecidas pela instância:
 
 1. Dados do perfil.
 2. Tipo de oferta publicada.
-3. Criterios de compatibilidade.
+3. Critérios de compatibilidade.
+4. Critério de denúncia.
+5. Integração LLM, quando a instância quiser usar compatibilidade assistida.
+6. DTOs, mappers, repositories, controllers e mensagens de erro.
 
-## Regra Sobre Interacoes
+## Regra Sobre Manifestação de Interesse
 
-O registro de interacoes e um ponto fixo do framework e sera concretizado como **Manifestacao de Interesse** em todas as instancias.
+Manifestação de Interesse é ponto fixo.
 
-A Manifestacao de Interesse nao deve ser tratada como ponto variavel principal. O mecanismo e reutilizado; o que muda entre as instancias e o tipo de oferta pela qual o usuario manifesta interesse.
+O framework define o fluxo comum:
 
-Exemplos:
+- criar manifestação;
+- validar oferta ativa;
+- impedir interesse na própria oferta;
+- impedir duplicidade ativa;
+- aceitar, recusar e cancelar;
+- listar por oferta ou interessado;
+- cancelar manifestações pendentes quando uma oferta fica indisponível.
 
-- Apto: manifestacao de interesse em moradia ou vaga.
-- Study Buddy: manifestacao de interesse em grupo de estudo.
-- Mentor Match: manifestacao de interesse em sessao ou programa de mentoria.
+O que varia entre instâncias é a oferta alvo. No Apto, a manifestação é feita em um anúncio de moradia ou vaga.
 
-## Instancias
+## Arquitetura Final
 
-### Apto
+### Núcleo: `elo-core`
 
-Dominio: moradias universitarias.
+O núcleo contém contratos e templates independentes de `com.apto`:
 
-- Dados do perfil: convivencia, rotina, sono, organizacao e preferencias.
-- Tipo de oferta publicada: moradia, vaga ou anuncio de aluguel.
-- Criterios de compatibilidade: rotina, convivencia, preferencias e caracteristicas da moradia.
-- Interacao fixa do framework: registro da manifestacao de interesse no anuncio.
+- `com.elo.usuario.Usuario`
+- `com.elo.usuario.UsuarioService`
+- `com.elo.perfil.Perfil`
+- `com.elo.perfil.PerfilService`
+- `com.elo.oferta.Oferta`
+- `com.elo.oferta.OfertaService`
+- `com.elo.manifestacao.ManifestacaoInteresse`
+- `com.elo.manifestacao.ManifestacaoInteresseService`
+- `com.elo.denuncia.Denuncia`
+- `com.elo.denuncia.DenunciaService`
+- `com.elo.denuncia.CriterioDenuncia`
+- `com.elo.moderacao.ModeracaoService`
+- `com.elo.compatibilidade.CompatibilidadeStrategy`
+- `com.elo.compatibilidade.MatchingService`
+- `com.elo.compatibilidade.ProvedorCompatibilidadeLlm`
 
-### Study Buddy
+Os testes do core usam implementações falsas para provar que os templates funcionam sem depender do Apto.
 
-Dominio: grupos e colegas de estudo.
+### Instância: `apto`
 
-- Dados do perfil: curso, disciplinas, disponibilidade e objetivo de estudo.
-- Tipo de oferta publicada: grupo de estudo ou oportunidade de estudo em conjunto.
-- Criterios de compatibilidade: disciplina, horario, objetivo e nivel de conhecimento.
-- Interacao fixa do framework: registro da manifestacao de interesse no grupo de estudo.
+O Apto fornece entidades, DTOs, repositories, mappers, controllers e regras específicas:
 
-### Mentor Match
-
-Dominio: conexao entre mentores e mentorados.
-
-- Dados do perfil: area de interesse, objetivo, experiencia e disponibilidade.
-- Tipo de oferta publicada: sessao ou programa de mentoria.
-- Criterios de compatibilidade: area, objetivo, experiencia e disponibilidade.
-- Interacao fixa do framework: registro da manifestacao de interesse na sessao ou programa de mentoria.
+- `UsuarioUniversitario` e `Locador` especializam `Usuario`.
+- `PerfilConvivencia` implementa `Perfil`.
+- `Anuncio` implementa `Oferta`.
+- `ManifestacaoInteresse` implementa o contrato fixo de manifestação.
+- `Denuncia` implementa o contrato de denúncia.
+- `CriterioDenunciaApto` implementa `CriterioDenuncia`.
+- `CompatibilidadeDeterministicaCalculator` implementa os critérios de convivência.
+- `AptoCompatibilidadeLlmProvider` fornece a porta LLM usando Groq, prompt e parser do Apto.
 
 ## Requisitos
 
-### EF-001: Pontos fixos reutilizaveis
+### EF-001: Núcleo reutilizável
 
-THE Elo Framework SHALL define reusable fixed points for user management, profile management, offer publication, interaction registration, and compatibility calculation.
+THE Elo Framework SHALL provide reusable templates for user management, profile management, offer publication, interest manifestation, complaint/moderation, and compatibility/matching.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- Deve ser possivel identificar no backend os conceitos de usuario, perfil, oferta, interacao e compatibilidade.
-- A implementacao deve preservar o comportamento existente do Apto.
-- A documentacao deve explicar quais partes sao fixas e por que sao reutilizaveis.
+- `elo-core` não deve depender de `com.apto`.
+- Os fluxos comuns devem estar em templates ou contratos do core.
+- O Apto deve estender os templates sem reimplementar o algoritmo fixo inteiro.
 
-### EF-002: Pontos variaveis limitados
+### EF-002: Pontos flexíveis limitados
 
-THE Elo Framework SHALL define variation points only for profile data, published offer type, and compatibility criteria.
+THE Elo Framework SHALL keep the primary variation points limited to profile data, published offer type, and compatibility criteria.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- A especificacao deve listar apenas os tres pontos variaveis definidos.
-- Interacao nao deve aparecer como ponto variavel principal.
-- Cada instancia deve demonstrar os tres pontos variaveis.
+- `PerfilConvivencia` deve representar os dados variáveis do perfil no Apto.
+- `Anuncio` e `Moradia` devem representar a oferta concreta do Apto.
+- `CompatibilidadeDeterministicaCalculator` deve representar os critérios de compatibilidade do Apto.
 
-### EF-003: Interacao como ponto fixo
+### EF-003: Manifestação de Interesse como ponto fixo
 
-THE Elo Framework SHALL treat interaction registration as a fixed point shared by all instances.
+THE Elo Framework SHALL treat interest manifestation as a fixed interaction mechanism.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- O fluxo de registrar interacao deve ser explicado como mecanismo comum.
-- Manifestacao de Interesse deve ser o mecanismo comum de interacao nas tres instancias.
-- O significado da manifestacao deve ser determinado pelo tipo de oferta da instancia.
+- Manifestação de Interesse não deve ser ponto flexível.
+- O core deve controlar criação, resposta, cancelamento, autorização, duplicidade e transições.
+- O Apto deve fornecer persistência, mapeamento e exceções.
 
-### EF-004: Apto como instancia original
+### EF-004: Apto instanciado no framework
 
-WHERE the Apto instance is used, THE SYSTEM SHALL preserve housing, coexistence profile, housing offers, interest registration, and coexistence compatibility.
+WHERE the Apto instance is used, THE SYSTEM SHALL preserve existing housing behavior while extending the framework contracts and templates.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- O comportamento atual do Apto nao deve ser removido.
-- O matchmaking atual entre usuarios universitarios deve continuar funcionando.
-- A instancia Apto deve ser descrita como especializacao do Elo Framework.
+- Controllers e DTOs públicos do Apto devem continuar compatíveis.
+- Testes do Apto devem passar.
+- O diagrama deve mostrar classes do Apto implementando/extending contratos do `elo-core`.
 
-### EF-005: Study Buddy como instancia demonstravel
+### EF-005: Matching com fallback
 
-WHERE the Study Buddy instance is used, THE SYSTEM SHALL vary profile data to academic data, offer type to study group, and compatibility criteria to discipline, schedule, objective, and knowledge level.
+THE Elo Framework SHALL provide a matching flow with eligibility, LLM result usage, deterministic fallback, ordering and `topN`.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- A instancia deve demonstrar perfil academico.
-- A instancia deve demonstrar oferta de grupo de estudo.
-- A instancia deve demonstrar criterio proprio de compatibilidade.
+- O core deve identificar diretamente o candidato no resultado.
+- Falha de LLM ou resultado ausente deve acionar fallback determinístico.
+- O Apto deve manter prompt, parser, Groq e mapper como detalhes da instância.
 
-### EF-006: Mentor Match como instancia demonstravel
+### EF-006: Denúncia e moderação no framework
 
-WHERE the Mentor Match instance is used, THE SYSTEM SHALL vary profile data to mentorship data, offer type to mentorship session, and compatibility criteria to area, objective, experience, and availability.
+THE Elo Framework SHALL provide fixed complaint and moderation flows while allowing instance-specific complaint criteria.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- A instancia deve demonstrar perfil de mentoria.
-- A instancia deve demonstrar oferta de sessao ou programa de mentoria.
-- A instancia deve demonstrar criterio proprio de compatibilidade.
+- Estados de denúncia e máquina de estados devem estar no core.
+- Ações de pausar/encerrar oferta devem ser aplicadas por porta/hook.
+- `CriterioDenunciaApto` deve representar critérios específicos do Apto.
 
 ### EF-007: Extensibilidade controlada
 
-WHEN a new application instance is defined, THE SYSTEM SHALL allow the instance to specialize profile data, offer type, and compatibility criteria without changing the fixed interaction registration mechanism.
+WHEN a future application instance is created, THE SYSTEM SHALL require implementation of hooks/contracts instead of changes in fixed framework algorithms.
 
-**Criterios de aceitacao:**
+Critérios de aceitação:
 
-- O design deve separar contratos fixos de especializacoes.
-- A inclusao de uma instancia deve exigir implementacao de pontos variaveis, nao alteracao do mecanismo fixo de interacao.
+- A documentação deve listar hooks obrigatórios.
+- Study Buddy e Mentor Match devem aparecer apenas como exemplos futuros, sem plano de implementação nesta entrega.
 
-## Criterios Gerais de Aceitacao
+## Hooks Obrigatórios para uma Futura Instância
 
-- A especificacao deve estar alinhada aos slides da Fase 2.
-- O backend deve continuar compilando e passando nos testes existentes.
-- Mudancas devem ser pequenas e rastreaveis.
-- Cada commit deve indicar o proposito academico da mudanca.
-- Interacoes com LLM sobre backend devem ser registradas conforme o estudo.
+Uma futura instância deve fornecer:
 
+- Entidade concreta de usuário, se precisar especializar `Usuario`.
+- Perfil concreto implementando `Perfil`.
+- Oferta concreta implementando `Oferta`.
+- Manifestação concreta implementando `ManifestacaoInteresse`.
+- Denúncia concreta implementando `Denuncia`, se usar denúncia/moderação.
+- Critério de denúncia implementando `CriterioDenuncia`, se usar denúncia/moderação.
+- Estratégia de compatibilidade implementando `CompatibilidadeStrategy<P>`.
+- Provedor LLM implementando `ProvedorCompatibilidadeLlm<U, P>`, se usar LLM.
+- Services concretos estendendo os templates do core.
+- Repositories compatíveis com `RepositorioBase`.
+- DTOs, mappers, controllers e exceções da instância.
+
+## Exemplos Futuros Fora do Escopo
+
+Study Buddy poderia variar:
+
+- Perfil: dados acadêmicos.
+- Oferta: grupo de estudo.
+- Compatibilidade: disciplina, horário, objetivo e nível.
+
+Mentor Match poderia variar:
+
+- Perfil: dados de mentoria.
+- Oferta: sessão ou programa de mentoria.
+- Compatibilidade: área, objetivo, experiência e disponibilidade.
+
+Esses exemplos demonstram extensibilidade conceitual, mas não fazem parte da implementação atual.
+
+## Critérios Gerais de Aceitação
+
+- `mvn test` no reactor `backend` deve passar.
+- `elo-core` deve permanecer livre de dependências para `com.apto`.
+- Apto deve preservar seus endpoints e comportamentos essenciais.
+- Diagrama, contratos, modelo, tarefas, plano e README devem refletir a arquitetura final.
+- Interações com LLM devem continuar registradas nos documentos do estudo.

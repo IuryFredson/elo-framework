@@ -2,161 +2,159 @@
 
 ## Objetivo
 
-Registrar investigacoes, decisoes e alternativas avaliadas antes da implementacao.
+Registrar investigações, decisões e alternativas avaliadas durante a evolução do Apto para o Elo Framework.
 
-Este arquivo apoia o processo de Spec-Driven Development e evita que decisoes tecnicas fiquem implicitas.
-
-## Estado Atual do Projeto
-
-O repositorio da Fase 2 contem uma aplicacao chamada Apto.
+## Estado Final do Projeto
 
 Estrutura principal:
 
-- `backend/apto-api`: API Spring Boot.
-- `frontend`: aplicacao React/Vite.
-- `docker`: infraestrutura local.
+- `backend/elo-core`: núcleo reutilizável do framework.
+- `backend/apto`: instância Apto e API Spring Boot.
+- `frontend`: aplicação React/Vite do Apto.
+- `specs`: documentação SDD, contratos, modelo, tarefas, rastreabilidade e diagrama.
 
-Backend atual:
+## Elementos do Apto que Instanciam o Framework
 
-- Java 21.
-- Spring Boot.
-- Spring Web.
-- Spring Data JPA.
-- Bean Validation.
-- PostgreSQL.
-- H2 para testes.
-- Lombok.
-- RestClient para integracao opcional com Groq.
+### Usuários
 
-Frontend atual:
+O core possui `Usuario` e `UsuarioService`.
 
-- React.
-- Vite.
-- TypeScript.
-- Tailwind CSS.
-- React Router.
-
-## Elementos do Apto que ja correspondem ao framework
-
-### Usuarios
-
-O backend possui `Usuario` como entidade base e especializacoes como:
+O Apto especializa:
 
 - `UsuarioUniversitario`;
 - `Locador`.
 
-Isso se alinha ao ponto fixo de cadastro e gestao de usuarios.
-
 ### Perfis
 
-O backend possui:
+O core possui `Perfil` e `PerfilService`.
 
-- `PerfilConvivencia`;
-- `PerfilAnunciante`.
+O Apto instancia:
 
-`PerfilConvivencia` e o principal perfil usado para compatibilidade entre universitarios.
+- `PerfilConvivencia`.
 
 ### Ofertas
 
-O backend possui:
+O core possui `Oferta` e `OfertaService`.
 
-- `Anuncio`;
-- `Moradia`.
+O Apto instancia:
 
-`Anuncio` representa a publicacao de uma oferta no dominio de moradias.
+- `Anuncio`, associado a `Moradia`.
 
-### Interacoes
+### Manifestação de Interesse
 
-O backend possui:
+O core possui `ManifestacaoInteresse`, `StatusManifestacaoInteresse` e `ManifestacaoInteresseService`.
 
-- `ManifestacaoInteresse`.
+O Apto instancia:
 
-Ela representa o registro de uma interacao entre usuario interessado e anuncio.
+- `ManifestacaoInteresse` entre interessado e anúncio.
+
+### Denúncia e Moderação
+
+O core possui `Denuncia`, `StatusDenuncia`, `CriterioDenuncia`, `DenunciaService` e `ModeracaoService`.
+
+O Apto instancia:
+
+- `Denuncia`;
+- `CriterioDenunciaApto`;
+- `ModeracaoService` concreto.
 
 ### Compatibilidade
 
-O backend possui:
+O core possui `CompatibilidadeStrategy`, `MatchingService`, `ProvedorCompatibilidadeLlm`, `ResultadoCompatibilidade` e `ResultadoMatching`.
 
-- `MatchmakingService`;
+O Apto instancia:
+
 - `CompatibilidadeDeterministicaCalculator`;
-- integracao opcional com Groq/LLM;
-- fallback deterministico.
+- `AptoCompatibilidadeLlmProvider`;
+- `MatchmakingService`.
 
-O match atual e principalmente entre dois `UsuarioUniversitario`, usando dados de `PerfilConvivencia`.
+## Decisões
 
-## Decisoes
-
-### Decisao 1: Preservar o Apto como instancia original
+### Decisão 1: Preservar o Apto como instância original
 
 Motivo:
 
-- O Apto e o produto da Fase 1.
-- A Fase 2 deve demonstrar evolucao, nao substituicao.
-- O comportamento existente ja cobre muitos pontos fixos do framework.
+- O Apto é o produto da Fase 1.
+- A Fase 2 deve demonstrar evolução, não substituição.
+- Os endpoints e fluxos públicos precisavam continuar funcionando.
 
-Consequencia:
+Consequência:
 
-- Refatoracoes devem ser incrementais.
-- Controllers e fluxos existentes devem ser preservados.
+- Refatorações foram incrementais.
+- DTOs, controllers, mappers e repositories concretos permaneceram no Apto.
 
-### Decisao 2: Nao tratar interacao como ponto variavel
-
-Motivo:
-
-- Orientacao do professor.
-- O mecanismo de Manifestacao de Interesse e comum.
-- O que muda por instancia e o tipo de oferta em que o usuario manifesta interesse.
-
-Consequencia:
-
-- Todas as instancias devem ser explicadas usando Manifestacao de Interesse como mecanismo fixo.
-- Apto: interesse em moradia ou vaga.
-- Study Buddy: interesse em grupo de estudo.
-- Mentor Match: interesse em sessao ou programa de mentoria.
-
-### Decisao 3: Usar estrategia para criterios de compatibilidade
+### Decisão 2: Usar Template Method no core
 
 Motivo:
 
-- Compatibilidade e ponto fixo.
-- Criterios de compatibilidade sao ponto variavel.
-- Strategy permite trocar criterio sem alterar o fluxo geral.
+- O framework deve controlar fluxos fixos.
+- A instância deve fornecer hooks específicos.
+- Evita que o algoritmo comum continue espalhado no Apto.
 
-Alternativas avaliadas:
+Consequência:
 
-- Heranca profunda: rejeitada por aumentar acoplamento.
-- Condicionais por tipo de instancia: rejeitada por reduzir extensibilidade.
-- Strategy ou interfaces simples: recomendada por ser direta e demonstravel.
+- Services do Apto passaram a estender templates do core.
+- Testes do core usam implementações falsas para provar independência.
 
-### Decisao 4: Implementar Study Buddy e Mentor Match de forma minima
+### Decisão 3: Manifestação de Interesse é ponto fixo
 
 Motivo:
 
-- Prazo curto.
-- Objetivo academico e demonstrar instanciacao.
-- Nao e necessario criar produtos completos.
+- A orientação conceitual do projeto define Manifestação de Interesse como mecanismo comum.
+- O que muda é o tipo de oferta alvo.
 
-Consequencia:
+Consequência:
 
-- As instancias podem focar em perfil, oferta e compatibilidade.
-- Persistencia completa so deve ser adicionada se for necessaria para demonstracao.
+- Manifestação de Interesse não virou ponto flexível.
+- O core controla transições, autorização, duplicidade e cancelamento de pendentes.
 
-## Perguntas de Clarificacao
+### Decisão 4: Study Buddy e Mentor Match fora da implementação atual
 
-1. As instancias Study Buddy e Mentor Match precisam ter endpoints REST completos?
-2. As novas instancias precisam persistir dados no banco?
-3. A demonstracao sera feita por testes, endpoints, seed de dados ou slides?
-4. O professor espera um framework mais conceitual ou uma refatoracao profunda de codigo?
-5. O frontend precisa demonstrar as novas instancias ou o foco sera backend?
+Motivo:
 
-## Recomendacao Atual
+- O plano final da Etapa 09 remove implementações futuras.
+- A entrega atual deve provar o Apto instanciado no framework.
 
-Seguir com uma implementacao pequena no backend:
+Consequência:
 
-- contratos minimos para os pontos fixos;
-- Apto adaptado ou documentado como instancia original;
-- Study Buddy e Mentor Match com estrategias proprias de compatibilidade;
-- testes unitarios comprovando variacao de criterios.
+- Study Buddy e Mentor Match ficam apenas como exemplos conceituais de extensibilidade.
+- Não há classes, endpoints ou testes dessas instâncias nesta entrega.
 
-Essa abordagem reduz risco e atende ao objetivo academico.
+### Decisão 5: Remover Observer/Event Publisher
 
+Motivo:
+
+- O mecanismo adicionava indireção sem ser parte essencial do framework.
+- A Etapa 08 exigiu isolamento de funcionalidades do Apto.
+
+Consequência:
+
+- Cancelamento de manifestações passou a ser chamada direta.
+- Reputação passou a ser recalculada diretamente.
+- Notificações de anúncio indisponível foram removidas.
+
+## Alternativas Rejeitadas
+
+### Generalizar avaliação e reputação
+
+Rejeitada porque avaliação e reputação são específicas do Apto nesta entrega.
+
+### Implementar múltiplas instâncias agora
+
+Rejeitada porque aumentaria escopo e risco. A extensibilidade é demonstrada por contratos, templates, hooks documentados e testes fake no core.
+
+### Usar adapters para tudo
+
+Rejeitada quando a implementação direta do contrato era natural. Exemplo: `PerfilConvivencia` implementando `Perfil` e `Anuncio` implementando `Oferta`.
+
+## Recomendações Futuras
+
+Trabalhos futuros podem:
+
+- implementar Study Buddy como nova instância;
+- implementar Mentor Match como nova instância;
+- publicar `elo-core` como biblioteca independente;
+- criar autenticação real;
+- criar frontend multi-instância.
+
+Essas recomendações não fazem parte da entrega atual.

@@ -2,122 +2,162 @@
 
 ## Resumo
 
-Transformar `elo-core` em um framework Spring/JPA híbrido: o núcleo controla os fluxos comuns por Template Method e chama hooks/portas implementados pelo Apto. A dependência permanece unidirecional (`apto → elo-core`).
+Transformar `elo-core` em um framework Spring/JPA híbrido: o núcleo controla fluxos comuns por Template Method e chama hooks/portas implementados pelo Apto. A dependência permanece unidirecional:
 
-`Usuario` e estados fixos serão movidos ao core. Entidades persistentes específicas, DTOs, mappers, repositories, controllers e regras de moradia permanecem no Apto. Avaliação e reputação continuam exclusivas do Apto. Nenhuma outra instância será implementada.
+```text
+apto -> elo-core
+```
 
-Cada etapa abaixo deve ser entregue isoladamente, terminando com o reactor Maven compilando e todos os testes passando.
+`Usuario` e estados fixos foram movidos ao core. Entidades persistentes específicas, DTOs, mappers, repositories, controllers e regras de moradia permanecem no Apto. Avaliação e reputação continuam exclusivas do Apto. Nenhuma outra instância foi implementada nesta entrega.
+
+Cada etapa foi entregue isoladamente, com o reactor Maven compilando e testes passando.
 
 ## Contratos públicos do framework
 
-- Substituir os contratos provisórios por `Usuario`, `Perfil`, `Oferta`, `ManifestacaoInteresse` e `Denuncia`.
-- Mover para o core os estados fixos de manifestação e denúncia.
-- Criar `CriterioDenuncia`, implementado por cada instância.
-- Criar os Template Methods genéricos:
-  - `UsuarioService<T extends Usuario, C, A, R>`;
-  - `PerfilService`;
-  - `OfertaService`;
-  - `ManifestacaoInteresseService`;
-  - `DenunciaService`;
-  - `ModeracaoService`.
-- Manter `CompatibilidadeStrategy`, acrescentando uma porta para LLM e um fluxo fixo de matching com fallback determinístico.
-- Os services do Apto passam a estender essas classes abstratas; não serão criadas interfaces de service que deixem todo o algoritmo novamente no Apto.
+Contratos e templates finais:
 
-## Etapas de execução
+- `Usuario`;
+- `Perfil`;
+- `Oferta`;
+- `ManifestacaoInteresse`;
+- `Denuncia`;
+- `CriterioDenuncia`;
+- `CompatibilidadeStrategy`;
+- `ProvedorCompatibilidadeLlm`;
+- `RepositorioBase`;
+- `UsuarioService<T extends Usuario, C, A, R>`;
+- `PerfilService`;
+- `OfertaService`;
+- `ManifestacaoInteresseService`;
+- `DenunciaService`;
+- `ModeracaoService`;
+- `MatchingService`.
+
+Os services do Apto estendem essas classes abstratas. Não foram criadas interfaces de service que deixassem o algoritmo fixo novamente no Apto.
+
+## Etapas executadas
 
 ### 1. Estabilizar a fronteira do core
 
-- Ajustar dependências do `elo-core` para JPA, Validation e transações Spring.
-- Definir os contratos, estados, exceções comuns e portas independentes de DTO/repository do Apto.
-- Remover nomes provisórios como `*Framework` e `STATUS_INTERACAO`.
-- Adicionar teste arquitetural garantindo que `elo-core` não referencia `com.apto`.
+Status: concluída.
+
+Resultado:
+
+- Dependências do `elo-core` ajustadas para JPA, Validation e transações Spring.
+- Contratos, estados, exceções comuns e portas independentes do Apto definidos.
+- Nomes provisórios como `*Framework` e `STATUS_INTERACAO` removidos.
+- Teste arquitetural garante que `elo-core` não referencia `com.apto`.
 
 ### 2. Migrar `Usuario` e implementar seu Template Method
 
-- Mover a entidade abstrata `Usuario` para `com.elo.usuario`, preservando `usuarios`, UUID e herança `JOINED`.
-- Configurar o Apto para descobrir entidades de `com.elo` e `com.apto`.
-- Implementar no core o fluxo comum de criar, listar, buscar, atualizar, ativar/inativar e excluir.
-- Deixar como hooks: construção da entidade, DTO, mapper, validações específicas, persistência e pós-criação.
-- Fazer `LocadorService` e `UsuarioUniversitarioService` estenderem o template.
-- Manter validação específica de documento e e-mail institucional.
-- Manter no hook do locador a criação transacional do `PerfilAnunciante`.
+Status: concluída.
+
+Resultado:
+
+- `Usuario` movido para `com.elo.usuario`.
+- `UsuarioService` controla o fluxo comum de criação, listagem, busca, atualização, ativação/inativação e exclusão.
+- `LocadorService` e `UsuarioUniversitarioService` estendem o template.
+- Validações específicas permanecem no Apto.
 
 ### 3. Extrair o fluxo de perfil
 
-- Tornar `Perfil` o contrato variável do core.
-- Implementar busca e criação/atualização do perfil como Template Method.
-- Adaptar `PerfilConvivencia` e `PerfilService`.
-- Manter campos, validações, DTOs e mapper de convivência no Apto.
+Status: concluída.
+
+Resultado:
+
+- `Perfil` virou contrato variável do core.
+- `PerfilService` controla busca e criação/atualização do perfil.
+- `PerfilConvivencia` e `PerfilService` do Apto instanciam esse ponto flexível.
 
 ### 4. Extrair publicação e gestão de ofertas
 
-- Tornar `Oferta` o contrato do core e fazer `Anuncio` implementá-lo.
-- Implementar no `OfertaService` o ciclo comum de criação, consulta, atualização, alteração de status e remoção.
-- Deixar em hooks as regras de `PerfilAnunciante`, `Moradia`, filtros e mapeamento.
-- Fazer `AnuncioService` estender o template, mantendo endpoints e busca paginada atuais.
+Status: concluída.
+
+Resultado:
+
+- `Oferta` virou contrato do core.
+- `OfertaService` controla criação, consulta, atualização, status e remoção.
+- `AnuncioService` estende o template.
+- `Anuncio` instancia a oferta do Apto.
 
 ### 5. Extrair manifestação de interesse
 
-- Mover `StatusManifestacaoInteresse` para o core.
-- Implementar no template as regras fixas: oferta ativa, proibição de interesse próprio, duplicidade ativa, autorização e transições aceitar/recusar/cancelar.
-- Acrescentar operação comum para cancelar manifestações pendentes quando uma oferta ficar indisponível.
-- Adaptar a entidade e o service do Apto; eliminar o adapter `ManifestacaoInteresseFrameworkAdapter`.
+Status: concluída.
+
+Resultado:
+
+- `StatusManifestacaoInteresse` movido para o core.
+- `ManifestacaoInteresseService` controla oferta ativa, interesse próprio, duplicidade, autorização e transições.
+- Operação comum `cancelarPendentesDaOferta` adicionada.
+- Adapter provisório eliminado.
 
 ### 6. Extrair denúncia e moderação
 
-- Mover `StatusDenuncia` e sua máquina de estados para o core.
-- Implementar criação, consultas, transições e exclusão em `DenunciaService`.
-- Implementar em `ModeracaoService` a validação fixa da decisão e a aplicação de pausar/encerrar oferta por porta.
-- Criar `CriterioDenunciaApto` com:
-  `ANUNCIO_ENGANOSO`, `PRECO_ABUSIVO`, `IMOVEL_INEXISTENTE`, `CONTEUDO_INAPROPRIADO` e `OUTRO`.
-- Adicionar `criterio` ao request, entidade e response do backend. Ausência no payload será convertida para `OUTRO`, preservando o frontend atual.
-- Manter `titulo` e `corpo`; o frontend não será alterado.
-- Permitir coluna legada nula, mas aplicar `OUTRO` em novas inclusões e atualizações.
+Status: concluída.
+
+Resultado:
+
+- `StatusDenuncia` e máquina de estados movidos para o core.
+- `DenunciaService` controla criação, consultas, transições e exclusão.
+- `ModeracaoService` controla validação fixa da decisão e aplicação de ação na oferta por hook.
+- `CriterioDenunciaApto` criado.
+- Campo `criterio` adicionado ao request, entidade e response do Apto.
 
 ### 7. Completar compatibilidade e matching
 
-- Fazer o core controlar elegibilidade, cálculo, ordenação, `topN`, origem do resultado e fallback.
-- Corrigir o resultado para identificar diretamente o candidato, eliminando os `IdentityHashMap` do `MatchmakingService`.
-- Manter como extensões do Apto:
-  - critérios de convivência determinísticos;
-  - elegibilidade por gênero;
-  - prompt, parser e integração Groq;
-  - mapper dos DTOs.
-- Em sucesso, usar resultados LLM; em falha ou resultado ausente, calcular deterministicamente.
+Status: concluída.
+
+Resultado:
+
+- `MatchingService` controla elegibilidade, cálculo, ordenação, `topN`, origem do resultado e fallback.
+- `ResultadoMatching` identifica diretamente o candidato.
+- `IdentityHashMap` foi eliminado do `MatchmakingService`.
+- Critérios determinísticos, elegibilidade por gênero, prompt, parser, Groq e mapper permanecem no Apto.
 
 ### 8. Remover o Observer e isolar funcionalidades do Apto
 
-- Remover publisher, observers, eventos e respectivos testes.
-- `AnuncioService` e `ModeracaoService` chamarão explicitamente o cancelamento de manifestações em uma transação.
-- `AvaliacaoService` chamará diretamente `ReputacaoCalculoService` após criar, alterar, excluir ou reativar avaliação.
-- Remover notificações de anúncio indisponível, incluindo entidade e repository sem consumidores.
-- Manter avaliação, reputação e seus modelos exclusivamente em `com.apto`.
+Status: concluída.
+
+Resultado:
+
+- Publisher, observers, eventos e testes removidos.
+- `AnuncioService` e `ModeracaoService` chamam explicitamente o cancelamento de manifestações.
+- `AvaliacaoService` chama diretamente `ReputacaoCalculoService`.
+- Notificações de anúncio indisponível foram removidas.
+- Avaliação e reputação permanecem exclusivamente em `com.apto`.
 
 ### 9. Atualizar documentação e validar a instanciação
 
-- Reescrever especificação, contratos, modelo, diagrama, tarefas e README conforme a arquitetura final.
-- Remover do plano atual Study Buddy, Mentor Match e qualquer implementação futura.
-- Documentar os hooks obrigatórios para uma futura instância.
-- Criar implementações falsas somente nos testes do core para provar que os templates funcionam sem depender do Apto.
+Status: concluída nesta etapa.
+
+Resultado:
+
+- Especificação, contratos, modelo, diagrama, tarefas, rastreabilidade, pesquisa, plano e README atualizados.
+- Study Buddy e Mentor Match removidos como implementação planejada da entrega atual.
+- Hooks obrigatórios para uma futura instância documentados.
+- Testes do core usam implementações falsas para provar funcionamento sem depender do Apto.
 
 ## Testes e aceitação
 
-- Executar `.\mvnw.cmd test` ao final de cada etapa; a linha de base atual é de 139 testes aprovados.
-- Cobrir no core a ordem dos Template Methods, hooks, validações comuns e falhas das portas.
-- Cobrir no Apto:
-  - usuários e criação automática do perfil anunciante;
-  - manifestação, autorizações e transições;
-  - critérios de denúncia, fallback `OUTRO` e moderação;
-  - cancelamento ao pausar, encerrar, moderar ou remover oferta;
-  - LLM, fallback determinístico, ordenação e `topN`;
-  - recálculo direto de reputação;
-  - inicialização JPA com `Usuario` no core.
-- Considerar concluído quando o Apto preservar seus endpoints e comportamentos essenciais, e o core controlar os fluxos sem qualquer dependência de `com.apto`.
+Comando principal:
+
+```bash
+cd backend
+mvn test
+```
+
+Critérios finais:
+
+- `elo-core` compila e testa sem depender de `com.apto`.
+- `apto-api` preserva endpoints e comportamentos essenciais.
+- Core controla os fluxos fixos.
+- Apto instancia os pontos flexíveis.
+- Documentação e diagrama refletem a arquitetura implementada.
 
 ## Premissas
 
-- O framework continuará baseado em Spring Boot/JPA.
+- O framework continua baseado em Spring Boot/JPA.
 - DTOs, controllers, mappers e repositories concretos pertencem a cada instância.
-- O schema e os nomes JSON atuais serão preservados, exceto pelo campo aditivo `criterio`.
-- O frontend fica fora desta sequência, mas continuará enviando denúncias graças ao default `OUTRO`.
-- Tabelas antigas de notificação podem permanecer em bancos existentes sob `ddl-auto=update`; ambientes novos não as criarão.
+- O schema e os nomes JSON atuais foram preservados, exceto pelo campo aditivo `criterio` em denúncia.
+- O frontend fica fora da evolução do framework.
+- Study Buddy e Mentor Match são exemplos futuros, não implementação desta entrega.
