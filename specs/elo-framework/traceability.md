@@ -2,55 +2,61 @@
 
 ## Objetivo
 
-Relacionar requisitos, tarefas, arquivos, testes e commits.
+Relacionar requisitos, tarefas, arquivos, testes e commits da evolução do Apto para o Elo Framework.
 
-Este arquivo deve ser atualizado conforme a implementacao avancar.
+## Matriz Final
 
-## Matriz Inicial
-
-| Requisito | Descricao | Tarefas | Arquivos esperados | Testes esperados | Status |
-| --- | --- | --- | --- | --- | --- |
-| EF-001 | Pontos fixos reutilizaveis | TASK-BE-001, TASK-BE-002, TASK-BE-003, TASK-BE-004, TASK-BE-004A | contratos de perfil, oferta, manifestacao de interesse, compatibilidade e service fixo de compatibilidade | testes de compilacao e regressao | Pendente |
-| EF-002 | Pontos variaveis limitados | TASK-SPEC-001, TASK-BE-004 | spec, contratos, strategies | testes de strategies | Pendente |
-| EF-003 | Interacao como ponto fixo | TASK-BE-003 | contrato/adaptacao de interacao | testes existentes de manifestacao | Pendente |
-| EF-004 | Apto como instancia original | TASK-BE-004A, TASK-BE-005, TASK-TEST-001 | services/entities atuais, CompatibilidadeService e contracts implementados diretamente | testes existentes do Apto | Pendente |
-| EF-005 | Study Buddy demonstravel | TASK-BE-006, TASK-TEST-002 | perfil academico, oferta de estudo, strategy academica | teste Study Buddy | Pendente |
-| EF-006 | Mentor Match demonstravel | TASK-BE-007, TASK-TEST-002 | perfil mentoria, oferta mentoria, strategy mentoria | teste Mentor Match | Pendente |
-| EF-007 | Extensibilidade controlada | TASK-BE-001, TASK-BE-002, TASK-BE-003, TASK-BE-004, TASK-BE-004A | contratos, estrategias e fluxo fixo de compatibilidade | testes de variacao | Pendente |
-
-## Registro de Commits
-
-Preencher apos cada commit.
-
-| Commit | Proposito | Requisitos | Tarefas | Decisao LLM |
+| Requisito | Descrição | Arquivos principais | Testes | Status |
 | --- | --- | --- | --- | --- |
-| A definir | A definir | A definir | A definir | A definir |
+| EF-001 | Núcleo reutilizável | `backend/elo-core/src/main/java/com/elo/**` | `DependenciaArquiteturalTest`, testes dos templates do core | Concluído |
+| EF-002 | Pontos flexíveis limitados | `Perfil`, `Oferta`, `CompatibilidadeStrategy`, `PerfilConvivencia`, `Anuncio`, `CompatibilidadeDeterministicaCalculator` | `CompatibilidadeServiceTest`, `MatchingServiceTest`, `MatchmakingServiceTest` | Concluído |
+| EF-003 | Manifestação de Interesse como ponto fixo | `ManifestacaoInteresseService`, `StatusManifestacaoInteresse`, `ManifestacaoInteresse` do Apto | `ManifestacaoInteresseServiceTest` no core e no Apto | Concluído |
+| EF-004 | Apto instanciado no framework | services do Apto estendendo templates do core | suíte `apto-api` | Concluído |
+| EF-005 | Matching com fallback | `MatchingService`, `ProvedorCompatibilidadeLlm`, `AptoCompatibilidadeLlmProvider` | `MatchingServiceTest`, `MatchmakingServiceTest` | Concluído |
+| EF-006 | Denúncia e moderação | `DenunciaService`, `ModeracaoService`, `CriterioDenunciaApto` | `DenunciaServiceTest`, `ModeracaoServiceTest` | Concluído |
+| EF-007 | Extensibilidade controlada | `spec.md`, `contracts.md`, `plan.md`, `data-model.md`, diagrama | testes fake no core | Concluído |
 
-## Registro de Testes
+## Commits Registrados
 
-Preencher apos cada execucao relevante.
+| Commit | Propósito | Observação |
+| --- | --- | --- |
+| `457cae1` | Extrair fluxo de Manifestação de Interesse | Etapa 05 |
+| `ac7593b` | Registrar resumo da interação 22 | Documento de estudo |
+| `9f37167` | Extrair fluxo de denúncia e moderação | Etapa 06 |
+| `9128326` | Extrair fluxo de compatibilidade e matching | Etapa 07 |
 
-| Data | Comando | Resultado | Observacoes |
-| --- | --- | --- | --- |
-| A definir | `./mvnw test` | A definir | A definir |
+A Etapa 08 e a Etapa 09 ainda podem ser commitadas juntas ou separadas, conforme decisão da equipe.
 
-## Registro de Decisoes LLM
+## Testes Registrados
 
-Usar em conjunto com o Google Docs exigido pelo estudo.
+| Etapa | Comando | Resultado |
+| --- | --- | --- |
+| 05 | `mvn test` em `backend` | `elo-core` e `apto-api` com sucesso |
+| 06 | `mvn test` em `backend` | `elo-core` e `apto-api` com sucesso |
+| 07 | `mvn test` em `backend` | `elo-core: 24`, `apto-api: 139`, sucesso |
+| 08 | `mvn test` em `backend` | `elo-core: 24`, `apto-api: 136`, sucesso |
+| 09 | `mvn test` em `backend` | `elo-core: 24`, `apto-api: 136`, sucesso |
 
-| Interacao | Tema | Decisao | Adaptacao necessaria |
-| --- | --- | --- | --- |
-| A definir | Especificacao SDD | A definir | A definir |
-| A definir | Plano tecnico | A definir | A definir |
-| A definir | Implementacao backend | A definir | A definir |
+A contagem do Apto caiu na Etapa 08 porque os testes de Observer foram removidos junto com o mecanismo.
 
-## Politica de Atualizacao
+## Decisões LLM e Equipe
 
-Atualizar este arquivo quando:
+| Tema | Decisão |
+| --- | --- |
+| Manifestação de Interesse | Mantida como ponto fixo, não como ponto flexível |
+| Apto | Instância concreta principal do framework |
+| Study Buddy e Mentor Match | Exemplos futuros, sem implementação nesta entrega |
+| Adapters | Evitados quando implementação direta nos contratos era simples |
+| Observer | Removido na Etapa 08, substituído por chamadas diretas |
+| Avaliação e reputação | Mantidas exclusivas do Apto |
 
-- um requisito for aprovado;
-- uma tarefa for implementada;
-- um teste for adicionado;
-- um commit for feito;
-- uma sugestao da LLM for aceita, adaptada ou rejeitada.
+## Evidências de Instanciação
 
+- `PerfilConvivencia` implementa `Perfil`.
+- `Anuncio` implementa `Oferta`.
+- `ManifestacaoInteresse` implementa `ManifestacaoInteresse` do core.
+- `Denuncia` implementa `Denuncia` do core.
+- `CriterioDenunciaApto` implementa `CriterioDenuncia`.
+- `CompatibilidadeDeterministicaCalculator` implementa `CompatibilidadeStrategy<PerfilConvivencia>`.
+- Services do Apto estendem templates do core.
+- Testes do core usam implementações falsas independentes do Apto.

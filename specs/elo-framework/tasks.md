@@ -2,293 +2,128 @@
 
 ## Objetivo
 
-Listar tarefas pequenas, rastreaveis e derivadas da especificacao.
+Registrar o estado final das tarefas da evolução do Apto para o Elo Framework.
 
-Nenhuma tarefa deve ser implementada antes de revisao e aprovacao da equipe.
+As tarefas abaixo refletem a implementação concluída até a Etapa 09. Study Buddy e Mentor Match não são tarefas de implementação desta entrega.
 
-## Tarefas de Especificacao
+## Tarefas Concluídas
 
-### TASK-SPEC-001: Revisar pontos fixos e variaveis
+### TASK-BE-001: Estabilizar fronteira do core
 
-Requisito relacionado:
+Status: concluída.
 
-- EF-001
-- EF-002
-- EF-003
+Resultado:
 
-Arquivos:
+- `elo-core` recebeu dependências necessárias para JPA, Validation e transações.
+- Contratos, estados e portas independentes do Apto foram definidos.
+- Teste arquitetural garante que `elo-core` não referencia `com.apto`.
 
-- `specs/elo-framework/spec.md`
+### TASK-BE-002: Migrar usuário e criar Template Method
+
+Status: concluída.
+
+Resultado:
+
+- `Usuario` foi movido para `com.elo.usuario`.
+- `UsuarioService` controla o fluxo fixo de gestão de usuários.
+- `LocadorService` e `UsuarioUniversitarioService` instanciam o template.
+
+### TASK-BE-003: Extrair fluxo de perfil
+
+Status: concluída.
+
+Resultado:
+
+- `Perfil` virou contrato do core.
+- `PerfilService` controla busca e criação/atualização de perfil.
+- `PerfilConvivencia` instancia o ponto flexível de dados do perfil no Apto.
+
+### TASK-BE-004: Extrair publicação e gestão de ofertas
+
+Status: concluída.
+
+Resultado:
+
+- `Oferta` virou contrato do core.
+- `OfertaService` controla criação, consulta, atualização, status e remoção.
+- `Anuncio` instancia o ponto flexível de oferta publicada no Apto.
+
+### TASK-BE-005: Extrair Manifestação de Interesse
+
+Status: concluída.
+
+Resultado:
+
+- `StatusManifestacaoInteresse` foi movido para o core.
+- `ManifestacaoInteresseService` controla as regras fixas.
+- Apto fornece hooks, repository, mapper e exceções.
+- Operação comum `cancelarPendentesDaOferta` foi adicionada.
+
+### TASK-BE-006: Extrair denúncia e moderação
+
+Status: concluída.
+
+Resultado:
+
+- `StatusDenuncia` e máquina de estados foram movidos para o core.
+- `DenunciaService` controla criação, consultas, transições e exclusão.
+- `ModeracaoService` controla validação fixa da decisão.
+- `CriterioDenunciaApto` instancia o critério de denúncia do Apto.
+
+### TASK-BE-007: Completar compatibilidade e matching
+
+Status: concluída.
+
+Resultado:
+
+- `MatchingService` controla elegibilidade, LLM, fallback, ordenação e `topN`.
+- `ResultadoMatching` associa resultado diretamente ao candidato.
+- `AptoCompatibilidadeLlmProvider` fornece a porta LLM do Apto.
+- `CompatibilidadeDeterministicaCalculator` mantém os critérios de convivência.
+
+### TASK-BE-008: Remover Observer e isolar funcionalidades do Apto
+
+Status: concluída.
+
+Resultado:
+
+- Eventos, observers, publisher, notificações e testes correspondentes foram removidos.
+- `AnuncioService` e `ModeracaoService` cancelam manifestações diretamente.
+- `AvaliacaoService` recalcula reputação diretamente.
+- Avaliação e reputação permanecem exclusivas do Apto.
+
+### TASK-DOC-009: Atualizar documentação e validar instanciação
+
+Status: em execução nesta etapa.
 
 Resultado esperado:
 
-- pontos fixos e variaveis aprovados pela equipe;
-- interacao mantida como ponto fixo.
+- `spec.md`, `contracts.md`, `data-model.md`, `plan.md`, `tasks.md`, diagrama e `README.md` alinhados à arquitetura final.
+- Study Buddy e Mentor Match removidos como tarefas de implementação.
+- Hooks obrigatórios para futuras instâncias documentados.
+- Testes executados com sucesso.
 
-### TASK-SPEC-002: Revisar modelo conceitual
+## Validações
 
-Requisito relacionado:
-
-- EF-004
-- EF-005
-- EF-006
-
-Arquivos:
-
-- `specs/elo-framework/data-model.md`
-
-Resultado esperado:
-
-- modelo de Usuario, Perfil, Oferta, Interacao e Compatibilidade validado.
-
-### TASK-SPEC-003: Revisar contratos
-
-Requisito relacionado:
-
-- EF-001
-- EF-007
-
-Arquivos:
-
-- `specs/elo-framework/contracts.md`
-
-Resultado esperado:
-
-- contratos minimos aprovados antes da implementacao.
-
-## Tarefas de Backend
-
-### TASK-BE-001: Extrair contrato de perfil
-
-Requisito relacionado:
-
-- EF-001
-- EF-002
-- EF-007
-
-Objetivo:
-
-- Criar contrato minimo para perfis usados pelo framework.
-
-Validacao:
-
-- backend compila;
-- nenhum fluxo existente do Apto quebra.
-
-### TASK-BE-002: Extrair contrato de oferta
-
-Requisito relacionado:
-
-- EF-001
-- EF-002
-- EF-007
-
-Objetivo:
-
-- Criar contrato minimo para ofertas publicadas.
-
-Validacao:
-
-- backend compila;
-- `Anuncio` pode ser explicado como oferta da instancia Apto.
-
-### TASK-BE-003: Extrair contrato de manifestacao de interesse
-
-Requisito relacionado:
-
-- EF-001
-- EF-003
-- EF-007
-
-Objetivo:
-
-- Criar contrato minimo para Manifestacao de Interesse como mecanismo fixo de interacao.
-
-Validacao:
-
-- `ManifestacaoInteresse` continua funcionando;
-- documentacao deixa claro que interacao e ponto fixo.
-
-### TASK-BE-004: Extrair contrato de compatibilidade
-
-Requisito relacionado:
-
-- EF-001
-- EF-002
-- EF-007
-
-Objetivo:
-
-- Criar contrato ou strategy para calculo de compatibilidade.
-
-Validacao:
-
-- compatibilidade do Apto continua funcionando;
-- novas estrategias podem ser adicionadas sem alterar o fluxo fixo.
-
-### TASK-BE-004A: Criar CompatibilidadeService
-
-Requisito relacionado:
-
-- EF-001
-- EF-004
-- EF-007
-
-Objetivo:
-
-- Criar `CompatibilidadeService<T>` como fluxo fixo do framework para aplicar elegibilidade, calcular compatibilidades, ordenar resultados e limitar a quantidade retornada.
-- Priorizar este service como primeira instancia operacional do Elo Framework no Apto.
-
-Arquivos:
-
-- `backend/apto-api/src/main/java/com/apto/framework/CompatibilidadeService.java`
-- `backend/apto-api/src/main/java/com/apto/framework/CompatibilidadeStrategy.java`
-
-Validacao:
-
-- backend compila;
-- teste unitario cobre o fluxo com uma strategy fake ou com a strategy do Apto;
-- o service nao depende de classes especificas do Apto.
-
-Risco:
-
-- duplicar responsabilidades do `MatchmakingService`;
-- alterar ordenacao ou filtragem de compatibilidade sem perceber.
-
-### TASK-BE-005: Adaptar Apto como instancia
-
-Requisito relacionado:
-
-- EF-004
-
-Objetivo:
-
-- Mapear perfil de convivencia, anuncio, manifestacao de interesse e matchmaking como elementos da instancia Apto.
-- Fazer `CompatibilidadeDeterministicaCalculator` implementar `CompatibilidadeStrategy<UsuarioUniversitario>`.
-- Fazer `MatchmakingService` usar `CompatibilidadeService<UsuarioUniversitario>` preservando o comportamento atual.
-
-Validacao:
-
-- testes existentes passam;
-- README ou documentacao descreve Apto como instancia do Elo Framework.
-
-Risco:
-
-- quebrar o fallback deterministico usado quando a integracao LLM falha;
-- mudar contratos REST existentes de matchmaking.
-
-### TASK-BE-006: Implementar Study Buddy minimo
-
-Requisito relacionado:
-
-- EF-005
-
-Objetivo:
-
-- Criar representacao minima de perfil academico, grupo de estudo e compatibilidade academica.
-
-Validacao:
-
-- teste comprova compatibilidade por disciplina, horario, objetivo e nivel.
-
-### TASK-BE-007: Implementar Mentor Match minimo
-
-Requisito relacionado:
-
-- EF-006
-
-Objetivo:
-
-- Criar representacao minima de perfil de mentoria, sessao de mentoria e compatibilidade de mentoria.
-
-Validacao:
-
-- teste comprova compatibilidade por area, objetivo, experiencia e disponibilidade.
-
-### TASK-BE-008: Adicionar endpoint ou exemplo demonstrativo
-
-Requisito relacionado:
-
-- EF-005
-- EF-006
-
-Objetivo:
-
-- Expor ou documentar exemplos de instanciacao.
-
-Validacao:
-
-- equipe consegue demonstrar as tres instancias.
-
-Observacao:
-
-- Esta tarefa so deve ser feita se a apresentacao precisar de demonstracao via API.
-
-## Tarefas de Testes
-
-### TASK-TEST-001: Garantir regressao do Apto
-
-Requisito relacionado:
-
-- EF-004
-
-Objetivo:
-
-- Rodar testes existentes do backend.
-
-Validacao:
+Comando de validação principal:
 
 ```bash
-cd backend/apto-api
-./mvnw test
+cd backend
+mvn test
 ```
 
-### TASK-TEST-002: Testar variacao de compatibilidade
+Critérios:
 
-Requisito relacionado:
+- `elo-core` deve passar nos testes.
+- `apto-api` deve passar nos testes.
+- `elo-core` deve permanecer independente de `com.apto`.
 
-- EF-005
-- EF-006
-- EF-007
+## Tarefas Futuras Fora da Entrega
 
-Objetivo:
+As ideias abaixo podem ser usadas em trabalhos futuros, mas não compõem a entrega atual:
 
-- Testar que Study Buddy e Mentor Match usam criterios diferentes.
-
-Validacao:
-
-- testes unitarios para cada strategy.
-
-## Tarefas de Documentacao
-
-### TASK-DOC-001: Atualizar README
-
-Requisito relacionado:
-
-- EF-001
-- EF-004
-- EF-005
-- EF-006
-
-Objetivo:
-
-- Explicar que o Apto passou a ser uma instancia do Elo Framework.
-
-Validacao:
-
-- README descreve pontos fixos, pontos variaveis e instancias.
-
-### TASK-DOC-002: Atualizar matriz de rastreabilidade
-
-Requisito relacionado:
-
-- todos
-
-Objetivo:
-
-- Relacionar requisitos, tarefas, arquivos, testes e commits.
-
-Validacao:
-
-- `traceability.md` preenchido apos implementacao.
-
+- implementar Study Buddy;
+- implementar Mentor Match;
+- criar frontend para múltiplas instâncias;
+- empacotar `elo-core` como artefato publicado;
+- substituir permissões simplificadas por autenticação real.

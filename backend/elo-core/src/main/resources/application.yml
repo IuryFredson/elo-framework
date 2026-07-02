@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/apto
+    username: apto
+    password: apto
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+apto:
+  groq:
+    base-url: https://api.groq.com/openai/v1
+    model: llama-3.3-70b-versatile
+    api-key: ${GROQ_API_KEY:}
+    timeout: 30s

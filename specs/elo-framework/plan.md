@@ -1,223 +1,158 @@
 # Plan: Elo Framework
 
-## Estrategia
+## Estado Final
 
-Implementar a evolucao para o Elo Framework de forma incremental e demonstravel, preservando o Apto e evitando uma reescrita completa do backend.
+O Elo Framework foi implementado como um framework Spring/JPA híbrido.
 
-O plano tecnico deve partir da especificacao em `spec.md` e manter o foco em evidenciar:
+A arquitetura final é:
 
-- pontos fixos;
-- pontos variaveis;
-- reuso;
-- extensibilidade;
-- instanciacao em Apto, Study Buddy e Mentor Match.
+- `backend/elo-core`: núcleo reutilizável com contratos, estados, portas e templates.
+- `backend/apto`: instância concreta do framework para moradias universitárias.
+- `frontend`: aplicação web do Apto, sem alteração estrutural para múltiplas instâncias.
 
-## Principios de Implementacao
-
-1. Preservar comportamento existente do Apto.
-2. Refatorar apenas onde houver ganho claro para demonstrar framework.
-3. Introduzir contratos pequenos e compreensiveis.
-4. Evitar novas dependencias.
-5. Manter testes focados nos pontos de extensao.
-6. Nao tratar interacao como ponto variavel principal.
-
-## Arquitetura Proposta
-
-### Camada do framework
-
-Criar uma camada conceitual para representar os pontos fixos:
-
-- Usuario.
-- Perfil.
-- Oferta.
-- Interacao.
-- Compatibilidade.
-
-Essa camada pode ser implementada por interfaces, classes abstratas, services ou contratos simples, conforme aderencia ao codigo atual.
-
-Para a entrega parcial, a prioridade de implementacao deve comecar por compatibilidade, pois ela demonstra com clareza a separacao entre fluxo fixo do framework e criterio variavel da instancia:
-
-- `CompatibilidadeStrategy<T>` representa o ponto flexivel de criterios de compatibilidade.
-- `CompatibilidadeService<T>` representa o fluxo fixo do framework para filtrar candidatos elegiveis, calcular compatibilidades, ordenar resultados e limitar retornos.
-- `CompatibilidadeDeterministicaCalculator` instancia `CompatibilidadeStrategy<UsuarioUniversitario>` para o Apto.
-- `MatchmakingService` deve orquestrar o caso de uso atual reaproveitando `CompatibilidadeService<UsuarioUniversitario>`, preservando LLM, fallback e respostas publicas.
-
-### Instancia Apto
-
-O Apto deve continuar sendo a instancia principal e funcional.
-
-O codigo existente ja possui:
-
-- `Usuario` e especializacoes;
-- `PerfilConvivencia`;
-- `PerfilAnunciante`;
-- `Anuncio`;
-- `ManifestacaoInteresse`;
-- `MatchmakingService`;
-- `CompatibilidadeDeterministicaCalculator`.
-
-A refatoracao deve reaproveitar esses elementos como evidencia da instancia Apto.
-
-No Apto, `Anuncio` deve ser tratado como oferta publicada por meio de `PerfilAnunciante`, que representa o papel de publicador assumido por `Locador` ou `UsuarioUniversitario`.
-
-### Instancias Study Buddy e Mentor Match
-
-As novas instancias devem ser minimas.
-
-Elas nao precisam ter todo o fluxo produtivo do Apto, mas precisam demonstrar:
-
-- dados de perfil diferentes;
-- tipo de oferta diferente;
-- criterio de compatibilidade diferente.
-
-## Fases
-
-### Fase 1: Documentar e estabilizar a especificacao
-
-Objetivo:
-
-- Aprovar `spec.md`.
-- Confirmar pontos fixos e variaveis.
-- Confirmar limites de escopo.
-
-Entregaveis:
-
-- `spec.md`.
-- `research.md`.
-- `data-model.md`.
-- `contracts.md`.
-
-### Fase 2: Extrair contratos minimos
-
-Objetivo:
-
-- Criar contratos de perfil, oferta, manifestacao de interesse e compatibilidade.
-- Criar o fluxo fixo `CompatibilidadeService<T>` antes de alterar o `MatchmakingService`.
-- Evitar alterar comportamento existente.
-
-Possiveis entregaveis:
-
-- contrato de perfil;
-- contrato de oferta;
-- contrato de manifestacao de interesse;
-- contrato de estrategia de compatibilidade.
-- service fixo de compatibilidade.
-
-### Fase 3: Adaptar Apto como instancia
-
-Objetivo:
-
-- Mapear o Apto atual para os contratos.
-- Usar `CompatibilidadeService<UsuarioUniversitario>` como primeira instancia operacional do Elo Framework no Apto.
-- Manter matchmaking atual funcionando.
-- Explicar que o match atual compara usuarios universitarios por perfil de convivencia.
-
-Possiveis entregaveis:
-
-- `CompatibilidadeDeterministicaCalculator` implementando a strategy de compatibilidade do Apto;
-- `MatchmakingService` usando o fluxo fixo de `CompatibilidadeService<T>`;
-- testes garantindo compatibilidade existente.
-
-### Fase 4: Implementar Study Buddy minimo
-
-Objetivo:
-
-- Demonstrar uma segunda instancia.
-
-Possiveis entregaveis:
-
-- perfil academico;
-- oferta de grupo de estudo;
-- estrategia de compatibilidade academica;
-- teste de compatibilidade.
-
-### Fase 5: Implementar Mentor Match minimo
-
-Objetivo:
-
-- Demonstrar uma terceira instancia.
-
-Possiveis entregaveis:
-
-- perfil de mentoria;
-- oferta de sessao de mentoria;
-- estrategia de compatibilidade de mentoria;
-- teste de compatibilidade.
-
-### Fase 6: Validacao e apresentacao
-
-Objetivo:
-
-- Garantir alinhamento com especificacao e slides.
-- Preparar evidencias para apresentacao.
-
-Possiveis entregaveis:
-
-- testes passando;
-- README atualizado;
-- matriz de rastreabilidade;
-- exemplos de uso.
-
-## Riscos
-
-### Risco: refatoracao excessiva
-
-Mitigacao:
-
-- Priorizar adapters e contratos pequenos.
-- Evitar mover todo o dominio para pacotes genericos.
-
-### Risco: quebrar o Apto
-
-Mitigacao:
-
-- Rodar testes existentes.
-- Preservar controllers e services publicos.
-
-### Risco: confundir ponto fixo e ponto variavel
-
-Mitigacao:
-
-- Usar `spec.md` como referencia.
-- Manter interacao como ponto fixo em todos os documentos.
-
-### Risco: instancia minima parecer artificial
-
-Mitigacao:
-
-- Garantir que Study Buddy e Mentor Match tenham criterios de compatibilidade realmente diferentes.
-- Relacionar cada instancia aos pontos variaveis definidos.
-
-## Validacoes Tecnicas
-
-Comandos esperados:
-
-```bash
-cd backend/apto-api
-./mvnw test
-```
-
-Se houver alteracoes no frontend:
-
-```bash
-cd frontend
-npm run lint
-npm run build
-```
-
-## Politica de Commits
-
-Mensagens devem informar o proposito da mudanca.
-
-Exemplos:
+A dependência permanece unidirecional:
 
 ```text
-docs: specify elo framework variation points
-refactor: extract compatibility extension point
-feat: implement study buddy compatibility instance
-feat: implement mentor match compatibility instance
-test: cover elo framework compatibility strategies
+apto -> elo-core
 ```
 
-Quando houver adaptacao de sugestao da LLM, registrar isso na mensagem ou descricao do commit.
+`elo-core` não referencia `com.apto`.
 
+## Estratégia Executada
+
+A evolução foi incremental para preservar o Apto e evitar reescrita completa.
+
+Ordem executada:
+
+1. Estabilizar fronteira do core.
+2. Migrar `Usuario` e criar template de usuário.
+3. Extrair fluxo de perfil.
+4. Extrair publicação e gestão de ofertas.
+5. Extrair Manifestação de Interesse.
+6. Extrair denúncia e moderação.
+7. Completar compatibilidade e matching.
+8. Remover Observer e isolar funcionalidades do Apto.
+9. Atualizar documentação e validar instanciação.
+
+## Arquitetura Final
+
+### Núcleo do Framework
+
+O core controla os fluxos fixos por Template Method:
+
+- `UsuarioService`
+- `PerfilService`
+- `OfertaService`
+- `ManifestacaoInteresseService`
+- `DenunciaService`
+- `ModeracaoService`
+- `MatchingService`
+
+O core também define contratos:
+
+- `Usuario`
+- `Perfil`
+- `Oferta`
+- `ManifestacaoInteresse`
+- `Denuncia`
+- `CriterioDenuncia`
+- `CompatibilidadeStrategy`
+- `ProvedorCompatibilidadeLlm`
+- `RepositorioBase`
+
+### Instância Apto
+
+O Apto instancia os pontos flexíveis:
+
+- dados do perfil: `PerfilConvivencia`;
+- tipo de oferta publicada: `Anuncio` associado a `Moradia`;
+- critérios de compatibilidade: `CompatibilidadeDeterministicaCalculator`;
+- critério de denúncia: `CriterioDenunciaApto`;
+- integração LLM: `AptoCompatibilidadeLlmProvider`, `GroqClient`, prompt e parser.
+
+O Apto mantém como específicos:
+
+- DTOs;
+- controllers;
+- mappers;
+- repositories;
+- exceções;
+- avaliação;
+- reputação;
+- moradia;
+- perfil anunciante.
+
+## Decisões Finais
+
+### Manifestação de Interesse
+
+Manifestação de Interesse é ponto fixo.
+
+A instância não muda o mecanismo. Ela muda apenas a oferta na qual o usuário manifesta interesse.
+
+### Study Buddy e Mentor Match
+
+Study Buddy e Mentor Match não serão implementados nesta entrega.
+
+Eles permanecem apenas como exemplos conceituais de futuras instâncias:
+
+- Study Buddy poderia variar perfil acadêmico, grupo de estudo e compatibilidade acadêmica.
+- Mentor Match poderia variar perfil de mentoria, sessão de mentoria e compatibilidade de mentoria.
+
+### Observer
+
+O mecanismo de Observer/Event Publisher foi removido.
+
+Substituições:
+
+- cancelamento de manifestações: chamada direta em `AnuncioService` e `ModeracaoService`;
+- recálculo de reputação: chamada direta em `AvaliacaoService`.
+
+### Avaliação e Reputação
+
+Avaliação e reputação continuam exclusivas do Apto.
+
+Elas não viraram contratos do framework.
+
+## Hooks Obrigatórios para Futura Instância
+
+Uma futura instância deve implementar ou fornecer:
+
+- usuário concreto, quando precisar especializar `Usuario`;
+- perfil concreto implementando `Perfil`;
+- oferta concreta implementando `Oferta`;
+- manifestação concreta implementando `ManifestacaoInteresse`;
+- denúncia concreta implementando `Denuncia`, se usar denúncia;
+- critério de denúncia implementando `CriterioDenuncia`, se usar denúncia;
+- estratégia de compatibilidade implementando `CompatibilidadeStrategy<P>`;
+- provedor LLM implementando `ProvedorCompatibilidadeLlm<U, P>`, se usar LLM;
+- services concretos que estendem templates do core;
+- repositories compatíveis com `RepositorioBase`;
+- DTOs, mappers, controllers e exceções da instância.
+
+## Validação Técnica
+
+Comando principal:
+
+```bash
+cd backend
+mvn test
+```
+
+Validações esperadas:
+
+- testes do `elo-core` passando;
+- testes do `apto-api` passando;
+- teste arquitetural garantindo independência do core;
+- inicialização JPA do Apto funcionando.
+
+## Próximos Passos Fora do Plano Atual
+
+As atividades abaixo não fazem parte desta entrega:
+
+- implementar Study Buddy;
+- implementar Mentor Match;
+- criar frontend multi-instância;
+- empacotar/publicar o `elo-core` como biblioteca externa;
+- adicionar autenticação real;
+- preparar deploy de produção.

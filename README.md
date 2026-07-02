@@ -1,129 +1,158 @@
-# Apto
+# Apto / Elo Framework
 
-Plataforma de moradias universitárias desenvolvida para a disciplina de Projeto Detalhado de Software.
+Projeto acadêmico da disciplina Projeto Detalhado de Software.
 
-O projeto busca apoiar estudantes universitários na busca por moradias, vagas compartilhadas e colegas compatíveis para convivência. A aplicação também permite que locadores e universitários com papel de anunciante publiquem anúncios, recebam manifestações de interesse, sejam avaliados e tenham reputação consolidada, além de contar com mecanismos de denúncia e moderação.
+A Fase 2 evolui a aplicação **Apto** para o **Elo Framework**, um framework Spring/JPA híbrido para plataformas baseadas em usuários, perfis, ofertas, Manifestação de Interesse e compatibilidade.
+
+O núcleo reutilizável fica em `backend/elo-core`. A aplicação Apto fica em `backend/apto` e instancia o framework no domínio de moradias universitárias.
 
 ## Integrantes
 
-- Iury
-- Gabriel
-- Matheus
+- Iury Fredson Germano Miranda
+- Gabriel Eugenio Vitalino da Silva
+- Matheus Henrique Ferreira da Silva
 
 ## Estrutura
 
 ```text
 .
 ├── backend/
-│   └── apto-api/       # API Spring Boot
-├── frontend/           # Aplicação web React/Vite
+│   ├── elo-core/       # Núcleo do Elo Framework
+│   └── apto/           # Instância Apto e API Spring Boot
+├── frontend/           # Aplicação web React/Vite do Apto
+├── specs/              # Especificações, contratos, modelo, tarefas e diagrama
 └── docker/             # Serviços auxiliares, como PostgreSQL
 ```
 
-## Tecnologias
+## Arquitetura
+
+A dependência é unidirecional:
+
+```text
+apto -> elo-core
+```
+
+`elo-core` define contratos, estados, portas e Template Methods. Ele não referencia classes de `com.apto`.
+
+`apto` fornece entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
+
+## Núcleo do Framework
+
+O `elo-core` controla os fluxos fixos:
+
+- gestão de usuários;
+- gestão de perfis;
+- publicação e gestão de ofertas;
+- Manifestação de Interesse;
+- denúncia;
+- moderação;
+- compatibilidade e matching.
+
+Contratos e templates principais:
+
+- `Usuario` e `UsuarioService`;
+- `Perfil` e `PerfilService`;
+- `Oferta` e `OfertaService`;
+- `ManifestacaoInteresse` e `ManifestacaoInteresseService`;
+- `Denuncia`, `CriterioDenuncia` e `DenunciaService`;
+- `ModeracaoService`;
+- `CompatibilidadeStrategy`;
+- `MatchingService`;
+- `ProvedorCompatibilidadeLlm`.
+
+## Apto Como Instância
+
+O Apto instancia os pontos flexíveis do framework:
+
+| Ponto flexível | Instância Apto |
+| --- | --- |
+| Dados do perfil | `PerfilConvivencia` |
+| Tipo de oferta publicada | `Anuncio` associado a `Moradia` |
+| Critérios de compatibilidade | `CompatibilidadeDeterministicaCalculator` |
+| Critério de denúncia | `CriterioDenunciaApto` |
+| Integração LLM | `AptoCompatibilidadeLlmProvider`, Groq, prompt e parser |
+
+Manifestação de Interesse é ponto fixo. No Apto, ela representa interesse em um anúncio de moradia ou vaga.
+
+## Funcionalidades do Apto
 
 Backend:
 
-- Java 21
-- Spring Boot 4
-- Maven
-- Spring Web
-- Spring Data JPA
-- Bean Validation
-- PostgreSQL
-- H2 para testes automatizados
-- Lombok
-- RestClient
-- Integração opcional com Groq/LLM para matchmaking
+- cadastro e gestão de usuários universitários;
+- cadastro e gestão de locadores;
+- perfil de convivência;
+- perfil anunciante;
+- moradias;
+- anúncios;
+- busca paginada e filtrada de anúncios;
+- Manifestação de Interesse;
+- aceite, recusa e cancelamento de manifestações;
+- denúncia e moderação de anúncios;
+- avaliação e reputação de anunciantes;
+- matchmaking com LLM/Groq e fallback determinístico.
 
 Frontend:
 
-- React 19
-- Vite
-- TypeScript
-- Tailwind CSS
-- React Router
-- lucide-react
+- login/cadastro simplificados para contexto acadêmico;
+- sessão local em `localStorage`;
+- busca e detalhes de anúncios;
+- criação e gestão de anúncios;
+- manifestações de interesse;
+- matchmaking;
+- avaliação;
+- denúncias e moderação.
 
-Infraestrutura:
+## Decisões de Projeto
 
-- Docker
-- Docker Compose
+- Study Buddy e Mentor Match não foram implementados nesta entrega.
+- Eles aparecem apenas como exemplos futuros de extensibilidade.
+- Avaliação e reputação continuam específicas do Apto.
+- O mecanismo de Observer/Event Publisher foi removido.
+- Cancelamento de manifestações e recálculo de reputação agora são chamadas diretas entre services.
+- Autenticação real e deploy de produção estão fora do escopo.
 
-## Funcionalidades Implementadas
+## Documentação
 
-Backend:
+Arquivos principais:
 
-- Cadastro, listagem, atualização, ativação/inativação e remoção de usuários universitários.
-- Cadastro, listagem, atualização, ativação/inativação e remoção de locadores.
-- Perfil de convivência para universitários, criado/atualizado sob demanda.
-- Papel de anunciante por meio de `PerfilAnunciante`.
-- Criação automática de perfil anunciante para locadores.
-- Habilitação/desabilitação de perfil anunciante para universitários.
-- Cadastro, listagem, atualização e remoção de moradias.
-- Cadastro, listagem, busca paginada, atualização, alteração de status e remoção de anúncios.
-- Filtros de busca de anúncios por características da moradia, valor e tipo de anúncio.
-- Manifestação de interesse em anúncios.
-- Aceite, recusa e cancelamento de manifestações de interesse.
-- Liberação de contato quando uma manifestação é aceita.
-- Denúncias de anúncios.
-- Moderação de denúncias com ação sobre o anúncio.
-- Avaliação de anunciantes/moradias vinculada a anúncios.
-- Cálculo de reputação de anunciantes com base nas avaliações ativas.
-- Matchmaking entre estudantes com apoio de LLM/Groq e fallback determinístico.
-- CORS configurado para o frontend local.
-
-Frontend:
-
-- Login/cadastro simplificados para o contexto acadêmico.
-- Sessão local em `localStorage`, sem autenticação real por token.
-- Navegação com React Router e rotas protegidas por tipo de usuário.
-- Páginas de início, busca, detalhes de anúncio, criação de anúncio, meus anúncios, interesses, interesses recebidos, matchmaking, perfil, perfil de convivência, perfil público de anunciante e moderação.
-- Camada de API integrada ao backend via `fetch`.
-- Componentes visuais reutilizáveis.
-
-## Domínio Atual
-
-O conceito central para publicação e reputação é o `PerfilAnunciante`.
-
-- `Locador` é um tipo de usuário anunciante por padrão.
-- `UsuarioUniversitario` pode habilitar o papel de anunciante.
-- `Anuncio` aponta para `PerfilAnunciante`.
-- `Avaliacao` aponta para o anunciante avaliado, para o anúncio e para a moradia.
-- `ReputacaoAnunciante` consolida avaliações ativas de um `PerfilAnunciante`.
-
-Esse desenho permite que tanto locadores quanto universitários possam publicar anúncios, sem acoplar as regras de anúncio e reputação apenas ao tipo `Locador`.
+- `specs/elo-framework/spec.md`
+- `specs/elo-framework/contracts.md`
+- `specs/elo-framework/data-model.md`
+- `specs/elo-framework/plan.md`
+- `specs/elo-framework/tasks.md`
+- `specs/elo-framework/traceability.md`
+- `specs/elo-framework/diagrams/elo-framework-apto-class-diagram.puml`
 
 ## Como Rodar
 
-### 1. Subir o Banco de Dados
+### Banco de Dados
 
 ```bash
 cd docker
 docker compose up -d
 ```
 
-O PostgreSQL será iniciado com:
+Configuração padrão:
 
 - Database: `apto`
 - User: `apto`
 - Password: `apto`
 - Porta: `5432`
 
-### 2. Rodar o Backend
+### Backend
 
 ```bash
-cd backend/apto-api
-./mvnw spring-boot:run
+cd backend
+./mvnw -pl apto spring-boot:run
 ```
 
-A API ficará disponível em:
+API:
 
 ```text
 http://localhost:8080
 ```
 
-### 3. Rodar o Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -131,63 +160,29 @@ npm install
 npm run dev
 ```
 
-Por padrão, o Vite exibirá a URL local no terminal, normalmente:
+URL local padrão do Vite:
 
 ```text
 http://localhost:5173
 ```
 
-## Configuração
+## Configuração Groq
 
-O backend usa PostgreSQL no ambiente local, configurado em:
-
-```text
-backend/apto-api/src/main/resources/application.yml
-```
-
-Configuração padrão:
-
-- URL: `jdbc:postgresql://localhost:5432/apto`
-- User: `apto`
-- Password: `apto`
-
-Também existe integração opcional com Groq para o matchmaking:
+A integração com Groq é opcional:
 
 ```bash
 export GROQ_API_KEY=sua_chave_aqui
 ```
 
-Sem chave configurada ou em caso de falha da integração, o sistema utiliza o cálculo determinístico de compatibilidade.
+Sem chave ou em caso de falha, o matching usa fallback determinístico.
 
-O frontend usa como padrão:
-
-```text
-http://localhost:8080
-```
-
-Para alterar a URL da API:
-
-```bash
-VITE_API_URL=http://localhost:8080 npm run dev
-```
-
-## Perfil de Desenvolvimento
-
-Existe um seeder de dados de desenvolvimento em:
-
-```text
-backend/apto-api/src/main/java/com/apto/config/seed/DevDataSeeder.java
-```
-
-Ele roda no profile `dev` e popula usuários, locadores, perfis anunciantes, moradias, anúncios, avaliações, reputações, manifestações de interesse e denúncias.
-
-## Testes e Verificações
+## Testes
 
 Backend:
 
 ```bash
-cd backend/apto-api
-./mvnw test
+cd backend
+mvn test
 ```
 
 Frontend:
@@ -198,14 +193,8 @@ npm run lint
 npm run build
 ```
 
-## Observações de Projeto
-
-- O projeto ainda não possui autenticação real.
-- A sessão do frontend é local e simplificada, baseada em ID, tipo de usuário e nome.
-- As permissões são simplificadas por IDs enviados em requests ou query params, como `usuarioId`, `anuncianteId`, `avaliadorId`, `solicitanteId` e `interessadoId`.
-- O schema do banco é atualizado automaticamente pelo Hibernate em ambiente local.
-- Dados do PostgreSQL persistem enquanto o volume Docker não for removido.
-
 ## Status
 
-Em desenvolvimento.
+Apto está instanciado no Elo Framework.
+
+As etapas 1 a 9 do plano de evolução foram executadas. A Etapa 09 atualiza documentação e valida a arquitetura final.

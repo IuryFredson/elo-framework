@@ -2,229 +2,296 @@
 
 ## Objetivo
 
-Definir contratos conceituais para separar pontos fixos e pontos variaveis do Elo Framework.
+Registrar os contratos públicos e templates do Elo Framework após a instanciação do Apto.
 
-Este arquivo descreve contratos esperados. A forma final no codigo pode usar interfaces, classes abstratas, services, records ou adapters, desde que preserve a separacao de responsabilidades.
+O core fica em `backend/elo-core` e não referencia `com.apto`. A instância Apto fica em `backend/apto` e fornece entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
 
-## Contratos Principais
+## Contratos de Domínio
 
-### Perfil
+### `Usuario`
 
-Representa os dados usados para compatibilidade.
+Local:
 
-Responsabilidades:
+- `backend/elo-core/src/main/java/com/elo/usuario/Usuario.java`
 
-- identificar o tipo de perfil;
-- expor os atributos relevantes para o dominio;
-- permitir que estrategias de compatibilidade comparem perfis.
+Responsabilidade:
 
-Possivel contrato:
+- representar o usuário base do framework;
+- manter `id`, `nome`, `email`, `telefone` e `ativo`;
+- permitir especializações por instância.
 
-```java
-public interface PerfilFramework {
-    String tipoPerfil();
-}
-```
+No Apto:
 
-### Oferta
+- `UsuarioUniversitario`;
+- `Locador`.
 
-Representa algo publicado por um usuario.
+### `Perfil`
 
-Responsabilidades:
+Local:
 
-- identificar o tipo de oferta;
-- expor dados basicos da publicacao;
-- associar a oferta ao usuario publicador.
+- `backend/elo-core/src/main/java/com/elo/perfil/Perfil.java`
 
-Possivel contrato:
+Responsabilidade:
 
-```java
-public interface OfertaFramework {
-    String tipoOferta();
-}
-```
+- representar dados usados por busca, recomendação ou compatibilidade;
+- expor `tipoPerfil()`.
 
-### Interacao
+No Apto:
 
-Representa o registro da Manifestacao de Interesse de um usuario em uma oferta.
-
-Responsabilidades:
-
-- registrar usuario interessado;
-- registrar oferta alvo;
-- manter status;
-- manter datas relevantes;
-- preservar historico de manifestacao/resposta.
-
-Possivel contrato:
-
-```java
-public interface InteracaoFramework {
-    String tipoFixo();
-    String status();
-}
-```
-
-Observacao:
-
-- O contrato de interacao e ponto fixo.
-- O tipo fixo da interacao deve ser Manifestacao de Interesse.
-- O que varia entre instancias e a oferta alvo, nao o mecanismo de interacao.
-
-### Compatibilidade
-
-Representa o calculo de match entre perfis.
-
-Responsabilidades:
-
-- receber perfis comparaveis;
-- aplicar criterios do dominio;
-- retornar percentual e justificativa.
-
-Possivel contrato:
-
-```java
-public interface CompatibilidadeStrategy<P extends PerfilFramework> {
-    ResultadoCompatibilidade calcular(P solicitante, P candidato);
-}
-```
-
-### Resultado de Compatibilidade
-
-Representa a saida do calculo.
-
-Campos esperados:
-
-- percentual;
-- justificativa;
-- criterios atendidos;
-- origem do calculo, se aplicavel.
-
-Possivel contrato:
-
-```java
-public record ResultadoCompatibilidade(
-    int percentual,
-    String justificativa,
-    List<String> criteriosAtendidos
-) {}
-```
-
-## Contratos por Ponto Fixo
-
-### Cadastro e Gestao de Usuarios
-
-Contrato esperado:
-
-- criar usuario;
-- atualizar usuario;
-- ativar/inativar usuario;
-- buscar usuario.
-
-No Apto atual:
-
-- `UsuarioUniversitarioService`;
-- `LocadorService`.
-
-### Cadastro de Perfis
-
-Contrato esperado:
-
-- criar ou atualizar perfil;
-- buscar perfil por usuario;
-- validar dados obrigatorios do perfil.
-
-No Apto atual:
-
-- `PerfilService`;
 - `PerfilConvivencia`.
 
-### Publicacao de Ofertas
+Ponto flexível:
 
-Contrato esperado:
+- dados do perfil.
+
+### `Oferta`
+
+Local:
+
+- `backend/elo-core/src/main/java/com/elo/oferta/Oferta.java`
+
+Responsabilidade:
+
+- representar uma oferta publicada;
+- expor `getId()`, `getPublicadorId()`, `tipoOferta()` e `isAtiva()`.
+
+No Apto:
+
+- `Anuncio`, associado a `Moradia` e `PerfilAnunciante`.
+
+Ponto flexível:
+
+- tipo de oferta publicada.
+
+### `ManifestacaoInteresse`
+
+Local:
+
+- `backend/elo-core/src/main/java/com/elo/manifestacao/ManifestacaoInteresse.java`
+- `backend/elo-core/src/main/java/com/elo/manifestacao/StatusManifestacaoInteresse.java`
+
+Responsabilidade:
+
+- representar o mecanismo fixo de interesse em uma oferta;
+- expor interessado, oferta e status.
+
+No Apto:
+
+- `ManifestacaoInteresse`.
+
+Ponto fixo:
+
+- Manifestação de Interesse não é variação principal do framework.
+
+### `Denuncia`
+
+Local:
+
+- `backend/elo-core/src/main/java/com/elo/denuncia/Denuncia.java`
+- `backend/elo-core/src/main/java/com/elo/denuncia/StatusDenuncia.java`
+- `backend/elo-core/src/main/java/com/elo/denuncia/CriterioDenuncia.java`
+
+Responsabilidade:
+
+- representar denúncia de uma oferta;
+- expor denunciante, oferta, status e critério.
+
+No Apto:
+
+- `Denuncia`;
+- `CriterioDenunciaApto`.
+
+Ponto flexível secundário:
+
+- critério de denúncia.
+
+## Templates do Core
+
+### `UsuarioService<T extends Usuario, C, A, R>`
+
+Fluxo fixo:
+
+- criar;
+- listar;
+- buscar;
+- atualizar;
+- ativar/inativar;
+- excluir.
+
+Hooks da instância:
+
+- construir entidade;
+- aplicar atualização;
+- validar regras específicas;
+- persistir;
+- mapear resposta;
+- executar pós-criação.
+
+### `PerfilService`
+
+Fluxo fixo:
+
+- buscar perfil por usuário;
+- criar ou atualizar perfil.
+
+Hooks da instância:
+
+- buscar usuário;
+- buscar perfil existente;
+- construir perfil;
+- aplicar dados específicos;
+- mapear resposta.
+
+### `OfertaService`
+
+Fluxo fixo:
 
 - criar oferta;
-- atualizar oferta;
-- listar ofertas;
-- alterar status.
+- listar;
+- buscar;
+- atualizar;
+- alterar status;
+- excluir física ou logicamente.
 
-No Apto atual:
+Hooks da instância:
 
-- `AnuncioService`;
-- `Anuncio`.
+- construir oferta;
+- validar publicador;
+- aplicar atualização;
+- obter/aplicar status;
+- decidir exclusão física;
+- executar ação após indisponibilização.
 
-### Registro de Interacoes
+### `ManifestacaoInteresseService`
 
-Contrato esperado:
+Fluxo fixo:
 
-- criar interacao;
+- criar manifestação;
+- validar oferta ativa;
+- impedir interesse próprio;
+- impedir duplicidade ativa;
 - aceitar;
 - recusar;
 - cancelar;
-- listar por origem/destino/oferta.
+- listar por oferta;
+- listar por interessado;
+- buscar com autorização;
+- cancelar pendentes da oferta.
 
-No Apto atual:
+Hooks da instância:
 
-- `ManifestacaoInteresseService`;
-- `ManifestacaoInteresse`.
+- buscar oferta;
+- buscar interessado;
+- construir manifestação;
+- aplicar criação e resposta;
+- consultar duplicidade;
+- mapear respostas;
+- fornecer exceções específicas.
 
-### Calculo de Compatibilidade
+### `DenunciaService`
 
-Contrato esperado:
+Fluxo fixo:
 
-- calcular compatibilidade entre perfis;
-- ordenar resultados;
-- retornar justificativa.
+- listar;
+- criar;
+- aplicar status inicial;
+- atualizar status;
+- validar máquina de estados;
+- excluir;
+- buscar por id, oferta, denunciante e status.
 
-No Apto atual:
+Hooks da instância:
 
-- `MatchmakingService`;
-- `CompatibilidadeDeterministicaCalculator`;
+- buscar denunciante;
+- buscar oferta;
+- construir denúncia;
+- aplicar dados específicos;
+- mapear resposta;
+- fornecer exceções específicas.
+
+### `ModeracaoService`
+
+Fluxo fixo:
+
+- buscar denúncia;
+- obter oferta denunciada;
+- validar decisão;
+- aplicar status da denúncia;
+- aplicar ação na oferta;
+- salvar denúncia e oferta;
+- mapear resposta.
+
+Hooks da instância:
+
+- converter ação da instância para ação do core;
+- pausar oferta;
+- encerrar oferta;
+- mapear resposta;
+- fornecer exceções específicas.
+
+### `MatchingService<U extends Usuario, P extends Perfil>`
+
+Fluxo fixo:
+
+- validar `topN`;
+- buscar solicitante;
+- validar perfil do solicitante;
+- buscar candidatos;
+- filtrar elegíveis;
+- tentar resultados LLM;
+- aplicar fallback determinístico quando a LLM falha ou omite candidato;
+- associar resultado diretamente ao candidato;
+- ordenar por percentual;
+- limitar por `topN`.
+
+Hooks da instância:
+
+- buscar solicitante;
+- buscar candidatos;
+- obter perfil;
+- validar perfil;
+- aplicar elegibilidade;
+- prover LLM;
+- mapear resposta final.
+
+## Estratégias e Portas
+
+### `CompatibilidadeStrategy<P extends Perfil>`
+
+Ponto flexível principal para critérios de compatibilidade.
+
+No Apto:
+
+- `CompatibilidadeDeterministicaCalculator`.
+
+### `ProvedorCompatibilidadeLlm<U, P>`
+
+Porta opcional para compatibilidade assistida por LLM.
+
+No Apto:
+
+- `AptoCompatibilidadeLlmProvider`;
+- `GroqClient`;
 - `MatchmakingPromptBuilder`;
 - `MatchmakingLlmParser`.
 
-## Pontos de Extensao
+### `RepositorioBase<T, ID>`
 
-### Dados do Perfil
-
-Cada instancia define seu proprio perfil.
-
-Exemplos:
-
-- Apto: `PerfilConvivencia`.
-- Study Buddy: `PerfilAcademico`.
-- Mentor Match: `PerfilMentoria`.
-
-### Tipo de Oferta Publicada
-
-Cada instancia define sua propria oferta.
-
-Exemplos:
-
-- Apto: `Anuncio` de moradia ou vaga.
-- Study Buddy: grupo de estudo.
-- Mentor Match: sessao de mentoria.
-
-### Criterios de Compatibilidade
-
-Cada instancia define sua propria estrategia.
-
-Exemplos:
-
-- Apto: rotina e convivencia.
-- Study Buddy: disciplina e horario.
-- Mentor Match: area e objetivo.
+Porta de persistência usada pelos templates do core para evitar dependência direta de repositories do Apto.
 
 ## Anti-Contratos
 
-Estes itens nao devem virar ponto de extensao principal:
+Não fazem parte do núcleo reutilizável nesta entrega:
 
-- autenticacao real;
+- autenticação real;
+- frontend;
 - deploy;
-- reputacao generica;
-- moderacao generica;
-- notificacoes genericas;
-- acao de interacao como variacao principal.
+- avaliação genérica;
+- reputação genérica;
+- moradia genérica;
+- notificação genérica;
+- observer/event publisher;
+- Study Buddy implementado;
+- Mentor Match implementado.
 
-Eles podem existir no Apto, mas nao precisam compor o nucleo do framework da Fase 2.
-
+Avaliação e reputação continuam exclusivas do Apto.
