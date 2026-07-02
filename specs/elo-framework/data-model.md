@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-Descrever o modelo final do Elo Framework e como o Apto instancia esse modelo.
+Descrever o modelo final do Elo Framework e como Apto e Study Buddy instanciam esse modelo.
 
-Este documento não define todas as tabelas do banco. Ele descreve os conceitos do framework, os contratos do core e as entidades concretas do Apto.
+Este documento não define todas as tabelas do banco. Ele descreve os conceitos do framework, os contratos do core e as entidades concretas das instâncias.
 
 ## Modelo Conceitual do Framework
 
@@ -47,6 +47,10 @@ No Apto:
 - `UsuarioUniversitario`;
 - `Locador`.
 
+No Study Buddy:
+
+- `Estudante`.
+
 ### Perfil
 
 Representa dados da instância usados por busca, recomendação ou compatibilidade.
@@ -58,6 +62,10 @@ Contrato no core:
 No Apto:
 
 - `PerfilConvivencia`.
+
+No Study Buddy:
+
+- `PerfilAcademico`.
 
 Ponto flexível:
 
@@ -87,6 +95,10 @@ Ponto flexível:
 
 - tipo de oferta publicada.
 
+No Study Buddy:
+
+- `GrupoEstudo`, publicado por `Estudante`.
+
 ### Manifestação de Interesse
 
 Representa o mecanismo fixo de interesse em uma oferta.
@@ -105,6 +117,10 @@ Estados no core:
 No Apto:
 
 - `ManifestacaoInteresse` entre `UsuarioUniversitario` interessado e `Anuncio`.
+
+No Study Buddy:
+
+- `ManifestacaoInteresseGrupo` entre `Estudante` interessado e `GrupoEstudo`.
 
 Ponto fixo:
 
@@ -148,6 +164,12 @@ No Apto:
 - `CompatibilidadeDeterministicaCalculator` calcula compatibilidade por convivência;
 - `AptoCompatibilidadeLlmProvider` integra Groq, prompt e parser;
 - `MatchmakingService` mapeia o resultado para DTOs públicos.
+
+No Study Buddy:
+
+- `CompatibilidadeAcademicaCalculator` calcula compatibilidade por disciplina, disponibilidade, objetivo, nível e modalidade;
+- `StudyBuddyCompatibilidadeLlmProvider` mantém a porta LLM opcional sem tornar LLM obrigatória;
+- `StudyBuddyMatchingService` mapeia o resultado para DTOs públicos da instância.
 
 ## Modelo Atual do Apto
 
@@ -238,6 +260,66 @@ Entidades:
 
 Essas entidades não são contratos do framework.
 
+## Modelo Atual do Study Buddy
+
+### Estudante
+
+`Estudante` estende `Usuario` e contém:
+
+- matrícula;
+- instituição.
+
+### Perfil Acadêmico
+
+`PerfilAcademico` implementa `Perfil` e contém:
+
+- curso;
+- disciplinas de interesse;
+- disponibilidade;
+- objetivo de estudo;
+- nível de conhecimento;
+- modalidade preferida;
+- descrição.
+
+### Grupo de Estudo
+
+`GrupoEstudo` implementa `Oferta` e contém:
+
+- título;
+- descrição;
+- disciplina;
+- publicador;
+- quantidade de vagas;
+- modalidade;
+- período;
+- status;
+- data de publicação.
+
+### Manifestação de Interesse em Grupo
+
+`ManifestacaoInteresseGrupo` implementa o contrato fixo do core.
+
+Ela possui:
+
+- grupo;
+- interessado;
+- status;
+- mensagem;
+- data de manifestação;
+- data de resposta.
+
+### Compatibilidade Acadêmica
+
+`CompatibilidadeAcademicaCalculator` implementa `CompatibilidadeStrategy<PerfilAcademico>`.
+
+Os critérios mínimos são:
+
+- disciplinas em comum;
+- disponibilidade compatível;
+- objetivo de estudo igual ou complementar;
+- nível de conhecimento próximo;
+- modalidade compatível.
+
 ### Notificações e Observers
 
 O mecanismo de Observer/Event Publisher e as notificações de anúncio indisponível foram removidos.
@@ -247,13 +329,7 @@ Cancelamentos e recálculos passaram a ser chamadas diretas:
 - `AnuncioService` e `ModeracaoService` cancelam manifestações pendentes;
 - `AvaliacaoService` recalcula reputação diretamente.
 
-## Exemplos Futuros Fora do Escopo
-
-Uma futura instância Study Buddy poderia usar:
-
-- perfil acadêmico;
-- oferta de grupo de estudo;
-- compatibilidade por disciplina, horário, objetivo e nível.
+## Exemplo Futuro Fora do Escopo
 
 Uma futura instância Mentor Match poderia usar:
 

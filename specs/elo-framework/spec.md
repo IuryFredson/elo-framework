@@ -4,7 +4,7 @@
 
 Evoluir o Apto, aplicação da Fase 1 da disciplina Projeto Detalhado de Software, para o **Elo Framework** na Fase 2.
 
-O Elo Framework é um framework Spring/JPA híbrido para plataformas baseadas em usuários, perfis, ofertas, manifestação de interesse e compatibilidade. O núcleo fica em `backend/elo-core` e controla fluxos comuns por Template Method. A aplicação Apto fica em `backend/apto` e instancia os pontos flexíveis com regras do domínio de moradias universitárias.
+O Elo Framework é um framework Spring/JPA híbrido para plataformas baseadas em usuários, perfis, ofertas, manifestação de interesse e compatibilidade. O núcleo fica em `backend/elo-core` e controla fluxos comuns por Template Method. As aplicações Apto e Study Buddy ficam em módulos separados e instanciam os pontos flexíveis com regras dos seus domínios.
 
 ## Escopo Final
 
@@ -13,9 +13,11 @@ O Elo Framework é um framework Spring/JPA híbrido para plataformas baseadas em
 - Preservar o Apto como aplicação funcional.
 - Extrair contratos e fluxos comuns para `elo-core`.
 - Demonstrar, no código e no diagrama, que o Apto instancia o framework.
+- Demonstrar Study Buddy como segunda instância concreta do framework.
 - Manter dependência unidirecional: `apto -> elo-core`.
-- Documentar hooks obrigatórios para uma futura instância.
-- Validar a arquitetura com testes do core usando implementações falsas e testes de regressão do Apto.
+- Manter dependência unidirecional: `study-buddy -> elo-core`.
+- Documentar hooks obrigatórios para novas instâncias.
+- Validar a arquitetura com testes do core usando implementações falsas e testes de regressão das instâncias.
 
 ### Fora do escopo
 
@@ -23,7 +25,6 @@ O Elo Framework é um framework Spring/JPA híbrido para plataformas baseadas em
 - Deploy de produção.
 - Novo frontend.
 - Reescrita completa do domínio.
-- Implementação de Study Buddy.
 - Implementação de Mentor Match.
 - Generalização de avaliação, reputação ou moradia como pontos obrigatórios do framework.
 
@@ -63,7 +64,7 @@ O framework define o fluxo comum:
 - listar por oferta ou interessado;
 - cancelar manifestações pendentes quando uma oferta fica indisponível.
 
-O que varia entre instâncias é a oferta alvo. No Apto, a manifestação é feita em um anúncio de moradia ou vaga.
+O que varia entre instâncias é a oferta alvo. No Apto, a manifestação é feita em um anúncio de moradia ou vaga. No Study Buddy, a manifestação é feita em um grupo de estudo.
 
 ## Arquitetura Final
 
@@ -101,6 +102,18 @@ O Apto fornece entidades, DTOs, repositories, mappers, controllers e regras espe
 - `CriterioDenunciaApto` implementa `CriterioDenuncia`.
 - `CompatibilidadeDeterministicaCalculator` implementa os critérios de convivência.
 - `AptoCompatibilidadeLlmProvider` fornece a porta LLM usando Groq, prompt e parser do Apto.
+
+### Instância: `study-buddy`
+
+Study Buddy fornece entidades, DTOs, repositories, mappers, controllers e regras específicas para grupos de estudo:
+
+- `Estudante` especializa `Usuario`.
+- `PerfilAcademico` implementa `Perfil`.
+- `GrupoEstudo` implementa `Oferta`.
+- `ManifestacaoInteresseGrupo` implementa o contrato fixo de manifestação.
+- `CompatibilidadeAcademicaCalculator` implementa os critérios acadêmicos.
+- `StudyBuddyCompatibilidadeLlmProvider` fornece uma porta LLM sem integração obrigatória, mantendo fallback determinístico.
+- `StudyBuddyMatchingService` usa o template de matching do core.
 
 ## Requisitos
 
@@ -171,7 +184,23 @@ WHEN a future application instance is created, THE SYSTEM SHALL require implemen
 Critérios de aceitação:
 
 - A documentação deve listar hooks obrigatórios.
-- Study Buddy e Mentor Match devem aparecer apenas como exemplos futuros, sem plano de implementação nesta entrega.
+- Apto e Study Buddy devem aparecer como instâncias concretas separadas.
+- Mentor Match pode permanecer como exemplo futuro.
+
+### EF-008: Study Buddy instanciado no framework
+
+WHERE the Study Buddy instance is used, THE SYSTEM SHALL reuse Elo Framework templates for users, profiles, offers, interest manifestation and matching.
+
+Critérios de aceitação:
+
+- `EstudanteService` deve estender `UsuarioService`.
+- `PerfilAcademicoService` deve estender `PerfilService`.
+- `GrupoEstudoService` deve estender `OfertaService`.
+- `ManifestacaoInteresseGrupoService` deve estender `ManifestacaoInteresseService`.
+- `CompatibilidadeAcademicaCalculator` deve implementar `CompatibilidadeStrategy<PerfilAcademico>`.
+- `StudyBuddyMatchingService` deve estender `MatchingService`.
+- Controllers da instância devem ficar sob `/study-buddy`.
+- O core não deve depender de `com.studybuddy`.
 
 ## Hooks Obrigatórios para uma Futura Instância
 
@@ -189,13 +218,22 @@ Uma futura instância deve fornecer:
 - Repositories compatíveis com `RepositorioBase`.
 - DTOs, mappers, controllers e exceções da instância.
 
-## Exemplos Futuros Fora do Escopo
+## Instâncias Concretas
 
-Study Buddy poderia variar:
+Apto varia:
+
+- Perfil: dados de convivência.
+- Oferta: anúncio de moradia ou vaga.
+- Compatibilidade: convivência entre estudantes.
+- Denúncia: critérios de anúncio e moradia.
+
+Study Buddy varia:
 
 - Perfil: dados acadêmicos.
 - Oferta: grupo de estudo.
-- Compatibilidade: disciplina, horário, objetivo e nível.
+- Compatibilidade: disciplina, disponibilidade, objetivo, nível e modalidade.
+
+## Exemplo Futuro Fora do Escopo
 
 Mentor Match poderia variar:
 
@@ -208,7 +246,8 @@ Esses exemplos demonstram extensibilidade conceitual, mas não fazem parte da im
 ## Critérios Gerais de Aceitação
 
 - `mvn test` no reactor `backend` deve passar.
-- `elo-core` deve permanecer livre de dependências para `com.apto`.
+- `elo-core` deve permanecer livre de dependências para `com.apto` e `com.studybuddy`.
 - Apto deve preservar seus endpoints e comportamentos essenciais.
+- Study Buddy deve expor seus endpoints mínimos sob `/study-buddy`.
 - Diagrama, contratos, modelo, tarefas, plano e README devem refletir a arquitetura final.
 - Interações com LLM devem continuar registradas nos documentos do estudo.
