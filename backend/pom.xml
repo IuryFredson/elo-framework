@@ -21,6 +21,7 @@
 	<modules>
 		<module>elo-core</module>
 		<module>apto</module>
+		<module>study-buddy</module>
 	</modules>
 
 	<properties>
