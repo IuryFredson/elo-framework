@@ -10,6 +10,7 @@ Estrutura principal:
 
 - `backend/elo-core`: núcleo reutilizável do framework.
 - `backend/apto`: instância Apto e API Spring Boot.
+- `backend/study-buddy`: instância Study Buddy e API Spring Boot.
 - `frontend`: aplicação React/Vite do Apto.
 - `specs`: documentação SDD, contratos, modelo, tarefas, rastreabilidade e diagrama.
 
@@ -68,6 +69,44 @@ O Apto instancia:
 - `AptoCompatibilidadeLlmProvider`;
 - `MatchmakingService`.
 
+## Elementos do Study Buddy que Instanciam o Framework
+
+### Usuários
+
+O Study Buddy instancia:
+
+- `Estudante`;
+- `EstudanteService`.
+
+### Perfis
+
+O Study Buddy instancia:
+
+- `PerfilAcademico`;
+- `PerfilAcademicoService`.
+
+### Ofertas
+
+O Study Buddy instancia:
+
+- `GrupoEstudo`;
+- `GrupoEstudoService`.
+
+### Manifestação de Interesse
+
+O Study Buddy instancia:
+
+- `ManifestacaoInteresseGrupo`;
+- `ManifestacaoInteresseGrupoService`.
+
+### Compatibilidade
+
+O Study Buddy instancia:
+
+- `CompatibilidadeAcademicaCalculator`;
+- `StudyBuddyCompatibilidadeLlmProvider`;
+- `StudyBuddyMatchingService`.
+
 ## Decisões
 
 ### Decisão 1: Preservar o Apto como instância original
@@ -108,17 +147,18 @@ Consequência:
 - Manifestação de Interesse não virou ponto flexível.
 - O core controla transições, autorização, duplicidade e cancelamento de pendentes.
 
-### Decisão 4: Study Buddy e Mentor Match fora da implementação atual
+### Decisão 4: Study Buddy como segunda instância concreta
 
 Motivo:
 
-- O plano final da Etapa 09 remove implementações futuras.
-- A entrega atual deve provar o Apto instanciado no framework.
+- Após o Apto estar instanciado, Study Buddy foi escolhido para demonstrar reutilização real do framework em outro domínio.
+- A instância precisava ficar separada do Apto e depender apenas de `elo-core`.
 
 Consequência:
 
-- Study Buddy e Mentor Match ficam apenas como exemplos conceituais de extensibilidade.
-- Não há classes, endpoints ou testes dessas instâncias nesta entrega.
+- Study Buddy foi implementado em `backend/study-buddy`.
+- O core não depende de `com.studybuddy`.
+- Mentor Match permanece como exemplo conceitual de extensibilidade futura.
 
 ### Decisão 5: Remover Observer/Event Publisher
 
@@ -139,9 +179,9 @@ Consequência:
 
 Rejeitada porque avaliação e reputação são específicas do Apto nesta entrega.
 
-### Implementar múltiplas instâncias agora
+### Implementar Mentor Match agora
 
-Rejeitada porque aumentaria escopo e risco. A extensibilidade é demonstrada por contratos, templates, hooks documentados e testes fake no core.
+Rejeitada porque Study Buddy já demonstra reutilização concreta do framework em uma segunda instância.
 
 ### Usar adapters para tudo
 
@@ -151,7 +191,6 @@ Rejeitada quando a implementação direta do contrato era natural. Exemplo: `Per
 
 Trabalhos futuros podem:
 
-- implementar Study Buddy como nova instância;
 - implementar Mentor Match como nova instância;
 - publicar `elo-core` como biblioteca independente;
 - criar autenticação real;

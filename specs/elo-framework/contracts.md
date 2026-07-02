@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-Registrar os contratos públicos e templates do Elo Framework após a instanciação do Apto.
+Registrar os contratos públicos e templates do Elo Framework após a instanciação do Apto e do Study Buddy.
 
-O core fica em `backend/elo-core` e não referencia `com.apto`. A instância Apto fica em `backend/apto` e fornece entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
+O core fica em `backend/elo-core` e não referencia `com.apto` nem `com.studybuddy`. As instâncias Apto e Study Buddy fornecem entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
 
 ## Contratos de Domínio
 
@@ -25,6 +25,10 @@ No Apto:
 - `UsuarioUniversitario`;
 - `Locador`.
 
+No Study Buddy:
+
+- `Estudante`.
+
 ### `Perfil`
 
 Local:
@@ -39,6 +43,10 @@ Responsabilidade:
 No Apto:
 
 - `PerfilConvivencia`.
+
+No Study Buddy:
+
+- `PerfilAcademico`.
 
 Ponto flexível:
 
@@ -59,6 +67,10 @@ No Apto:
 
 - `Anuncio`, associado a `Moradia` e `PerfilAnunciante`.
 
+No Study Buddy:
+
+- `GrupoEstudo`, associado ao `Estudante` publicador.
+
 Ponto flexível:
 
 - tipo de oferta publicada.
@@ -78,6 +90,10 @@ Responsabilidade:
 No Apto:
 
 - `ManifestacaoInteresse`.
+
+No Study Buddy:
+
+- `ManifestacaoInteresseGrupo`.
 
 Ponto fixo:
 
@@ -264,6 +280,10 @@ No Apto:
 
 - `CompatibilidadeDeterministicaCalculator`.
 
+No Study Buddy:
+
+- `CompatibilidadeAcademicaCalculator`.
+
 ### `ProvedorCompatibilidadeLlm<U, P>`
 
 Porta opcional para compatibilidade assistida por LLM.
@@ -274,6 +294,10 @@ No Apto:
 - `GroqClient`;
 - `MatchmakingPromptBuilder`;
 - `MatchmakingLlmParser`.
+
+No Study Buddy:
+
+- `StudyBuddyCompatibilidadeLlmProvider`, sem integração obrigatória com LLM.
 
 ### `RepositorioBase<T, ID>`
 
@@ -291,7 +315,6 @@ Não fazem parte do núcleo reutilizável nesta entrega:
 - moradia genérica;
 - notificação genérica;
 - observer/event publisher;
-- Study Buddy implementado;
 - Mentor Match implementado.
 
 Avaliação e reputação continuam exclusivas do Apto.

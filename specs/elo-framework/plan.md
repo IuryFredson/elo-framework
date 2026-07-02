@@ -92,12 +92,16 @@ A instância não muda o mecanismo. Ela muda apenas a oferta na qual o usuário 
 
 ### Study Buddy e Mentor Match
 
-Study Buddy e Mentor Match não serão implementados nesta entrega.
+Study Buddy foi implementado como segunda instância concreta do Elo Framework em `backend/study-buddy`.
 
-Eles permanecem apenas como exemplos conceituais de futuras instâncias:
+Ele demonstra:
 
-- Study Buddy poderia variar perfil acadêmico, grupo de estudo e compatibilidade acadêmica.
-- Mentor Match poderia variar perfil de mentoria, sessão de mentoria e compatibilidade de mentoria.
+- perfil acadêmico como dados de perfil;
+- grupo de estudo como oferta publicada;
+- manifestação de interesse em grupo como uso do mecanismo fixo;
+- compatibilidade acadêmica como critério variável.
+
+Mentor Match permanece como exemplo conceitual de futura instância, podendo variar perfil de mentoria, sessão de mentoria e compatibilidade de mentoria.
 
 ### Observer
 
@@ -143,14 +147,14 @@ Validações esperadas:
 
 - testes do `elo-core` passando;
 - testes do `apto-api` passando;
+- testes do `study-buddy` passando;
 - teste arquitetural garantindo independência do core;
-- inicialização JPA do Apto funcionando.
+- inicialização JPA do Apto e do Study Buddy funcionando.
 
 ## Próximos Passos Fora do Plano Atual
 
 As atividades abaixo não fazem parte desta entrega:
 
-- implementar Study Buddy;
 - implementar Mentor Match;
 - criar frontend multi-instância;
 - empacotar/publicar o `elo-core` como biblioteca externa;

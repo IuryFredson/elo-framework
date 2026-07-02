@@ -1,5 +1,5 @@
 @startuml
-title Elo Framework - Apto Instanciado
+title Elo Framework - Apto e Study Buddy Instanciados
 
 left to right direction
 skinparam packageStyle rectangle
@@ -242,6 +242,60 @@ package "apto (com.apto) <<instancia>>" {
   class ModeracaoServiceApto as "ModeracaoService"
 }
 
+package "study-buddy (com.studybuddy) <<instancia>>" {
+
+  class Estudante {
+    -matricula: String
+    -instituicao: String
+  }
+
+  class PerfilAcademico <<dados do perfil>> {
+    -curso: String
+    -disciplinasInteresse: Set<String>
+    -disponibilidade: Set<PeriodoDisponibilidade>
+    -objetivoEstudo: ObjetivoEstudo
+    -nivelConhecimento: NivelConhecimento
+    -modalidadePreferida: ModalidadeEstudo
+    +tipoPerfil(): String
+  }
+
+  class GrupoEstudo <<tipo de oferta>> {
+    -titulo: String
+    -descricao: String
+    -disciplina: String
+    -quantidadeVagas: int
+    -modalidade: ModalidadeEstudo
+    -periodo: PeriodoDisponibilidade
+    -status: StatusGrupoEstudo
+    +tipoOferta(): String
+    +getPublicadorId(): UUID
+    +isAtiva(): boolean
+  }
+
+  class ManifestacaoInteresseGrupo {
+    -mensagem: String
+    -dataManifestacao: LocalDateTime
+    -dataResposta: LocalDateTime
+  }
+
+  class CompatibilidadeAcademicaCalculator <<criterios de compatibilidade>> {
+    +calcular(solicitante: PerfilAcademico, candidato: PerfilAcademico): ResultadoCompatibilidade
+  }
+
+  class StudyBuddyCompatibilidadeLlmProvider <<porta LLM opcional>> {
+    +calcular(solicitante, candidatos): Map<UUID, ResultadoCompatibilidade>
+  }
+
+  class StudyBuddyMatchingService {
+    +buscarEstudantesCompativeis(estudanteId, topN): StudyBuddyMatchingResponseDTO
+  }
+
+  class EstudanteService
+  class PerfilAcademicoService
+  class GrupoEstudoService
+  class ManifestacaoInteresseGrupoService
+}
+
 Usuario <|-- UsuarioUniversitario
 Usuario <|-- Locador
 Perfil <|.. PerfilConvivencia
@@ -259,6 +313,19 @@ DenunciaService <|-- DenunciaServiceApto
 ModeracaoService <|-- ModeracaoServiceApto
 MatchingService <|-- MatchmakingService
 
+Usuario <|-- Estudante
+Perfil <|.. PerfilAcademico
+Oferta <|.. GrupoEstudo
+ManifestacaoInteresse <|.. ManifestacaoInteresseGrupo
+CompatibilidadeStrategy <|.. CompatibilidadeAcademicaCalculator
+ProvedorCompatibilidadeLlm <|.. StudyBuddyCompatibilidadeLlmProvider
+
+UsuarioService <|-- EstudanteService
+PerfilService <|-- PerfilAcademicoService
+OfertaService <|-- GrupoEstudoService
+ManifestacaoInteresseService <|-- ManifestacaoInteresseGrupoService
+MatchingService <|-- StudyBuddyMatchingService
+
 UsuarioUniversitario "1" -- "0..1" PerfilConvivencia : possui
 Usuario "1" -- "0..1" PerfilAnunciante : assume papel
 PerfilAnunciante "1" -- "0..*" Anuncio : publica
@@ -268,6 +335,13 @@ ManifestacaoInteresseApto "0..*" -- "1" Anuncio : oferta alvo
 DenunciaApto "0..*" -- "1" Anuncio : denuncia
 MatchmakingService --> CompatibilidadeDeterministicaCalculator
 MatchmakingService --> AptoCompatibilidadeLlmProvider
+
+Estudante "1" -- "0..1" PerfilAcademico : possui
+Estudante "1" -- "0..*" GrupoEstudo : publica
+Estudante "1" -- "0..*" ManifestacaoInteresseGrupo : manifesta
+ManifestacaoInteresseGrupo "0..*" -- "1" GrupoEstudo : oferta alvo
+StudyBuddyMatchingService --> CompatibilidadeAcademicaCalculator
+StudyBuddyMatchingService --> StudyBuddyCompatibilidadeLlmProvider
 
 note right of Perfil
   Ponto flexivel: cada instancia define

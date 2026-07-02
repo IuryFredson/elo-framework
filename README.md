@@ -4,7 +4,7 @@ Projeto acadêmico da disciplina Projeto Detalhado de Software.
 
 A Fase 2 evolui a aplicação **Apto** para o **Elo Framework**, um framework Spring/JPA híbrido para plataformas baseadas em usuários, perfis, ofertas, Manifestação de Interesse e compatibilidade.
 
-O núcleo reutilizável fica em `backend/elo-core`. A aplicação Apto fica em `backend/apto` e instancia o framework no domínio de moradias universitárias.
+O núcleo reutilizável fica em `backend/elo-core`. A aplicação Apto fica em `backend/apto` e instancia o framework no domínio de moradias universitárias. A aplicação Study Buddy fica em `backend/study-buddy` e instancia o mesmo framework no domínio de grupos de estudo.
 
 ## Integrantes
 
@@ -18,7 +18,8 @@ O núcleo reutilizável fica em `backend/elo-core`. A aplicação Apto fica em `
 .
 ├── backend/
 │   ├── elo-core/       # Núcleo do Elo Framework
-│   └── apto/           # Instância Apto e API Spring Boot
+│   ├── apto/           # Instância Apto e API Spring Boot
+│   └── study-buddy/    # Instância Study Buddy e API Spring Boot
 ├── frontend/           # Aplicação web React/Vite do Apto
 ├── specs/              # Especificações, contratos, modelo, tarefas e diagrama
 └── docker/             # Serviços auxiliares, como PostgreSQL
@@ -30,11 +31,12 @@ A dependência é unidirecional:
 
 ```text
 apto -> elo-core
+study-buddy -> elo-core
 ```
 
-`elo-core` define contratos, estados, portas e Template Methods. Ele não referencia classes de `com.apto`.
+`elo-core` define contratos, estados, portas e Template Methods. Ele não referencia classes de `com.apto` ou `com.studybuddy`.
 
-`apto` fornece entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
+Cada instância fornece entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
 
 ## Núcleo do Framework
 
@@ -74,6 +76,19 @@ O Apto instancia os pontos flexíveis do framework:
 
 Manifestação de Interesse é ponto fixo. No Apto, ela representa interesse em um anúncio de moradia ou vaga.
 
+## Study Buddy Como Instância
+
+O Study Buddy instancia os pontos flexíveis do framework:
+
+| Ponto flexível | Instância Study Buddy |
+| --- | --- |
+| Dados do perfil | `PerfilAcademico` |
+| Tipo de oferta publicada | `GrupoEstudo` |
+| Critérios de compatibilidade | `CompatibilidadeAcademicaCalculator` |
+| Integração LLM | `StudyBuddyCompatibilidadeLlmProvider` sem LLM obrigatória |
+
+Manifestação de Interesse continua sendo ponto fixo. No Study Buddy, ela representa interesse em um grupo de estudo.
+
 ## Funcionalidades do Apto
 
 Backend:
@@ -104,8 +119,8 @@ Frontend:
 
 ## Decisões de Projeto
 
-- Study Buddy e Mentor Match não foram implementados nesta entrega.
-- Eles aparecem apenas como exemplos futuros de extensibilidade.
+- Study Buddy foi implementado como segunda instância concreta do framework.
+- Mentor Match aparece apenas como exemplo futuro de extensibilidade.
 - Avaliação e reputação continuam específicas do Apto.
 - O mecanismo de Observer/Event Publisher foi removido.
 - Cancelamento de manifestações e recálculo de reputação agora são chamadas diretas entre services.
@@ -152,6 +167,19 @@ API:
 http://localhost:8080
 ```
 
+Study Buddy:
+
+```bash
+cd backend
+./mvnw -pl study-buddy spring-boot:run
+```
+
+Rotas da instância:
+
+```text
+/study-buddy
+```
+
 ### Frontend
 
 ```bash
@@ -195,6 +223,6 @@ npm run build
 
 ## Status
 
-Apto está instanciado no Elo Framework.
+Apto e Study Buddy estão instanciados no Elo Framework.
 
-As etapas 1 a 9 do plano de evolução foram executadas. A Etapa 09 atualiza documentação e valida a arquitetura final.
+As etapas 1 a 9 do plano de evolução do framework e do plano Study Buddy foram executadas. A Etapa 09 atualiza documentação e valida a arquitetura final.

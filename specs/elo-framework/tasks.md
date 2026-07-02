@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-Registrar o estado final das tarefas da evolução do Apto para o Elo Framework.
+Registrar o estado final das tarefas da evolução do Apto para o Elo Framework e da instanciação do Study Buddy.
 
-As tarefas abaixo refletem a implementação concluída até a Etapa 09. Study Buddy e Mentor Match não são tarefas de implementação desta entrega.
+As tarefas abaixo refletem a implementação concluída até a Etapa 09. Apto e Study Buddy são instâncias concretas; Mentor Match permanece fora da implementação atual.
 
 ## Tarefas Concluídas
 
@@ -94,14 +94,92 @@ Resultado:
 
 ### TASK-DOC-009: Atualizar documentação e validar instanciação
 
-Status: em execução nesta etapa.
+Status: concluída.
 
-Resultado esperado:
+Resultado:
 
-- `spec.md`, `contracts.md`, `data-model.md`, `plan.md`, `tasks.md`, diagrama e `README.md` alinhados à arquitetura final.
-- Study Buddy e Mentor Match removidos como tarefas de implementação.
-- Hooks obrigatórios para futuras instâncias documentados.
+- `spec.md`, `contracts.md`, `data-model.md`, `tasks.md`, `traceability.md`, diagrama e `README.md` alinhados à arquitetura final.
+- Study Buddy registrado como segunda instância concreta do framework.
+- Hooks obrigatórios para novas instâncias documentados.
 - Testes executados com sucesso.
+
+### TASK-SB-001: Criar módulo Study Buddy
+
+Status: concluída.
+
+Resultado:
+
+- `backend/study-buddy` criado como módulo Maven separado.
+- O módulo depende de `elo-core`.
+- `elo-core` e `apto` não dependem de `study-buddy`.
+
+### TASK-SB-002: Instanciar usuário da aplicação
+
+Status: concluída.
+
+Resultado:
+
+- `Estudante` estende `Usuario`.
+- `EstudanteService` estende `UsuarioService`.
+- DTOs, mapper, repository e testes de estudante criados.
+
+### TASK-SB-003: Instanciar perfil acadêmico
+
+Status: concluída.
+
+Resultado:
+
+- `PerfilAcademico` implementa `Perfil`.
+- `PerfilAcademicoService` estende `PerfilService`.
+- Dados acadêmicos representam o ponto flexível de perfil.
+
+### TASK-SB-004: Instanciar grupo de estudo como oferta
+
+Status: concluída.
+
+Resultado:
+
+- `GrupoEstudo` implementa `Oferta`.
+- `GrupoEstudoService` estende `OfertaService`.
+- Grupo de estudo representa o ponto flexível de oferta publicada.
+
+### TASK-SB-005: Instanciar Manifestação de Interesse em grupo
+
+Status: concluída.
+
+Resultado:
+
+- `ManifestacaoInteresseGrupo` implementa `ManifestacaoInteresse`.
+- `ManifestacaoInteresseGrupoService` estende `ManifestacaoInteresseService`.
+- Manifestação de Interesse permanece mecanismo fixo.
+
+### TASK-SB-006: Instanciar compatibilidade acadêmica e matching
+
+Status: concluída.
+
+Resultado:
+
+- `CompatibilidadeAcademicaCalculator` implementa `CompatibilidadeStrategy<PerfilAcademico>`.
+- `StudyBuddyMatchingService` estende `MatchingService`.
+- Matching ordena candidatos e respeita `topN`.
+
+### TASK-SB-007: Expor controllers REST mínimos
+
+Status: concluída.
+
+Resultado:
+
+- Controllers finos criados sob `/study-buddy`.
+- DTOs e controllers permanecem na instância, não no core.
+
+### TASK-SB-008: Validar instância completa
+
+Status: concluída.
+
+Resultado:
+
+- Testes de service e controller da instância passando.
+- Reactor Maven completo validado com `mvn test`.
 
 ## Validações
 
@@ -116,13 +194,14 @@ Critérios:
 
 - `elo-core` deve passar nos testes.
 - `apto-api` deve passar nos testes.
+- `study-buddy` deve passar nos testes.
 - `elo-core` deve permanecer independente de `com.apto`.
+- `elo-core` deve permanecer independente de `com.studybuddy`.
 
 ## Tarefas Futuras Fora da Entrega
 
 As ideias abaixo podem ser usadas em trabalhos futuros, mas não compõem a entrega atual:
 
-- implementar Study Buddy;
 - implementar Mentor Match;
 - criar frontend para múltiplas instâncias;
 - empacotar `elo-core` como artefato publicado;

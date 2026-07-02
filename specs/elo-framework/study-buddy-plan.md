@@ -6,7 +6,7 @@ Planejar a implementacao da instancia **Study Buddy** usando o Elo Framework.
 
 Study Buddy sera uma plataforma para estudantes encontrarem grupos de estudo compativeis.
 
-Este documento e apenas planejamento. Nao implementa codigo e nao altera o escopo da entrega anterior, na qual apenas o Apto estava instanciado concretamente.
+Este documento iniciou como planejamento e agora registra a execução da instância Study Buddy. O código correspondente fica em `backend/study-buddy`.
 
 ## Contexto
 
@@ -544,21 +544,27 @@ Validacao:
 - Nao generalizar avaliacao/reputacao.
 - Nao mexer no core sem necessidade clara.
 
-## Decisoes Pendentes da Equipe
+## Decisoes Tomadas pela Equipe
 
-1. Study Buddy deve ser novo modulo Maven ou pacote dentro de `backend/apto`?
-2. A instancia precisa ter API REST completa ou apenas testes demonstrativos?
-3. Precisa persistir em banco ou pode ser demonstracao in-memory/testes?
-4. O matching sera entre estudante e estudante, estudante e grupo, ou ambos?
-5. Denuncia/moderacao entram no Study Buddy minimo?
-6. Deve haver seed de dados para demonstracao?
-7. O diagrama final deve incluir Apto + Study Buddy ou um diagrama separado por instancia?
+1. Study Buddy foi implementado como novo modulo Maven em `backend/study-buddy`.
+2. A instancia possui API REST minima sob `/study-buddy`.
+3. A instancia usa persistencia JPA e H2 nos testes, como os demais modulos.
+4. O matching minimo implementado compara estudante com estudante por perfil academico.
+5. Denuncia/moderacao nao entram no Study Buddy minimo.
+6. Seed de dados nao foi incluido nesta etapa.
+7. O diagrama final inclui Apto e Study Buddy como instancias separadas do mesmo framework.
 
-## Recomendacao Inicial
+## Resultado
 
-Implementar Study Buddy como novo modulo Maven em `backend/study-buddy`.
+Study Buddy foi implementado como segunda instancia concreta do Elo Framework.
 
-Isso evita misturar dominio do Apto com a nova instancia e demonstra melhor que `elo-core` e reutilizavel por outra aplicacao.
+A dependencia permanece unidirecional:
+
+```text
+study-buddy -> elo-core
+```
+
+Isso evita misturar dominio do Apto com a nova instancia e demonstra que `elo-core` e reutilizavel por outra aplicacao.
 
 Escopo recomendado para a primeira entrega:
 
