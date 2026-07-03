@@ -85,7 +85,7 @@ O Study Buddy instancia os pontos flexíveis do framework:
 | Dados do perfil | `PerfilAcademico` |
 | Tipo de oferta publicada | `GrupoEstudo` |
 | Critérios de compatibilidade | `CompatibilidadeAcademicaCalculator` |
-| Integração LLM | `StudyBuddyCompatibilidadeLlmProvider` sem LLM obrigatória |
+| Integração LLM | `StudyBuddyCompatibilidadeLlmProvider`, Groq, prompt e parser acadêmicos |
 
 Manifestação de Interesse continua sendo ponto fixo. No Study Buddy, ela representa interesse em um grupo de estudo.
 
@@ -196,13 +196,13 @@ http://localhost:5173
 
 ## Configuração Groq
 
-A integração com Groq é opcional:
+A integração com Groq é opcional nas instâncias Apto e Study Buddy:
 
 ```bash
 export GROQ_API_KEY=sua_chave_aqui
 ```
 
-Sem chave ou em caso de falha, o matching usa fallback determinístico.
+Sem chave ou em caso de falha, o matching de cada instância usa seu fallback determinístico.
 
 ## Testes
 

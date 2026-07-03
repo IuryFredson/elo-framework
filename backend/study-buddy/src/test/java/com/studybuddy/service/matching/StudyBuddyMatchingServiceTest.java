@@ -1,6 +1,7 @@
 package com.studybuddy.service.matching;
 
 import com.elo.compatibilidade.ResultadoCompatibilidade;
+import com.elo.compatibilidade.OrigemCompatibilidade;
 import com.studybuddy.dto.response.StudyBuddyMatchingResponseDTO;
 import com.studybuddy.exception.PerfilAcademicoAusenteException;
 import com.studybuddy.mapper.StudyBuddyMatchingMapper;
@@ -26,6 +27,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class StudyBuddyMatchingServiceTest {
@@ -83,6 +85,59 @@ class StudyBuddyMatchingServiceTest {
 
         assertThrows(PerfilAcademicoAusenteException.class,
                 () -> service.buscarEstudantesCompativeis(solicitante.getId(), 10));
+    }
+
+    @Test
+    void deveUsarResultadoDaLlmSemExecutarCalculoDeterministico() {
+        when(estudanteRepository.findById(solicitante.getId())).thenReturn(Optional.of(solicitante));
+        when(estudanteRepository.buscarCandidatosMatching(solicitante.getId()))
+                .thenReturn(List.of(candidatoAlta));
+        when(compatibilidadeLlmProvider.calcular(solicitante, List.of(candidatoAlta)))
+                .thenReturn(Map.of(candidatoAlta.getId(), new ResultadoCompatibilidade(
+                        candidatoAlta.getId(), 94, "Resultado da LLM", List.of(), OrigemCompatibilidade.LLM)));
+
+        StudyBuddyMatchingResponseDTO response = service.buscarEstudantesCompativeis(solicitante.getId(), 10);
+
+        assertEquals(94, response.candidatos().getFirst().percentualCompatibilidade());
+        assertEquals(OrigemCompatibilidade.LLM, response.candidatos().getFirst().origem());
+        verifyNoInteractions(compatibilidadeCalculator);
+    }
+
+    @Test
+    void deveUsarFallbackDeterministicoQuandoLlmFalha() {
+        when(estudanteRepository.findById(solicitante.getId())).thenReturn(Optional.of(solicitante));
+        when(estudanteRepository.buscarCandidatosMatching(solicitante.getId()))
+                .thenReturn(List.of(candidatoAlta));
+        when(compatibilidadeLlmProvider.calcular(solicitante, List.of(candidatoAlta)))
+                .thenThrow(new RuntimeException("Groq indisponivel"));
+        when(compatibilidadeCalculator.calcular(
+                solicitante.getPerfilAcademico(), candidatoAlta.getPerfilAcademico()))
+                .thenReturn(new ResultadoCompatibilidade(72, "Fallback", List.of("criterio local")));
+
+        StudyBuddyMatchingResponseDTO response = service.buscarEstudantesCompativeis(solicitante.getId(), 10);
+
+        assertEquals(72, response.candidatos().getFirst().percentualCompatibilidade());
+        assertEquals(OrigemCompatibilidade.FALLBACK_DETERMINISTICO,
+                response.candidatos().getFirst().origem());
+    }
+
+    @Test
+    void deveAplicarFallbackSomenteAoCandidatoAusenteNaRespostaDaLlm() {
+        when(estudanteRepository.findById(solicitante.getId())).thenReturn(Optional.of(solicitante));
+        when(estudanteRepository.buscarCandidatosMatching(solicitante.getId()))
+                .thenReturn(List.of(candidatoAlta, candidatoBaixa));
+        when(compatibilidadeLlmProvider.calcular(solicitante, List.of(candidatoAlta, candidatoBaixa)))
+                .thenReturn(Map.of(candidatoAlta.getId(), new ResultadoCompatibilidade(
+                        candidatoAlta.getId(), 90, "Resultado da LLM", List.of(), OrigemCompatibilidade.LLM)));
+        when(compatibilidadeCalculator.calcular(
+                solicitante.getPerfilAcademico(), candidatoBaixa.getPerfilAcademico()))
+                .thenReturn(new ResultadoCompatibilidade(45, "Fallback", List.of("criterio local")));
+
+        StudyBuddyMatchingResponseDTO response = service.buscarEstudantesCompativeis(solicitante.getId(), 10);
+
+        assertEquals(2, response.total());
+        assertEquals(OrigemCompatibilidade.LLM, response.candidatos().get(0).origem());
+        assertEquals(OrigemCompatibilidade.FALLBACK_DETERMINISTICO, response.candidatos().get(1).origem());
     }
 
     private Estudante estudante(String nome, PerfilAcademico perfil) {

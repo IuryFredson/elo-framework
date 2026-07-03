@@ -10,11 +10,13 @@ import com.studybuddy.mapper.StudyBuddyMatchingMapper;
 import com.studybuddy.model.entity.Estudante;
 import com.studybuddy.model.entity.PerfilAcademico;
 import com.studybuddy.repository.EstudanteRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class StudyBuddyMatchingService extends MatchingService<Estudante, PerfilAcademico> {
 
@@ -67,6 +69,18 @@ public class StudyBuddyMatchingService extends MatchingService<Estudante, Perfil
             throw new PerfilAcademicoAusenteException(
                     "O solicitante nao possui PerfilAcademico cadastrado.");
         }
+    }
+
+    @Override
+    protected void aoUsarLlm(Estudante solicitante, List<Estudante> candidatos) {
+        log.info("Matching via LLM concluido: solicitante={}, candidatos={}",
+                solicitante.getId(), candidatos.size());
+    }
+
+    @Override
+    protected void aoUsarFallback(Estudante solicitante, RuntimeException causa) {
+        log.warn("Groq indisponivel - usando fallback deterministico. solicitante={}, causa={}",
+                solicitante.getId(), causa.getMessage());
     }
 
     private MatchEstudanteResponseDTO mapearResultado(ResultadoMatching<Estudante> resultado) {
