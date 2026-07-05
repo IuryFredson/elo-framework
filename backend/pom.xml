@@ -22,6 +22,7 @@
 		<module>elo-core</module>
 		<module>apto</module>
 		<module>study-buddy</module>
+		<module>mentor-match</module>
 	</modules>
 
 	<properties>
