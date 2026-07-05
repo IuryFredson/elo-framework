@@ -2,16 +2,20 @@ package com.apto.controller;
 
 import com.apto.dto.request.ModerarDenunciaRequestDTO;
 import com.apto.dto.response.ModeracaoResponseDTO;
+import com.apto.model.entity.Anuncio;
+import com.apto.model.entity.Denuncia;
 import com.apto.service.ModeracaoService;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
+import com.elo.web.ModeracaoRestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/moderacoes/denuncias")
-public class ModeracaoController {
+public class ModeracaoController extends ModeracaoRestController<
+        Denuncia,
+        Anuncio,
+        ModerarDenunciaRequestDTO,
+        ModeracaoResponseDTO> {
 
     private final ModeracaoService moderacaoService;
 
@@ -19,11 +23,8 @@ public class ModeracaoController {
         this.moderacaoService = moderacaoService;
     }
 
-    @PatchMapping("/{denunciaId}")
-    public ResponseEntity<ModeracaoResponseDTO> moderar(
-            @PathVariable UUID denunciaId,
-            @Valid @RequestBody ModerarDenunciaRequestDTO dto
-    ) {
-        return ResponseEntity.ok(moderacaoService.moderar(denunciaId, dto));
+    @Override
+    protected ModeracaoService service() {
+        return moderacaoService;
     }
 }
