@@ -65,7 +65,7 @@ class StudyBuddyControllerTest {
         assertEquals(HttpStatus.CREATED, resposta.getStatusCode());
         assertEquals(esperado, resposta.getBody());
         verify(service).criar(request);
-        assertEquals("/study-buddy/estudantes", rotaBase(EstudanteController.class));
+        assertEquals("/study-buddy/usuarios", rotaBase(EstudanteController.class));
     }
 
     @Test
@@ -101,7 +101,7 @@ class StudyBuddyControllerTest {
         assertEquals(HttpStatus.OK, resposta.getStatusCode());
         assertEquals(esperado, resposta.getBody());
         verify(service).atualizarPerfil(estudanteId, request);
-        assertEquals("/study-buddy/estudantes/{id}/perfil", rotaBase(PerfilAcademicoController.class));
+        assertEquals("/study-buddy/usuarios", rotaBase(PerfilAcademicoController.class));
     }
 
     @Test
@@ -137,7 +137,7 @@ class StudyBuddyControllerTest {
         assertEquals(HttpStatus.CREATED, resposta.getStatusCode());
         assertEquals(esperado, resposta.getBody());
         verify(service).criar(request);
-        assertEquals("/study-buddy/grupos", rotaBase(GrupoEstudoController.class));
+        assertEquals("/study-buddy/ofertas", rotaBase(GrupoEstudoController.class));
     }
 
     @Test
@@ -168,7 +168,7 @@ class StudyBuddyControllerTest {
         assertEquals(HttpStatus.OK, resposta.getStatusCode());
         assertEquals(esperado, resposta.getBody());
         verify(service).aceitar(manifestacaoId, publicadorId);
-        assertEquals("/study-buddy", rotaBase(ManifestacaoInteresseGrupoController.class));
+        assertEquals("/study-buddy/manifestacoes", rotaBase(ManifestacaoInteresseGrupoController.class));
     }
 
     @Test
@@ -197,7 +197,7 @@ class StudyBuddyControllerTest {
         when(service.buscarEstudantesCompativeis(solicitanteId, 5)).thenReturn(esperado);
 
         ResponseEntity<StudyBuddyMatchingResponseDTO> resposta =
-                controller.buscarEstudantesCompativeis(solicitanteId, 5);
+                controller.buscarMatches(solicitanteId, 5);
 
         assertEquals(HttpStatus.OK, resposta.getStatusCode());
         assertEquals(esperado, resposta.getBody());

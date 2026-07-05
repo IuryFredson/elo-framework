@@ -1,18 +1,16 @@
 package com.studybuddy.controller;
 
+import com.elo.web.MatchingRestController;
 import com.studybuddy.dto.response.StudyBuddyMatchingResponseDTO;
 import com.studybuddy.service.matching.StudyBuddyMatchingService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/study-buddy/matching")
-public class StudyBuddyMatchingController {
+public class StudyBuddyMatchingController extends MatchingRestController<StudyBuddyMatchingResponseDTO> {
 
     private final StudyBuddyMatchingService matchingService;
 
@@ -20,10 +18,8 @@ public class StudyBuddyMatchingController {
         this.matchingService = matchingService;
     }
 
-    @GetMapping
-    public ResponseEntity<StudyBuddyMatchingResponseDTO> buscarEstudantesCompativeis(
-            @RequestParam UUID estudanteId,
-            @RequestParam(defaultValue = "10") int topN) {
-        return ResponseEntity.ok(matchingService.buscarEstudantesCompativeis(estudanteId, topN));
+    @Override
+    protected StudyBuddyMatchingResponseDTO calcularMatches(UUID solicitanteId, int topN) {
+        return matchingService.buscarEstudantesCompativeis(solicitanteId, topN);
     }
 }

@@ -1,22 +1,21 @@
 package com.studybuddy.controller;
 
+import com.elo.web.PerfilRestController;
 import com.studybuddy.dto.request.AtualizarPerfilAcademicoRequestDTO;
 import com.studybuddy.dto.response.PerfilAcademicoResponseDTO;
+import com.studybuddy.model.entity.Estudante;
+import com.studybuddy.model.entity.PerfilAcademico;
 import com.studybuddy.service.PerfilAcademicoService;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
-
 @RestController
-@RequestMapping("/study-buddy/estudantes/{id}/perfil")
-public class PerfilAcademicoController {
+@RequestMapping("/study-buddy/usuarios")
+public class PerfilAcademicoController extends PerfilRestController<
+        Estudante,
+        PerfilAcademico,
+        AtualizarPerfilAcademicoRequestDTO,
+        PerfilAcademicoResponseDTO> {
 
     private final PerfilAcademicoService perfilAcademicoService;
 
@@ -24,15 +23,8 @@ public class PerfilAcademicoController {
         this.perfilAcademicoService = perfilAcademicoService;
     }
 
-    @GetMapping
-    public ResponseEntity<PerfilAcademicoResponseDTO> buscarPerfil(@PathVariable UUID id) {
-        return ResponseEntity.ok(perfilAcademicoService.buscarPerfil(id));
-    }
-
-    @PutMapping
-    public ResponseEntity<PerfilAcademicoResponseDTO> atualizarPerfil(
-            @PathVariable UUID id,
-            @Valid @RequestBody AtualizarPerfilAcademicoRequestDTO dto) {
-        return ResponseEntity.ok(perfilAcademicoService.atualizarPerfil(id, dto));
+    @Override
+    protected PerfilAcademicoService service() {
+        return perfilAcademicoService;
     }
 }
