@@ -1,5 +1,7 @@
 package com.studybuddy.service.matching;
 
+
+import com.elo.compatibilidade.llm.MatchingPromptBuilder;
 import com.studybuddy.model.entity.Estudante;
 import com.studybuddy.model.entity.PerfilAcademico;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +16,11 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class StudyBuddyMatchingPromptBuilder {
+public class StudyBuddyMatchingPromptBuilder implements MatchingPromptBuilder<Estudante> {
 
     private final ObjectMapper objectMapper;
 
+    @Override
     public String montarSystemPrompt() {
         return """
             Voce e um assessor de compatibilidade entre potenciais parceiros de estudo.
@@ -54,6 +57,7 @@ public class StudyBuddyMatchingPromptBuilder {
             """;
     }
 
+    @Override
     public String montarUserPrompt(Estudante solicitante, List<Estudante> candidatos) {
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
@@ -91,3 +95,4 @@ public class StudyBuddyMatchingPromptBuilder {
         return campos;
     }
 }
+

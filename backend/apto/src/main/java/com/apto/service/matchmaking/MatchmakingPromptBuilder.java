@@ -1,5 +1,7 @@
 package com.apto.service.matchmaking;
 
+
+import com.elo.compatibilidade.llm.MatchingPromptBuilder;
 import com.apto.model.entity.UsuarioUniversitario;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +15,11 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MatchmakingPromptBuilder {
+public class MatchmakingPromptBuilder implements MatchingPromptBuilder<UsuarioUniversitario> {
 
     private final ObjectMapper objectMapper;
 
+    @Override
     public String montarSystemPrompt() {
         return """
             Você é um assessor de compatibilidade entre potenciais colegas de moradia estudantil.
@@ -59,6 +62,7 @@ public class MatchmakingPromptBuilder {
             """;
     }
 
+    @Override
     public String montarUserPrompt(UsuarioUniversitario solicitante, List<UsuarioUniversitario> candidatos) {
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
