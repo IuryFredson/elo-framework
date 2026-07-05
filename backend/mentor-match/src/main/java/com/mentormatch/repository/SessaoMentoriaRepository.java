@@ -12,7 +12,7 @@ public interface SessaoMentoriaRepository extends RepositorioBase<SessaoMentoria
     @Query("""
         SELECT s FROM SessaoMentoria s
         WHERE s.status = com.mentormatch.model.enums.StatusSessaoMentoria.ATIVA
-          AND (:area IS NULL OR LOWER(s.area) LIKE LOWER(CONCAT('%', :area, '%')))
+          AND (:area IS NULL OR LOWER(s.area) LIKE LOWER(CONCAT('%', CAST(:area AS String), '%')))
           AND (:modalidade IS NULL OR s.modalidade = :modalidade)
           AND (:nivel IS NULL OR s.nivelAtendido = :nivel)
           AND (:periodo IS NULL OR s.periodo = :periodo)

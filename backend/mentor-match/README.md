@@ -21,6 +21,25 @@ inicia na porta `8082`.
 - `/mentor-match/matching` — recomendação de mentores por aluno.
 - `/mentor-match/denuncias` e `/mentor-match/moderacoes/denuncias` — denúncia e moderação.
 
+## Seed de demonstração
+
+Com o profile `dev` ativo, o `DevDataSeeder` popula um banco limpo (`ddl-auto=create-drop`)
+com dados mínimos para demonstrar o fluxo completo: 3 mentores e 4 alunos com perfis, 5 sessões
+(4 ativas e 1 pausada, exercitando a busca e o matching), solicitações em estados variados
+(pendente, aceita, recusada) e duas denúncias (pendente e procedente) para a moderação.
+
+```powershell
+# Windows / PowerShell
+$env:SPRING_PROFILES_ACTIVE="dev"; .\mvnw.cmd -pl mentor-match spring-boot:run
+```
+
+```bash
+# Linux / macOS
+SPRING_PROFILES_ACTIVE=dev ./mvnw -pl mentor-match spring-boot:run
+```
+
+O seed é ignorado se já houver mentores ou alunos cadastrados.
+
 ## Limites desta versão
 
 Não inclui autenticação real, frontend, agendamento após o aceite, notificações, avaliações ou reputação.
