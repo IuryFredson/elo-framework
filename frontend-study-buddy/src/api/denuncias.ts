@@ -12,9 +12,9 @@ export const denunciasApi = {
   criar: (body: CriarDenunciaRequest) =>
     api.post<DenunciaResponse>("/denuncias", body),
   porAnuncio: (anuncioId: UUID) =>
-    api.get<DenunciaResponse[]>(`/denuncias/por-anuncio`, { anuncioId }),
+    api.get<DenunciaResponse[]>(`/denuncias/oferta/${anuncioId}`),
   porUsuario: (usuarioId: UUID) =>
-    api.get<DenunciaResponse[]>(`/denuncias/por-usuario`, { usuarioId }),
+    api.get<DenunciaResponse[]>(`/denuncias/usuario/${usuarioId}`),
   porStatus: (status: StatusDenuncia) =>
-    api.get<DenunciaResponse[]>(`/denuncias/por-status`, { status }),
+    api.get<DenunciaResponse[]>(`/denuncias/status/${status}`),
 };

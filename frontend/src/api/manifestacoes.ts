@@ -6,47 +6,49 @@ import type {
   UUID,
 } from "./types";
 
+const MANIFESTACOES_PATH = "/manifestacoes";
+
 export const manifestacoesApi = {
   criar: (body: CriarManifestacaoInteresseRequest) =>
     api.post<ManifestacaoInteresseDetalheResponse>(
-      "/manifestacoes-interesse",
+      MANIFESTACOES_PATH,
       body,
     ),
 
   obter: (id: UUID, solicitanteId: UUID) =>
     api.get<ManifestacaoInteresseDetalheResponse>(
-      `/manifestacoes-interesse/${id}`,
+      `${MANIFESTACOES_PATH}/${id}`,
       { solicitanteId },
     ),
 
   porAnuncio: (anuncioId: UUID, anuncianteId: UUID) =>
     api.get<ManifestacaoInteresseResponse[]>(
-      `/manifestacoes-interesse/anuncio/${anuncioId}`,
-      { anuncianteId },
+      `${MANIFESTACOES_PATH}/oferta/${anuncioId}`,
+      { publicadorId: anuncianteId },
     ),
 
   porUsuario: (interessadoId: UUID) =>
     api.get<ManifestacaoInteresseResponse[]>(
-      `/manifestacoes-interesse/usuario/${interessadoId}`,
+      `${MANIFESTACOES_PATH}/interessado/${interessadoId}`,
     ),
 
   aceitar: (id: UUID, anuncianteId: UUID) =>
     api.patch<ManifestacaoInteresseDetalheResponse>(
-      `/manifestacoes-interesse/${id}/aceitar`,
+      `${MANIFESTACOES_PATH}/${id}/aceitar`,
       undefined,
-      { anuncianteId },
+      { publicadorId: anuncianteId },
     ),
 
   recusar: (id: UUID, anuncianteId: UUID) =>
     api.patch<ManifestacaoInteresseDetalheResponse>(
-      `/manifestacoes-interesse/${id}/recusar`,
+      `${MANIFESTACOES_PATH}/${id}/recusar`,
       undefined,
-      { anuncianteId },
+      { publicadorId: anuncianteId },
     ),
 
   cancelar: (id: UUID, interessadoId: UUID) =>
     api.patch<ManifestacaoInteresseDetalheResponse>(
-      `/manifestacoes-interesse/${id}/cancelar`,
+      `${MANIFESTACOES_PATH}/${id}/cancelar`,
       undefined,
       { interessadoId },
     ),

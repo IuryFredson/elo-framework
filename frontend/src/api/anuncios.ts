@@ -10,18 +10,20 @@ import type {
   UUID,
 } from "./types";
 
+const OFERTAS_PATH = "/ofertas";
+
 export const anunciosApi = {
-  listar: () => api.get<AnuncioResponse[]>("/anuncios"),
-  obter: (id: UUID) => api.get<AnuncioResponse>(`/anuncios/${id}`),
+  listar: () => api.get<AnuncioResponse[]>(OFERTAS_PATH),
+  obter: (id: UUID) => api.get<AnuncioResponse>(`${OFERTAS_PATH}/${id}`),
   criar: (body: CriarAnuncioRequest) =>
-    api.post<AnuncioResponse>("/anuncios", body),
+    api.post<AnuncioResponse>(OFERTAS_PATH, body),
   atualizar: (id: UUID, anuncianteId: UUID, body: AtualizarAnuncioRequest) =>
-    api.put<AnuncioResponse>(`/anuncios/${id}`, body, { anuncianteId }),
+    api.put<AnuncioResponse>(`${OFERTAS_PATH}/${id}`, body, { publicadorId: anuncianteId }),
   alterarStatus: (id: UUID, status: StatusAnuncio) =>
-    api.patch<AnuncioResponse>(`/anuncios/${id}/status`, status),
-  excluir: (id: UUID) => api.delete(`/anuncios/${id}`),
+    api.patch<AnuncioResponse>(`${OFERTAS_PATH}/${id}/status`, status),
+  excluir: (id: UUID) => api.delete(`${OFERTAS_PATH}/${id}`),
   buscar: (filtro: FiltroBuscaAnuncio) =>
-    api.get<PaginaResponse<BuscaAnuncioResponse>>("/anuncios/busca", {
+    api.get<PaginaResponse<BuscaAnuncioResponse>>(`${OFERTAS_PATH}/busca`, {
       ...filtro,
     }),
 };
