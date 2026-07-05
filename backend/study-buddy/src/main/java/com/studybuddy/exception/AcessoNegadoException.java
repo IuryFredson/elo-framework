@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class AcessoNegadoException extends RuntimeException {
+
+import com.elo.exception.AcessoNegadoFrameworkException;
+public class AcessoNegadoException extends AcessoNegadoFrameworkException {
 
     public AcessoNegadoException(String message) {
         super(message);

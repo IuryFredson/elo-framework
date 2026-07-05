@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class ManifestacaoInteresseNaoEncontradaException extends RuntimeException {
+
+import com.elo.exception.EntidadeNaoEncontradaException;
+public class ManifestacaoInteresseNaoEncontradaException extends EntidadeNaoEncontradaException {
 
     public ManifestacaoInteresseNaoEncontradaException(String message) {
         super(message);

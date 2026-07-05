@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class DenunciaGrupoEstudoNaoEncontradaException extends RuntimeException {
+
+import com.elo.exception.EntidadeNaoEncontradaException;
+public class DenunciaGrupoEstudoNaoEncontradaException extends EntidadeNaoEncontradaException {
 
     public DenunciaGrupoEstudoNaoEncontradaException(String message) {
         super(message);

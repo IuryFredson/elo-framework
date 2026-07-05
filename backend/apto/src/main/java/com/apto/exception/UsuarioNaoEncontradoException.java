@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class UsuarioNaoEncontradoException extends RuntimeException {
+
+import com.elo.exception.EntidadeNaoEncontradaException;
+public class UsuarioNaoEncontradoException extends EntidadeNaoEncontradaException {
     public UsuarioNaoEncontradoException(String mensagem) {
         super(mensagem);
     }

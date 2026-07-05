@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class MatriculaJaCadastradaException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class MatriculaJaCadastradaException extends RegraNegocioException {
 
     public MatriculaJaCadastradaException(String message) {
         super(message);

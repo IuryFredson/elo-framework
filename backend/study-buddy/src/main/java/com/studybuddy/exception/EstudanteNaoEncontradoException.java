@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class EstudanteNaoEncontradoException extends RuntimeException {
+
+import com.elo.exception.EntidadeNaoEncontradaException;
+public class EstudanteNaoEncontradoException extends EntidadeNaoEncontradaException {
 
     public EstudanteNaoEncontradoException(String message) {
         super(message);

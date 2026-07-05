@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class DenunciaNaoEncontradaException extends RuntimeException {
+
+import com.elo.exception.EntidadeNaoEncontradaException;
+public class DenunciaNaoEncontradaException extends EntidadeNaoEncontradaException {
     public DenunciaNaoEncontradaException(String message) {
         super(message);
     }

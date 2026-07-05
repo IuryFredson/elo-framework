@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class ModeracaoGrupoEstudoInvalidaException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class ModeracaoGrupoEstudoInvalidaException extends RegraNegocioException {
 
     public ModeracaoGrupoEstudoInvalidaException(String message) {
         super(message);

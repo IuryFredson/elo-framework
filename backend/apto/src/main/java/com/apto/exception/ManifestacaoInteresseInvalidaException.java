@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class ManifestacaoInteresseInvalidaException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class ManifestacaoInteresseInvalidaException extends RegraNegocioException {
     public ManifestacaoInteresseInvalidaException(String message) {
         super(message);
     }

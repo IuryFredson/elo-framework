@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class MoradiaAssociadaComAnuncioException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class MoradiaAssociadaComAnuncioException extends RegraNegocioException {
     public MoradiaAssociadaComAnuncioException(String message) {
         super(message);
     }

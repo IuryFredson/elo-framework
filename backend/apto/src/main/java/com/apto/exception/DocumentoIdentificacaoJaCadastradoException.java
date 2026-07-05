@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class DocumentoIdentificacaoJaCadastradoException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class DocumentoIdentificacaoJaCadastradoException extends RegraNegocioException {
     public DocumentoIdentificacaoJaCadastradoException(String mensagem) {
         super(mensagem);
     }

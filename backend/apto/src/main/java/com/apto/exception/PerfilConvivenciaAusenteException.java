@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class PerfilConvivenciaAusenteException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class PerfilConvivenciaAusenteException extends RegraNegocioException {
     public PerfilConvivenciaAusenteException(String message) {
         super(message);
     }

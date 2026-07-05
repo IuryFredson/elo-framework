@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class MoradiaNaoEncontradaException extends RuntimeException {
+
+import com.elo.exception.EntidadeNaoEncontradaException;
+public class MoradiaNaoEncontradaException extends EntidadeNaoEncontradaException {
     public MoradiaNaoEncontradaException(String message) {
         super(message);
     }

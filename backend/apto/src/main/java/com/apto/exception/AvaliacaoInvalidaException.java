@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class AvaliacaoInvalidaException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class AvaliacaoInvalidaException extends RegraNegocioException {
     public AvaliacaoInvalidaException(String message) {
         super(message);
     }

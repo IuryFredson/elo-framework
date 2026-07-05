@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class AvaliacaoDuplicadaException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class AvaliacaoDuplicadaException extends RegraNegocioException {
     public AvaliacaoDuplicadaException(String message) {
         super(message);
     }

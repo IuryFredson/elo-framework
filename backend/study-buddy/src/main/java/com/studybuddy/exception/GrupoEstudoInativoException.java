@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class GrupoEstudoInativoException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class GrupoEstudoInativoException extends RegraNegocioException {
 
     public GrupoEstudoInativoException(String message) {
         super(message);

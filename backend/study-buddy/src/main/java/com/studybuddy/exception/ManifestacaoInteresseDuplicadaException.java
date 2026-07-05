@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class ManifestacaoInteresseDuplicadaException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class ManifestacaoInteresseDuplicadaException extends RegraNegocioException {
 
     public ManifestacaoInteresseDuplicadaException(String message) {
         super(message);

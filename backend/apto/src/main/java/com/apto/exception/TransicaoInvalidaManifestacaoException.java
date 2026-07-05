@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class TransicaoInvalidaManifestacaoException extends RuntimeException {
+
+import com.elo.exception.TransicaoInvalidaException;
+public class TransicaoInvalidaManifestacaoException extends TransicaoInvalidaException {
     public TransicaoInvalidaManifestacaoException(String message) {
         super(message);
     }

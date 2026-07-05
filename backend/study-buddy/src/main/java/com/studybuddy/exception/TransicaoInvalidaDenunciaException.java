@@ -1,6 +1,8 @@
 package com.studybuddy.exception;
 
-public class TransicaoInvalidaDenunciaException extends RuntimeException {
+
+import com.elo.exception.TransicaoInvalidaException;
+public class TransicaoInvalidaDenunciaException extends TransicaoInvalidaException {
 
     public TransicaoInvalidaDenunciaException(String message) {
         super(message);

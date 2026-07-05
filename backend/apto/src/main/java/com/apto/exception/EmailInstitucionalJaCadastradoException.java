@@ -1,6 +1,8 @@
 package com.apto.exception;
 
-public class EmailInstitucionalJaCadastradoException extends RuntimeException {
+
+import com.elo.exception.RegraNegocioException;
+public class EmailInstitucionalJaCadastradoException extends RegraNegocioException {
     public EmailInstitucionalJaCadastradoException(String mensagem) {
         super(mensagem);
     }
