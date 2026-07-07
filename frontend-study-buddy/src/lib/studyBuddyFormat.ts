@@ -48,6 +48,23 @@ export function parseDisciplinas(raw: string): string[] {
     .filter(Boolean);
 }
 
-export function formatarDisciplinas(disciplinas: string[]): string {
+export function formatarDisciplinas(disciplinas?: string[] | null): string {
+  if (!disciplinas || disciplinas.length === 0) {
+    return "Não informado";
+  }
   return disciplinas.join(", ");
 }
+
+export const criterioDenunciaStudyBuddyLabel = {
+  GRUPO_INADEQUADO: "Grupo inadequado",
+  CONTEUDO_FORA_DO_TEMA: "Conteúdo fora do tema",
+  COMPORTAMENTO_INADEQUADO: "Comportamento inadequado",
+  USO_INDEVIDO: "Uso indevido",
+  OUTRO: "Outro",
+} as const;
+
+export const acaoModeracaoGrupoLabel = {
+  NENHUMA: "Nenhuma ação",
+  PAUSAR_GRUPO: "Pausar grupo",
+  ENCERRAR_GRUPO: "Encerrar grupo",
+} as const;
