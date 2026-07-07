@@ -142,7 +142,7 @@ export default function GrupoDetalhe() {
             <h2 className="font-semibold text-apto-text-main">Gestão do grupo</h2>
           </div>
           <p className="text-sm text-apto-text-muted">
-            Esta área acompanha o padrão do Apto: o publicador controla o status da oferta
+            Esta área segue o fluxo fixo de ofertas do framework: o publicador controla o status do grupo
             e acompanha as manifestações recebidas.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -200,7 +200,9 @@ export default function GrupoDetalhe() {
       <ReportarGrupoModal
         open={reportarAberto}
         onClose={() => setReportarAberto(false)}
+        grupoId={grupo.id}
         grupoTitulo={grupo.titulo}
+        denuncianteId={sessao.id}
       />
     </div>
   );

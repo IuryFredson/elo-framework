@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { UUID } from "./types";
+import type { StatusDenuncia, UUID } from "./types";
 import type {
   AlterarStatusEstudanteRequest,
   AtualizarEstudanteRequest,
@@ -12,13 +12,19 @@ import type {
   ManifestacaoInteresseGrupoResponse,
   PerfilAcademicoResponse,
   StatusGrupoEstudo,
+  CriarDenunciaGrupoEstudoRequest,
+  DenunciaGrupoEstudoResponse,
+  ModerarDenunciaGrupoEstudoRequest,
+  ModeracaoGrupoEstudoResponse,
   StudyBuddyMatchingResponse,
 } from "../study-buddy/types";
 
 const BASE_PATH = "/study-buddy";
 const USUARIOS_PATH = `${BASE_PATH}/usuarios`;
 const OFERTAS_PATH = `${BASE_PATH}/ofertas`;
-const MANIFESTACOES_PATH = `${BASE_PATH}/manifestacoes`;
+const MANIFESTACOES_PATH = `/manifestacoes`;
+const DENUNCIAS_PATH = `/denuncias`;
+const MODERACOES_PATH = `/moderacoes/denuncias`;
 
 export const estudantesApi = {
   listar: () => api.get<EstudanteResponse[]>(USUARIOS_PATH),
@@ -88,4 +94,22 @@ export const studyBuddyMatchingApi = {
       solicitanteId: estudanteId,
       topN,
     }),
+};
+
+export const denunciasGrupoApi = {
+  criar: (body: CriarDenunciaGrupoEstudoRequest) =>
+    api.post<DenunciaGrupoEstudoResponse>(DENUNCIAS_PATH, body),
+  listar: () => api.get<DenunciaGrupoEstudoResponse[]>(DENUNCIAS_PATH),
+  obter: (id: UUID) => api.get<DenunciaGrupoEstudoResponse>(`${DENUNCIAS_PATH}/${id}`),
+  porGrupo: (grupoId: UUID) =>
+    api.get<DenunciaGrupoEstudoResponse[]>(`${DENUNCIAS_PATH}/oferta/${grupoId}`),
+  porEstudante: (estudanteId: UUID) =>
+    api.get<DenunciaGrupoEstudoResponse[]>(`${DENUNCIAS_PATH}/usuario/${estudanteId}`),
+  porStatus: (status: StatusDenuncia) =>
+    api.get<DenunciaGrupoEstudoResponse[]>(`${DENUNCIAS_PATH}/status/${status}`),
+};
+
+export const moderacaoGrupoApi = {
+  moderar: (denunciaId: UUID, body: ModerarDenunciaGrupoEstudoRequest) =>
+    api.patch<ModeracaoGrupoEstudoResponse>(`${MODERACOES_PATH}/${denunciaId}`, body),
 };

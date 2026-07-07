@@ -1,5 +1,6 @@
 import type {
   OrigemCompatibilidade,
+  StatusDenuncia,
   StatusManifestacaoInteresse,
   UUID,
 } from "../api/types";
@@ -133,4 +134,50 @@ export interface StudyBuddyMatchingResponse {
   solicitanteId: UUID;
   total: number;
   candidatos: MatchEstudanteResponse[];
+}
+
+export type CriterioDenunciaStudyBuddy =
+  | "GRUPO_INADEQUADO"
+  | "CONTEUDO_FORA_DO_TEMA"
+  | "COMPORTAMENTO_INADEQUADO"
+  | "USO_INDEVIDO"
+  | "OUTRO";
+
+export type AcaoModeracaoGrupoEstudo = "NENHUMA" | "PAUSAR_GRUPO" | "ENCERRAR_GRUPO";
+
+export interface CriarDenunciaGrupoEstudoRequest {
+  denuncianteId: UUID;
+  grupoId: UUID;
+  titulo: string;
+  corpo: string;
+  criterio: CriterioDenunciaStudyBuddy;
+}
+
+export interface DenunciaGrupoEstudoResponse {
+  id: UUID;
+  denuncianteId: UUID;
+  grupoId: UUID;
+  titulo: string;
+  corpo: string;
+  criterio: CriterioDenunciaStudyBuddy;
+  status: StatusDenuncia;
+  criadoEm: string;
+}
+
+export interface ModerarDenunciaGrupoEstudoRequest {
+  novoStatus: StatusDenuncia;
+  acaoGrupoEstudo: AcaoModeracaoGrupoEstudo;
+  justificativa: string;
+}
+
+export interface ModeracaoGrupoEstudoResponse {
+  denunciaId: UUID;
+  grupoId: UUID;
+  statusDenunciaAnterior: StatusDenuncia;
+  statusDenunciaAtual: StatusDenuncia;
+  acaoGrupoEstudoAplicada: AcaoModeracaoGrupoEstudo;
+  statusGrupoAnterior: StatusGrupoEstudo;
+  statusGrupoAtual: StatusGrupoEstudo;
+  justificativa: string;
+  moderadoEm: string;
 }

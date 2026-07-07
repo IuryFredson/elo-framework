@@ -41,8 +41,8 @@ export default function PerfilAcademicoForm() {
       .obter(sessao.id)
       .then((perfil) => {
         setCurso(perfil.curso);
-        setDisciplinasTexto(perfil.disciplinasInteresse.join(", "));
-        setDisponibilidade(perfil.disponibilidade);
+        setDisciplinasTexto((perfil.disciplinasInteresse ?? []).join(", "));
+        setDisponibilidade(perfil.disponibilidade ?? []);
         setObjetivoEstudo(perfil.objetivoEstudo);
         setNivelConhecimento(perfil.nivelConhecimento);
         setModalidadePreferida(perfil.modalidadePreferida);

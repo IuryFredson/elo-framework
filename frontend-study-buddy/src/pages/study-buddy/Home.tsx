@@ -201,11 +201,11 @@ export default function Home() {
               <p className="font-semibold text-apto-text-main">Denúncia e moderação</p>
             </div>
             <p className="text-sm text-apto-text-muted">
-              O frontend já reserva espaço para sinalização de grupos e fila de análise,
-              mas a lógica operacional será ligada em etapa posterior.
+              O Study Buddy reutiliza os fluxos fixos de denúncia e moderação do framework
+              para sinalizar grupos e analisar relatos.
             </p>
             <p className="text-sm text-apto-text-main">
-              Disciplinas em destaque: {matches[0] ? formatarDisciplinas(matches[0].disciplinasInteresse.slice(0, 3)) : "aguardando perfil"}.
+              Disciplinas em destaque: {matches[0] ? formatarDisciplinas((matches[0].disciplinasInteresse ?? []).slice(0, 3)) : "aguardando perfil"}.
             </p>
           </div>
         </div>

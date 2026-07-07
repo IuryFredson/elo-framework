@@ -157,7 +157,7 @@ export default function Profile() {
               <div className="space-y-3">
                 <p className="section-title">Disponibilidade</p>
                 <div className="flex flex-wrap gap-2">
-                  {perfil.disponibilidade.map((item) => (
+                  {(perfil.disponibilidade ?? []).map((item) => (
                     <Badge key={item} tone="info">
                       {periodoDisponibilidadeLabel[item]}
                     </Badge>
@@ -181,11 +181,11 @@ export default function Profile() {
           <section className="bg-white p-6 rounded-apto-section border border-apto-border shadow-sm space-y-3">
             <div className="flex items-center gap-2 text-apto-primary">
               <ShieldAlert size={16} />
-              <p className="font-semibold text-apto-text-main">Preparação para moderação</p>
+              <p className="font-semibold text-apto-text-main">Denúncia e moderação</p>
             </div>
             <p className="text-sm text-apto-text-muted">
-              O app já reserva navegação e estados visuais para denúncia e moderação,
-              mas a operação concreta ainda depende das próximas etapas do projeto.
+              O Study Buddy reutiliza os fluxos fixos de denúncia e moderação do framework.
+              Um estudante pode reportar um grupo, e a moderação pode analisar a denúncia e alterar o status da oferta.
             </p>
           </section>
         </div>

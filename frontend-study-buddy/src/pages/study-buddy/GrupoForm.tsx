@@ -53,8 +53,7 @@ export default function GrupoForm() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-apto-text-main">Novo grupo de estudo</h1>
         <p className="text-apto-text-muted mt-2">
-          Publique uma oferta concreta da instância Study Buddy usando o mesmo padrão
-          estrutural do Apto.
+          Publique a oferta concreta da instância Study Buddy: um grupo de estudo com disciplina, modalidade, período e vagas.
         </p>
       </div>
 
