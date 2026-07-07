@@ -1,9 +1,13 @@
-package com.elo.compatibilidade.llm.groq;
+ package com.elo.compatibilidade.llm.groq;
 
-import java.util.List;
+  import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public record GroqChatResponse(List<Choice> choices) {
+  import java.util.List;
 
-    public record Choice(GroqChatMessage message) {
-    }
-}
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record GroqChatResponse(List<Choice> choices) {
+
+      @JsonIgnoreProperties(ignoreUnknown = true)
+      public record Choice(GroqChatMessage message) {
+      }
+  }
