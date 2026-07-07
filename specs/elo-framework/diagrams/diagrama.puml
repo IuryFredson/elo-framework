@@ -1,0 +1,788 @@
+@startuml elo-framework-apto
+title Elo Framework - Nucleo (elo-core) e Instancia apto (com camada REST)
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 40
+hide empty members
+
+' =======================================================================
+'  ELO-CORE  (framework / com.elo)
+' =======================================================================
+package "elo-core (com.elo)" #F4F8FF {
+
+    package "elo > oferta" {
+        interface "Oferta" as elo_Oferta {
+            + getId()
+            + getPublicadorId()
+            + tipoOferta()
+            + isAtiva()
+        }
+        abstract class "OfertaService<O,C,A,R,S>" as elo_OfertaService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + buscarEntidadePorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+    }
+
+    package "elo > usuario" {
+        abstract class "Usuario" as elo_Usuario {
+            - id : UUID
+            - nome : String
+            - email : String
+            - telefone : String
+            - ativo : boolean
+        }
+        abstract class "UsuarioService<T,C,A,R>" as elo_UsuarioService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + alterarStatus()
+            + ativar()
+            + inativar()
+            + deletar()
+        }
+    }
+
+    package "elo > perfil" {
+        interface "Perfil" as elo_Perfil {
+            + tipoPerfil()
+        }
+        abstract class "PerfilService<U,P,A,R>" as elo_PerfilService {
+            + buscarPerfil()
+            + atualizarPerfil()
+        }
+    }
+
+    package "elo > denuncia" {
+        interface "CriterioDenuncia" as elo_CriterioDenuncia {
+            + codigo()
+        }
+        interface "Denuncia" as elo_Denuncia {
+            + getId()
+            + getDenuncianteId()
+            + getOfertaId()
+            + getStatus()
+            + getCriterioCodigo()
+        }
+        abstract class "DenunciaService<D,O,U,C,R>" as elo_DenunciaService {
+            + listarTodas()
+            + criar()
+            + atualizarStatus()
+            + deletar()
+            + buscarPorId()
+            + buscarPorOfertaId()
+            + buscarPorUsuarioId()
+            + buscarPorStatus()
+        }
+        enum "StatusDenuncia" as elo_StatusDenuncia {
+            PENDENTE
+            EM_ANALISE
+            IMPROCEDENTE
+            PROCEDENTE
+            ARQUIVADA
+        }
+    }
+
+    package "elo > manifestacao" {
+        interface "ManifestacaoInteresse" as elo_Manifestacao {
+            + getId()
+            + getInteressadoId()
+            + getOfertaId()
+            + getStatus()
+        }
+        abstract class "ManifestacaoInteresseService<M,O,U,C,R,D>" as elo_ManifestacaoService {
+            + criar()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+            + buscarPorId()
+            + cancelarPendentesDaOferta()
+        }
+        enum "StatusManifestacaoInteresse" as elo_StatusManifestacao {
+            PENDENTE
+            ACEITA
+            RECUSADA
+            CANCELADA
+        }
+    }
+
+    package "elo > moderacao" {
+        enum "AcaoModeracaoOferta" as elo_AcaoModeracaoOferta {
+            NENHUMA
+            PAUSAR
+            ENCERRAR
+        }
+        abstract class "ModeracaoService<D,O,C,R>" as elo_ModeracaoService {
+            + moderar()
+        }
+    }
+
+    package "elo > compatibilidade" {
+        interface "CompatibilidadeStrategy<P>" as elo_CompatStrategy {
+            + calcular()
+        }
+        abstract class "MatchingService<U,P>" as elo_MatchingService {
+            + calcularMatches()
+        }
+        interface "ProvedorCompatibilidadeLlm<U,P>" as elo_ProvedorLlm {
+            + calcular()
+        }
+        enum "OrigemCompatibilidade" as elo_OrigemCompat {
+            LLM
+            FALLBACK_DETERMINISTICO
+        }
+        class "ResultadoCompatibilidade" as elo_ResultadoCompat <<record>> {
+            + candidatoId : UUID
+            + percentual : int
+            + justificativa : String
+            + criteriosAtendidos : List<String>
+            + origem : OrigemCompatibilidade
+        }
+        class "ResultadoMatching<C>" as elo_ResultadoMatching <<record>> {
+            + candidato : C
+            + compatibilidade : ResultadoCompatibilidade
+        }
+    }
+
+    package "elo > compatibilidade > llm" {
+        interface "ChatLlmClient" as elo_ChatLlmClient {
+            + completarChat()
+        }
+        interface "MatchingPromptBuilder<U>" as elo_PromptBuilder {
+            + montarSystemPrompt()
+            + montarUserPrompt()
+        }
+        interface "CompatibilidadeLlmParser" as elo_LlmParser {
+            + parse()
+        }
+        abstract class "JsonMatchesCompatibilidadeParser" as elo_JsonParser {
+            + parse()
+        }
+        abstract class "AbstractCompatibilidadeLlmProvider<U,P>" as elo_AbstractLlmProvider {
+            + calcular()
+        }
+    }
+
+    package "elo > compatibilidade > llm > groq" {
+        interface "GroqClientProperties" as elo_GroqProps {
+            + model()
+            + apiKey()
+        }
+        abstract class "AbstractGroqChatClient" as elo_AbstractGroqClient {
+            + completarChat()
+        }
+        class "GroqChatMessage" as elo_GroqMsg <<record>> {
+            + role : String
+            + content : String
+        }
+        class "GroqChatRequest" as elo_GroqReq <<record>> {
+            + model : String
+            + messages : List<GroqChatMessage>
+            + temperature : Double
+            + responseFormat : Map
+        }
+        class "GroqChatResponse" as elo_GroqResp <<record>>
+        class "Choice" as elo_GroqChoice <<record>>
+    }
+
+    package "elo > persistencia" {
+        interface "RepositorioBase<T,ID>" as elo_RepositorioBase
+    }
+    package "elo > web" {
+        abstract class "OfertaRestController<O,C,A,R,S>" as elo_OfertaController {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+        abstract class "UsuarioRestController<T,C,A,R>" as elo_UsuarioController {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + alterarStatus()
+            + deletar()
+        }
+        abstract class "PerfilRestController<U,P,A,R>" as elo_PerfilController {
+            + buscarPerfil()
+            + atualizarPerfil()
+        }
+        abstract class "DenunciaRestController<D,O,U,C,R>" as elo_DenunciaController {
+            + criar()
+            + listarTodas()
+            + buscarPorId()
+            + buscarPorOferta()
+            + buscarPorUsuario()
+            + buscarPorStatus()
+            + atualizarStatus()
+            + deletar()
+        }
+        abstract class "ManifestacaoInteresseRestController<M,O,U,C,R,D>" as elo_ManifestacaoController {
+            + criar()
+            + buscarPorId()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+        }
+        abstract class "ModeracaoRestController<D,O,C,R>" as elo_ModeracaoController {
+            + moderar()
+        }
+        abstract class "MatchingRestController<R>" as elo_MatchingController {
+            + buscarMatches()
+        }
+    }
+}
+
+' ---- elo-core relacoes internas ----
+elo_Denuncia --> elo_StatusDenuncia
+elo_Manifestacao --> elo_StatusManifestacao
+elo_DenunciaService ..> elo_StatusDenuncia
+elo_ModeracaoService ..> elo_AcaoModeracaoOferta
+elo_MatchingService --> elo_CompatStrategy
+elo_MatchingService --> elo_ProvedorLlm
+elo_MatchingService ..> elo_ResultadoMatching
+elo_ResultadoMatching *--> elo_ResultadoCompat
+elo_ResultadoCompat --> elo_OrigemCompat
+elo_CompatStrategy ..> elo_ResultadoCompat
+elo_ProvedorLlm ..> elo_ResultadoCompat
+elo_AbstractLlmProvider ..|> elo_ProvedorLlm
+elo_AbstractLlmProvider --> elo_ChatLlmClient
+elo_AbstractLlmProvider --> elo_PromptBuilder
+elo_AbstractLlmProvider --> elo_LlmParser
+elo_JsonParser ..|> elo_LlmParser
+elo_AbstractGroqClient ..|> elo_ChatLlmClient
+elo_AbstractGroqClient --> elo_GroqProps
+elo_AbstractGroqClient ..> elo_GroqReq
+elo_AbstractGroqClient ..> elo_GroqResp
+elo_GroqReq --> elo_GroqMsg
+elo_GroqResp *--> elo_GroqChoice
+elo_GroqChoice --> elo_GroqMsg
+
+' ---- camada REST generica delega para os services ----
+elo_OfertaController ..> elo_OfertaService
+elo_UsuarioController ..> elo_UsuarioService
+elo_PerfilController ..> elo_PerfilService
+elo_DenunciaController ..> elo_DenunciaService
+elo_ManifestacaoController ..> elo_ManifestacaoService
+elo_ModeracaoController ..> elo_ModeracaoService
+
+' =======================================================================
+'  INSTANCIA - APTO  (com.apto)
+' =======================================================================
+package "apto (com.apto)" #F4FFF4 {
+
+    package "apto > entity" {
+        class "Anuncio" as apto_Anuncio {
+            - id : UUID
+            - titulo : String
+            - descricao : String
+            - valorMensal : BigDecimal
+            - dataPublicacao : LocalDate
+            + getAnuncianteUsuarioId()
+            + getPublicadorId()
+            + tipoOferta()
+            + isAtiva()
+            + getAnuncianteNome()
+        }
+        class "Avaliacao" as apto_Avaliacao {
+            - id : UUID
+            - notaGeral : Integer
+            - notaComunicacao : Integer
+            - notaFidelidadeAnuncio : Integer
+            - notaEstadoMoradia : Integer
+            - notaCustoBeneficio : Integer
+            - comentario : String
+            - dataCriacao : LocalDateTime
+            - ativa : Boolean
+        }
+        class "Denuncia" as apto_Denuncia {
+            - id : UUID
+            - titulo : String
+            - corpo : String
+            - criadoEm : LocalDateTime
+            - statusAtualizadoEm : LocalDateTime
+            + getDenuncianteId()
+            + getOfertaId()
+            + getStatus()
+            + getCriterioCodigo()
+        }
+        class "Locador" as apto_Locador {
+            - documentoIdentificacao : String
+            - nomeExibicaoOuRazao : String
+        }
+        class "ManifestacaoInteresse" as apto_Manifestacao {
+            - id : UUID
+            - status : StatusManifestacaoInteresse
+            - mensagem : String
+            - dataManifestacao : LocalDateTime
+            - dataResposta : LocalDateTime
+            + getInteressadoId()
+            + getOfertaId()
+            + getStatus()
+        }
+        class "Moradia" as apto_Moradia {
+            - id : UUID
+            - bairro : String
+            - enderecoResumo : String
+            - mobiliado : boolean
+            - aceitaAnimais : boolean
+            - quantidadeVagas : int
+            - regrasMoradia : String
+        }
+        class "PerfilAnunciante" as apto_PerfilAnunciante {
+            - id : UUID
+            - ativo : boolean
+        }
+        class "PerfilConvivencia" as apto_PerfilConvivencia {
+            - id : UUID
+            - horarioSono : HorarioSono
+            - nivelBarulhoAceitavel : NivelBarulho
+            - frequenciaVisitas : FrequenciaVisitas
+            - nivelOrganizacao : NivelOrganizacao
+            - rotinaEstudos : RotinaEstudos
+            - consomeAlcool : Boolean
+            - fumante : Boolean
+            - aceitaAnimais : Boolean
+            - preferenciaGeneroConvivencia : PreferenciaGeneroConvivencia
+            - descricaoLivre : String
+            + tipoPerfil()
+        }
+        class "ReputacaoAnunciante" as apto_Reputacao {
+            - id : UUID
+            - reputacaoScore : Double
+            - totalAvaliacoes : Integer
+            - mediaGeral : Double
+            - mediaComunicacao : Double
+            - mediaFidelidadeAnuncio : Double
+            - mediaEstadoMoradia : Double
+            - mediaCustoBeneficio : Double
+            - ultimaAtualizacao : LocalDateTime
+        }
+        class "UsuarioUniversitario" as apto_Universitario {
+            - emailInstitucional : String
+            - curso : String
+            - dataNascimento : LocalDate
+            - genero : Genero
+            + isAnunciante()
+        }
+    }
+
+    package "apto > enums" {
+        enum "AcaoModeracaoAnuncio" as apto_AcaoModeracao {
+            NENHUMA
+            PAUSAR_ANUNCIO
+            ENCERRAR_ANUNCIO
+        }
+        enum "CriterioDenunciaApto" as apto_Criterio {
+            ANUNCIO_ENGANOSO
+            PRECO_ABUSIVO
+            IMOVEL_INEXISTENTE
+            CONTEUDO_INAPROPRIADO
+            OUTRO
+            + codigo()
+        }
+        enum "FrequenciaVisitas" as apto_FreqVisitas {
+            RARAMENTE
+            AS_VEZES
+            FREQUENTEMENTE
+        }
+        enum "Genero" as apto_Genero {
+            MASCULINO
+            FEMININO
+            OUTRO
+            PREFIRO_NAO_INFORMAR
+        }
+        enum "HorarioSono" as apto_HorarioSono {
+            CEDO
+            MEDIO
+            TARDE
+        }
+        enum "NivelBarulho" as apto_NivelBarulho {
+            BAIXO
+            MEDIO
+            ALTO
+        }
+        enum "NivelOrganizacao" as apto_NivelOrg {
+            BAIXO
+            MEDIO
+            ALTO
+        }
+        enum "PreferenciaGeneroConvivencia" as apto_PrefGenero {
+            SEM_PREFERENCIA
+            APENAS_MULHERES
+            APENAS_HOMENS
+            A_COMBINAR
+        }
+        enum "RotinaEstudos" as apto_RotinaEstudos {
+            CASA
+            BIBLIOTECA
+            MISTA
+        }
+        enum "StatusAnuncio" as apto_StatusAnuncio {
+            ATIVO
+            PAUSADO
+            ENCERRADO
+        }
+        enum "TipoAnuncio" as apto_TipoAnuncio {
+            IMOVEL_COMPLETO
+            VAGA_COMPARTILHADA
+        }
+        enum "TipoMoradia" as apto_TipoMoradia {
+            APARTAMENTO
+            CASA
+            REPUBLICA
+            QUARTO
+        }
+    }
+
+    package "apto > service" {
+        class "AnuncioService" as apto_AnuncioService {
+            + buscarAnuncios()
+        }
+        class "AvaliacaoService" as apto_AvaliacaoService {
+            + criar()
+            + buscarPorId()
+            + listarPorAnunciante()
+            + listarPorMoradia()
+            + listarPorAvaliador()
+            + atualizar()
+            + desativar()
+            + resumoPorAnunciante()
+        }
+        class "DenunciaService" as apto_DenunciaService {
+            + buscarPorAnuncioId()
+        }
+        class "LocadorService" as apto_LocadorService {
+            + alterarStatus()
+        }
+        class "ManifestacaoInteresseService" as apto_ManifService {
+            + listarPorAnuncio()
+        }
+        class "ModeracaoService" as apto_ModeracaoService
+        class "MoradiaService" as apto_MoradiaService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + buscarEntidadePorId()
+            + atualizar()
+            + deletar()
+        }
+        class "PerfilAnuncianteService" as apto_PerfilAnuncianteService {
+            + habilitarAnunciante()
+            + desabilitarAnunciante()
+            + buscarPorUsuario()
+        }
+        class "PerfilService" as apto_PerfilService
+        class "ReputacaoCalculoService" as apto_ReputacaoService {
+            + buscarPorAnunciante()
+            + calcularReputacaoEAtualizar()
+        }
+        class "UsuarioUniversitarioService" as apto_UniversitarioService {
+            + alterarStatus()
+        }
+    }
+
+    package "apto > controller" {
+        class "AnuncioController" as apto_AnuncioController {
+            + buscarAnuncios()
+        }
+        class "DenunciaController" as apto_DenunciaController
+        class "LocadorController" as apto_LocadorController
+        class "ManifestacaoInteresseController" as apto_ManifController
+        class "MatchmakingController" as apto_MatchmakingController
+        class "ModeracaoController" as apto_ModeracaoController
+        class "PerfilController" as apto_PerfilController
+        class "UsuarioUniversitarioController" as apto_UniversitarioController
+        class "AvaliacaoController" as apto_AvaliacaoController {
+            + criar()
+            + buscarPorId()
+            + listarPorAnunciante()
+            + listarPorMoradia()
+            + listarPorAvaliador()
+            + resumoPorAnunciante()
+            + atualizar()
+            + desativar()
+        }
+        class "MoradiaController" as apto_MoradiaController {
+            + listarTodas()
+            + buscarPorId()
+            + criar()
+            + atualizar()
+            + excluir()
+        }
+        class "PerfilAnuncianteController" as apto_PerfilAnuncianteController {
+            + buscarPorUsuario()
+            + habilitarAnunciante()
+            + desabilitarAnunciante()
+        }
+        class "ReputacaoController" as apto_ReputacaoController {
+            + buscarPorAnunciante()
+        }
+        class "DiagnosticoGroqController" as apto_DiagnosticoController {
+            + pingGroq()
+        }
+    }
+
+    package "apto > matchmaking" {
+        class "MatchmakingService" as apto_MatchmakingService {
+            + buscarColegasCompativeis()
+        }
+        class "CompatibilidadeDeterministicaCalculator" as apto_CompatDet {
+            + calcular()
+            + preferenciaGeneroCompativel()
+        }
+        class "AptoCompatibilidadeLlmProvider" as apto_LlmProvider {
+            + calcular()
+        }
+        class "MatchmakingLlmParser" as apto_LlmParser {
+            + parse()
+        }
+        class "MatchmakingPromptBuilder" as apto_PromptBuilder {
+            + montarSystemPrompt()
+            + montarUserPrompt()
+        }
+        class "ResultadoCompatibilidade" as apto_ResultadoCompat <<record>> {
+            + percentual : int
+            + justificativa : String
+            + origem : OrigemCompatibilidade
+            + fromFramework()
+        }
+        enum "OrigemCompatibilidade" as apto_OrigemCompat {
+            LLM
+            FALLBACK_DETERMINISTICO
+        }
+    }
+
+    package "apto > integration" {
+        class "GroqClient" as apto_GroqClient {
+            + completarChat()
+        }
+        class "GroqProperties" as apto_GroqProps <<record>> {
+            + baseUrl : String
+            + model : String
+            + apiKey : String
+            + timeout : Duration
+        }
+    }
+}
+
+
+' =======================================================================
+'  LAYOUT - APTO
+'  Links ocultos: apenas organizam a visualizacao horizontal da instancia.
+' =======================================================================
+' Colunas principais: dominio -> servicos -> REST.
+apto_Universitario -[hidden]right-> apto_UniversitarioService
+apto_UniversitarioService -[hidden]right-> apto_UniversitarioController
+apto_Locador -[hidden]right-> apto_LocadorService
+apto_LocadorService -[hidden]right-> apto_LocadorController
+apto_PerfilConvivencia -[hidden]right-> apto_PerfilService
+apto_PerfilService -[hidden]right-> apto_PerfilController
+apto_Anuncio -[hidden]right-> apto_AnuncioService
+apto_AnuncioService -[hidden]right-> apto_AnuncioController
+apto_Manifestacao -[hidden]right-> apto_ManifService
+apto_ManifService -[hidden]right-> apto_ManifController
+apto_Denuncia -[hidden]right-> apto_DenunciaService
+apto_DenunciaService -[hidden]right-> apto_DenunciaController
+
+' Fluxos especificos do Apto em uma segunda faixa horizontal.
+apto_Moradia -[hidden]right-> apto_MoradiaService
+apto_MoradiaService -[hidden]right-> apto_MoradiaController
+apto_PerfilAnunciante -[hidden]right-> apto_PerfilAnuncianteService
+apto_PerfilAnuncianteService -[hidden]right-> apto_PerfilAnuncianteController
+apto_Avaliacao -[hidden]right-> apto_AvaliacaoService
+apto_AvaliacaoService -[hidden]right-> apto_AvaliacaoController
+apto_Reputacao -[hidden]right-> apto_ReputacaoService
+apto_ReputacaoService -[hidden]right-> apto_ReputacaoController
+
+' Ordem vertical dentro das colunas da instancia.
+apto_Universitario -[hidden]down-> apto_Locador
+apto_Locador -[hidden]down-> apto_PerfilConvivencia
+apto_PerfilConvivencia -[hidden]down-> apto_Anuncio
+apto_Anuncio -[hidden]down-> apto_Manifestacao
+apto_Manifestacao -[hidden]down-> apto_Denuncia
+apto_Denuncia -[hidden]down-> apto_Moradia
+apto_Moradia -[hidden]down-> apto_PerfilAnunciante
+apto_PerfilAnunciante -[hidden]down-> apto_Avaliacao
+apto_Avaliacao -[hidden]down-> apto_Reputacao
+
+apto_UniversitarioService -[hidden]down-> apto_LocadorService
+apto_LocadorService -[hidden]down-> apto_PerfilService
+apto_PerfilService -[hidden]down-> apto_AnuncioService
+apto_AnuncioService -[hidden]down-> apto_ManifService
+apto_ManifService -[hidden]down-> apto_DenunciaService
+apto_DenunciaService -[hidden]down-> apto_ModeracaoService
+apto_ModeracaoService -[hidden]down-> apto_MoradiaService
+apto_MoradiaService -[hidden]down-> apto_PerfilAnuncianteService
+apto_PerfilAnuncianteService -[hidden]down-> apto_AvaliacaoService
+apto_AvaliacaoService -[hidden]down-> apto_ReputacaoService
+
+apto_UniversitarioController -[hidden]down-> apto_LocadorController
+apto_LocadorController -[hidden]down-> apto_PerfilController
+apto_PerfilController -[hidden]down-> apto_AnuncioController
+apto_AnuncioController -[hidden]down-> apto_ManifController
+apto_ManifController -[hidden]down-> apto_DenunciaController
+apto_DenunciaController -[hidden]down-> apto_ModeracaoController
+apto_ModeracaoController -[hidden]down-> apto_MoradiaController
+apto_MoradiaController -[hidden]down-> apto_PerfilAnuncianteController
+apto_PerfilAnuncianteController -[hidden]down-> apto_AvaliacaoController
+apto_AvaliacaoController -[hidden]down-> apto_ReputacaoController
+apto_ReputacaoController -[hidden]down-> apto_MatchmakingController
+apto_MatchmakingController -[hidden]down-> apto_DiagnosticoController
+
+' Matching/LLM como faixa inferior compacta.
+apto_MatchmakingService -[hidden]right-> apto_CompatDet
+apto_CompatDet -[hidden]right-> apto_LlmProvider
+apto_LlmProvider -[hidden]right-> apto_GroqClient
+apto_LlmProvider -[hidden]down-> apto_PromptBuilder
+apto_PromptBuilder -[hidden]right-> apto_LlmParser
+apto_LlmParser -[hidden]right-> apto_ResultadoCompat
+apto_ResultadoCompat -[hidden]right-> apto_OrigemCompat
+apto_GroqClient -[hidden]down-> apto_GroqProps
+apto_MatchmakingService -[hidden]up-> apto_AnuncioService
+
+' Enums proximos das entidades que os usam, sem abrir demais a instancia.
+apto_HorarioSono -[hidden]right-> apto_NivelBarulho
+apto_NivelBarulho -[hidden]right-> apto_FreqVisitas
+apto_FreqVisitas -[hidden]right-> apto_NivelOrg
+apto_NivelOrg -[hidden]right-> apto_RotinaEstudos
+apto_RotinaEstudos -[hidden]right-> apto_PrefGenero
+apto_PrefGenero -[hidden]right-> apto_Genero
+apto_Genero -[hidden]right-> apto_TipoAnuncio
+apto_TipoAnuncio -[hidden]right-> apto_StatusAnuncio
+apto_StatusAnuncio -[hidden]right-> apto_TipoMoradia
+apto_TipoMoradia -[hidden]right-> apto_Criterio
+apto_Criterio -[hidden]right-> apto_AcaoModeracao
+apto_PerfilConvivencia -[hidden]down-> apto_HorarioSono
+
+' =======================================================================
+'  HERANCAS / REALIZACOES  ->  ELO-CORE
+' =======================================================================
+' --- apto realiza/estende o dominio do framework ---
+apto_Anuncio ..|> elo_Oferta
+apto_Denuncia ..|> elo_Denuncia
+apto_Manifestacao ..|> elo_Manifestacao
+apto_PerfilConvivencia ..|> elo_Perfil
+apto_Criterio ..|> elo_CriterioDenuncia
+apto_Locador --|> elo_Usuario
+apto_Universitario --|> elo_Usuario
+apto_AnuncioService --|> elo_OfertaService
+apto_LocadorService --|> elo_UsuarioService
+apto_UniversitarioService --|> elo_UsuarioService
+apto_DenunciaService --|> elo_DenunciaService
+apto_ManifService --|> elo_ManifestacaoService
+apto_ModeracaoService --|> elo_ModeracaoService
+apto_PerfilService --|> elo_PerfilService
+apto_MatchmakingService --|> elo_MatchingService
+apto_CompatDet ..|> elo_CompatStrategy
+apto_LlmProvider --|> elo_AbstractLlmProvider
+apto_GroqClient --|> elo_AbstractGroqClient
+apto_GroqProps ..|> elo_GroqProps
+apto_LlmParser --|> elo_JsonParser
+apto_PromptBuilder ..|> elo_PromptBuilder
+
+' --- apto estende a camada REST generica do framework ---
+apto_AnuncioController --|> elo_OfertaController
+apto_DenunciaController --|> elo_DenunciaController
+apto_LocadorController --|> elo_UsuarioController
+apto_UniversitarioController --|> elo_UsuarioController
+apto_ManifController --|> elo_ManifestacaoController
+apto_MatchmakingController --|> elo_MatchingController
+apto_ModeracaoController --|> elo_ModeracaoController
+apto_PerfilController --|> elo_PerfilController
+
+' =======================================================================
+'  ASSOCIACOES DE DOMINIO - APTO
+' =======================================================================
+apto_Anuncio "*" --> "1" apto_PerfilAnunciante : anunciante
+apto_Anuncio "1" --> "1" apto_Moradia : moradia
+apto_Anuncio --> apto_TipoAnuncio
+apto_Anuncio --> apto_StatusAnuncio
+apto_Avaliacao "*" --> "1" apto_Universitario : avaliador
+apto_Avaliacao "*" --> "1" apto_PerfilAnunciante : avaliado
+apto_Avaliacao "*" --> "1" apto_Anuncio
+apto_Avaliacao "*" --> "1" apto_Moradia
+apto_Denuncia "*" --> "1" elo_Usuario : denunciante
+apto_Denuncia "*" --> "1" apto_Anuncio
+apto_Denuncia --> apto_Criterio
+apto_Denuncia --> elo_StatusDenuncia
+apto_Locador "1" --> "1" apto_PerfilAnunciante
+apto_Manifestacao "*" --> "1" apto_Anuncio
+apto_Manifestacao "*" --> "1" apto_Universitario : interessado
+apto_Manifestacao --> elo_StatusManifestacao
+apto_Moradia --> apto_TipoMoradia
+apto_PerfilAnunciante "1" --> "1" elo_Usuario
+apto_Reputacao "1" --> "1" apto_PerfilAnunciante
+apto_Universitario "1" --> "0..1" apto_PerfilConvivencia
+apto_Universitario "1" --> "0..1" apto_PerfilAnunciante
+apto_Universitario --> apto_Genero
+apto_PerfilConvivencia --> apto_HorarioSono
+apto_PerfilConvivencia --> apto_NivelBarulho
+apto_PerfilConvivencia --> apto_FreqVisitas
+apto_PerfilConvivencia --> apto_NivelOrg
+apto_PerfilConvivencia --> apto_RotinaEstudos
+apto_PerfilConvivencia --> apto_PrefGenero
+
+' ---- controllers apto delegam para os services ----
+apto_AnuncioController ..> apto_AnuncioService
+apto_DenunciaController ..> apto_DenunciaService
+apto_LocadorController ..> apto_LocadorService
+apto_UniversitarioController ..> apto_UniversitarioService
+apto_ManifController ..> apto_ManifService
+apto_MatchmakingController ..> apto_MatchmakingService
+apto_ModeracaoController ..> apto_ModeracaoService
+apto_PerfilController ..> apto_PerfilService
+apto_AvaliacaoController ..> apto_AvaliacaoService
+apto_MoradiaController ..> apto_MoradiaService
+apto_PerfilAnuncianteController ..> apto_PerfilAnuncianteService
+apto_ReputacaoController ..> apto_ReputacaoService
+apto_DiagnosticoController ..> apto_GroqClient
+
+' ---- colaboracoes entre services (apto) ----
+apto_AnuncioService ..> apto_ManifService
+apto_AvaliacaoService ..> apto_AnuncioService
+apto_AvaliacaoService ..> apto_ReputacaoService
+apto_ModeracaoService ..> apto_ManifService
+apto_ModeracaoService ..> apto_AcaoModeracao
+apto_MatchmakingService ..> apto_CompatDet
+apto_MatchmakingService ..> apto_LlmProvider
+apto_MatchmakingService ..> apto_ResultadoCompat
+apto_LlmProvider ..> apto_GroqClient
+apto_LlmProvider ..> apto_PromptBuilder
+apto_LlmProvider ..> apto_LlmParser
+apto_ResultadoCompat --> apto_OrigemCompat
+apto_ResultadoCompat ..> elo_ResultadoCompat : adapta
+apto_GroqClient ..> apto_GroqProps
+
+
+note top of apto_AvaliacaoController
+  Controllers sem par generico no framework
+  (Avaliacao, Moradia, PerfilAnunciante,
+  Reputacao, DiagnosticoGroq) sao REST puros
+  da instancia, nao estendem a camada elo > web
+end note
+
+legend right
+  <b>elo-framework (elo-core + apto)</b>
+  elo-core = nucleo generico (Template Method + Strategy)
+  apto = instancia que estende/realiza o nucleo
+  camada REST: controllers apto estendem os RestController genericos
+  --|>  heranca    ..|>  realizacao    -->  associacao    ..>  dependencia
+endlegend
+
+@enduml

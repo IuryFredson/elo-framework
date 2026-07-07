@@ -1,0 +1,605 @@
+@startuml elo-framework-mentor-match
+title Elo Framework - Nucleo (elo-core) e Instancia Mentor Match (com camada REST)
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 40
+hide empty members
+
+' =======================================================================
+'  ELO-CORE  (framework / com.elo)
+' =======================================================================
+package "elo-core (com.elo)" #F4F8FF {
+
+    package "elo > oferta" {
+        interface "Oferta" as elo_Oferta {
+            + getId()
+            + getPublicadorId()
+            + tipoOferta()
+            + isAtiva()
+        }
+        abstract class "OfertaService<O,C,A,R,S>" as elo_OfertaService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + buscarEntidadePorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+    }
+
+    package "elo > usuario" {
+        abstract class "Usuario" as elo_Usuario {
+            - id : UUID
+            - nome : String
+            - email : String
+            - telefone : String
+            - ativo : boolean
+        }
+        abstract class "UsuarioService<T,C,A,R>" as elo_UsuarioService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + alterarStatus()
+            + ativar()
+            + inativar()
+            + deletar()
+        }
+    }
+
+    package "elo > perfil" {
+        interface "Perfil" as elo_Perfil {
+            + tipoPerfil()
+        }
+        abstract class "PerfilService<U,P,A,R>" as elo_PerfilService {
+            + buscarPerfil()
+            + atualizarPerfil()
+        }
+    }
+
+    package "elo > denuncia" {
+        interface "CriterioDenuncia" as elo_CriterioDenuncia {
+            + codigo()
+        }
+        interface "Denuncia" as elo_Denuncia {
+            + getId()
+            + getDenuncianteId()
+            + getOfertaId()
+            + getStatus()
+            + getCriterioCodigo()
+        }
+        abstract class "DenunciaService<D,O,U,C,R>" as elo_DenunciaService {
+            + listarTodas()
+            + criar()
+            + atualizarStatus()
+            + deletar()
+            + buscarPorId()
+            + buscarPorOfertaId()
+            + buscarPorUsuarioId()
+            + buscarPorStatus()
+        }
+        enum "StatusDenuncia" as elo_StatusDenuncia {
+            PENDENTE
+            EM_ANALISE
+            IMPROCEDENTE
+            PROCEDENTE
+            ARQUIVADA
+        }
+    }
+
+    package "elo > manifestacao" {
+        interface "ManifestacaoInteresse" as elo_Manifestacao {
+            + getId()
+            + getInteressadoId()
+            + getOfertaId()
+            + getStatus()
+        }
+        abstract class "ManifestacaoInteresseService<M,O,U,C,R,D>" as elo_ManifestacaoService {
+            + criar()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+            + buscarPorId()
+            + cancelarPendentesDaOferta()
+        }
+        enum "StatusManifestacaoInteresse" as elo_StatusManifestacao {
+            PENDENTE
+            ACEITA
+            RECUSADA
+            CANCELADA
+        }
+    }
+
+    package "elo > moderacao" {
+        enum "AcaoModeracaoOferta" as elo_AcaoModeracaoOferta {
+            NENHUMA
+            PAUSAR
+            ENCERRAR
+        }
+        abstract class "ModeracaoService<D,O,C,R>" as elo_ModeracaoService {
+            + moderar()
+        }
+    }
+
+    package "elo > compatibilidade" {
+        interface "CompatibilidadeStrategy<P>" as elo_CompatStrategy {
+            + calcular()
+        }
+        abstract class "MatchingService<U,P>" as elo_MatchingService {
+            + calcularMatches()
+        }
+        interface "ProvedorCompatibilidadeLlm<U,P>" as elo_ProvedorLlm {
+            + calcular()
+        }
+        enum "OrigemCompatibilidade" as elo_OrigemCompat {
+            LLM
+            FALLBACK_DETERMINISTICO
+        }
+        class "ResultadoCompatibilidade" as elo_ResultadoCompat <<record>> {
+            + candidatoId : UUID
+            + percentual : int
+            + justificativa : String
+            + criteriosAtendidos : List<String>
+            + origem : OrigemCompatibilidade
+        }
+        class "ResultadoMatching<C>" as elo_ResultadoMatching <<record>> {
+            + candidato : C
+            + compatibilidade : ResultadoCompatibilidade
+        }
+    }
+
+    package "elo > compatibilidade > llm" {
+        interface "ChatLlmClient" as elo_ChatLlmClient {
+            + completarChat()
+        }
+        interface "MatchingPromptBuilder<U>" as elo_PromptBuilder {
+            + montarSystemPrompt()
+            + montarUserPrompt()
+        }
+        interface "CompatibilidadeLlmParser" as elo_LlmParser {
+            + parse()
+        }
+        abstract class "JsonMatchesCompatibilidadeParser" as elo_JsonParser {
+            + parse()
+        }
+        abstract class "AbstractCompatibilidadeLlmProvider<U,P>" as elo_AbstractLlmProvider {
+            + calcular()
+        }
+    }
+
+    package "elo > compatibilidade > llm > groq" {
+        interface "GroqClientProperties" as elo_GroqProps {
+            + model()
+            + apiKey()
+        }
+        abstract class "AbstractGroqChatClient" as elo_AbstractGroqClient {
+            + completarChat()
+        }
+        class "GroqChatMessage" as elo_GroqMsg <<record>> {
+            + role : String
+            + content : String
+        }
+        class "GroqChatRequest" as elo_GroqReq <<record>> {
+            + model : String
+            + messages : List<GroqChatMessage>
+            + temperature : Double
+            + responseFormat : Map
+        }
+        class "GroqChatResponse" as elo_GroqResp <<record>>
+        class "Choice" as elo_GroqChoice <<record>>
+    }
+
+    package "elo > persistencia" {
+        interface "RepositorioBase<T,ID>" as elo_RepositorioBase
+    }
+    package "elo > web" {
+        abstract class "OfertaRestController<O,C,A,R,S>" as elo_OfertaController {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+        abstract class "UsuarioRestController<T,C,A,R>" as elo_UsuarioController {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + alterarStatus()
+            + deletar()
+        }
+        abstract class "PerfilRestController<U,P,A,R>" as elo_PerfilController {
+            + buscarPerfil()
+            + atualizarPerfil()
+        }
+        abstract class "DenunciaRestController<D,O,U,C,R>" as elo_DenunciaController {
+            + criar()
+            + listarTodas()
+            + buscarPorId()
+            + buscarPorOferta()
+            + buscarPorUsuario()
+            + buscarPorStatus()
+            + atualizarStatus()
+            + deletar()
+        }
+        abstract class "ManifestacaoInteresseRestController<M,O,U,C,R,D>" as elo_ManifestacaoController {
+            + criar()
+            + buscarPorId()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+        }
+        abstract class "ModeracaoRestController<D,O,C,R>" as elo_ModeracaoController {
+            + moderar()
+        }
+        abstract class "MatchingRestController<R>" as elo_MatchingController {
+            + buscarMatches()
+        }
+    }
+}
+
+' ---- elo-core relacoes internas ----
+elo_Denuncia --> elo_StatusDenuncia
+elo_Manifestacao --> elo_StatusManifestacao
+elo_DenunciaService ..> elo_StatusDenuncia
+elo_ModeracaoService ..> elo_AcaoModeracaoOferta
+elo_MatchingService --> elo_CompatStrategy
+elo_MatchingService --> elo_ProvedorLlm
+elo_MatchingService ..> elo_ResultadoMatching
+elo_ResultadoMatching *--> elo_ResultadoCompat
+elo_ResultadoCompat --> elo_OrigemCompat
+elo_CompatStrategy ..> elo_ResultadoCompat
+elo_ProvedorLlm ..> elo_ResultadoCompat
+elo_AbstractLlmProvider ..|> elo_ProvedorLlm
+elo_AbstractLlmProvider --> elo_ChatLlmClient
+elo_AbstractLlmProvider --> elo_PromptBuilder
+elo_AbstractLlmProvider --> elo_LlmParser
+elo_JsonParser ..|> elo_LlmParser
+elo_AbstractGroqClient ..|> elo_ChatLlmClient
+elo_AbstractGroqClient --> elo_GroqProps
+elo_AbstractGroqClient ..> elo_GroqReq
+elo_AbstractGroqClient ..> elo_GroqResp
+elo_GroqReq --> elo_GroqMsg
+elo_GroqResp *--> elo_GroqChoice
+elo_GroqChoice --> elo_GroqMsg
+
+' ---- camada REST generica delega para os services ----
+elo_OfertaController ..> elo_OfertaService
+elo_UsuarioController ..> elo_UsuarioService
+elo_PerfilController ..> elo_PerfilService
+elo_DenunciaController ..> elo_DenunciaService
+elo_ManifestacaoController ..> elo_ManifestacaoService
+elo_ModeracaoController ..> elo_ModeracaoService
+
+' =======================================================================
+'  INSTANCIA - MENTOR MATCH  (com.mentormatch)
+' =======================================================================
+package "mentor-match (com.mentormatch)" #F4FFF4 {
+
+    package "mentormatch > entity" {
+        abstract class "ParticipanteMentoria" as mm_Participante {
+            + getPerfilMentoria()
+        }
+        class "Aluno" as mm_Aluno
+        class "Mentor" as mm_Mentor
+        class "PerfilMentoria" as mm_PerfilMentoria {
+            - id : UUID
+            - areas : Set<String>
+            - objetivos : Set<String>
+            - nivelConhecimento : NivelConhecimento
+            - modalidades : Set<ModalidadeMentoria>
+            - disponibilidades : Set<PeriodoDisponibilidade>
+            - idiomas : Set<String>
+            - descricao : String
+            + tipoPerfil()
+        }
+        class "SessaoMentoria" as mm_Sessao {
+            - id : UUID
+            - titulo : String
+            - descricao : String
+            - area : String
+            - nivelAtendido : NivelConhecimento
+            - modalidade : ModalidadeMentoria
+            - periodo : PeriodoDisponibilidade
+            - capacidade : int
+            - status : StatusSessaoMentoria
+            - dataPublicacao : LocalDate
+            + getPublicadorId()
+            + tipoOferta()
+            + isAtiva()
+        }
+        class "SolicitacaoMentoria" as mm_Solicitacao {
+            - id : UUID
+            - status : StatusManifestacaoInteresse
+            - mensagem : String
+            - dataSolicitacao : LocalDateTime
+            - dataResposta : LocalDateTime
+            + getInteressadoId()
+            + getOfertaId()
+            + getStatus()
+        }
+        class "DenunciaSessaoMentoria" as mm_Denuncia {
+            - id : UUID
+            - titulo : String
+            - corpo : String
+            - criterio : CriterioDenunciaMentorMatch
+            - statusDenuncia : StatusDenuncia
+            - criadoEm : LocalDateTime
+            - statusAtualizadoEm : LocalDateTime
+            + getDenuncianteId()
+            + getOfertaId()
+            + getStatus()
+            + getCriterioCodigo()
+        }
+    }
+
+    package "mentormatch > enums" {
+        enum "AcaoModeracaoSessao" as mm_AcaoModeracao {
+            NENHUMA
+            PAUSAR_SESSAO
+            ENCERRAR_SESSAO
+        }
+        enum "CriterioDenunciaMentorMatch" as mm_Criterio {
+            CONTEUDO_INADEQUADO
+            INFORMACAO_FALSA
+            COMPORTAMENTO_INADEQUADO
+            FRAUDE
+            USO_INDEVIDO
+            OUTRO
+            + codigo()
+        }
+        enum "NivelConhecimento" as mm_Nivel {
+            INICIANTE
+            INTERMEDIARIO
+            AVANCADO
+            ESPECIALISTA
+        }
+        enum "ModalidadeMentoria" as mm_Modalidade {
+            PRESENCIAL
+            ONLINE
+            HIBRIDA
+        }
+        enum "PeriodoDisponibilidade" as mm_Periodo {
+            MANHA
+            TARDE
+            NOITE
+            FIM_DE_SEMANA
+            FLEXIVEL
+        }
+        enum "StatusSessaoMentoria" as mm_StatusSessao {
+            ATIVA
+            PAUSADA
+            ENCERRADA
+        }
+    }
+
+    package "mentormatch > service" {
+        class "AlunoService" as mm_AlunoService
+        class "MentorService" as mm_MentorService
+        class "PerfilMentoriaService" as mm_PerfilService
+        class "SessaoMentoriaService" as mm_SessaoService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + buscarEntidadePorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+        class "SolicitacaoMentoriaService" as mm_SolicitacaoService {
+            + criar()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+            + buscarPorId()
+            + cancelarPendentesDaOferta()
+        }
+        class "DenunciaSessaoMentoriaService" as mm_DenunciaService
+        class "ModeracaoSessaoMentoriaService" as mm_ModeracaoService
+    }
+
+    package "mentormatch > controller" {
+        class "AlunoController" as mm_AlunoController
+        class "MentorController" as mm_MentorController
+        class "AlunoPerfilController" as mm_AlunoPerfilController
+        class "MentorPerfilController" as mm_MentorPerfilController
+        class "SessaoMentoriaController" as mm_SessaoController
+        class "SolicitacaoMentoriaController" as mm_SolicitacaoController
+        class "DenunciaSessaoController" as mm_DenunciaController
+        class "ModeracaoSessaoController" as mm_ModeracaoController
+        class "MentorMatchingController" as mm_MatchingController
+    }
+
+    package "mentormatch > matching" {
+        class "MentorMatchingService" as mm_MatchingService {
+            + buscarMentoresCompativeis()
+        }
+        class "CompatibilidadeMentoriaCalculator" as mm_CompatDet {
+            + calcular()
+        }
+        class "MentorMatchCompatibilidadeLlmProvider" as mm_LlmProvider {
+            + calcular()
+        }
+        class "MentorMatchLlmParser" as mm_LlmParser {
+            + parse()
+        }
+        class "MentorMatchPromptBuilder" as mm_PromptBuilder {
+            + montarSystemPrompt()
+            + montarUserPrompt()
+        }
+    }
+
+    package "mentormatch > integration" {
+        class "GroqClient" as mm_GroqClient {
+            + completarChat()
+        }
+        class "GroqProperties" as mm_GroqProps <<record>> {
+            + baseUrl : String
+            + model : String
+            + apiKey : String
+            + timeout : Duration
+        }
+    }
+}
+
+
+' =======================================================================
+'  LAYOUT - MENTOR MATCH
+'  Links ocultos: apenas organizam a visualizacao horizontal da instancia.
+' =======================================================================
+' Colunas principais: dominio -> servicos -> REST.
+mm_Participante -[hidden]right-> mm_AlunoService
+mm_AlunoService -[hidden]right-> mm_AlunoController
+mm_PerfilMentoria -[hidden]right-> mm_PerfilService
+mm_PerfilService -[hidden]right-> mm_AlunoPerfilController
+mm_Sessao -[hidden]right-> mm_SessaoService
+mm_SessaoService -[hidden]right-> mm_SessaoController
+mm_Solicitacao -[hidden]right-> mm_SolicitacaoService
+mm_SolicitacaoService -[hidden]right-> mm_SolicitacaoController
+mm_Denuncia -[hidden]right-> mm_DenunciaService
+mm_DenunciaService -[hidden]right-> mm_DenunciaController
+
+' Ordem vertical dentro das colunas da instancia.
+mm_Participante -[hidden]down-> mm_PerfilMentoria
+mm_PerfilMentoria -[hidden]down-> mm_Sessao
+mm_Sessao -[hidden]down-> mm_Solicitacao
+mm_Solicitacao -[hidden]down-> mm_Denuncia
+mm_AlunoService -[hidden]down-> mm_MentorService
+mm_MentorService -[hidden]down-> mm_PerfilService
+mm_PerfilService -[hidden]down-> mm_SessaoService
+mm_SessaoService -[hidden]down-> mm_SolicitacaoService
+mm_SolicitacaoService -[hidden]down-> mm_DenunciaService
+mm_DenunciaService -[hidden]down-> mm_ModeracaoService
+mm_AlunoController -[hidden]down-> mm_MentorController
+mm_MentorController -[hidden]down-> mm_AlunoPerfilController
+mm_AlunoPerfilController -[hidden]down-> mm_MentorPerfilController
+mm_MentorPerfilController -[hidden]down-> mm_SessaoController
+mm_SessaoController -[hidden]down-> mm_SolicitacaoController
+mm_SolicitacaoController -[hidden]down-> mm_DenunciaController
+mm_DenunciaController -[hidden]down-> mm_ModeracaoController
+mm_ModeracaoController -[hidden]down-> mm_MatchingController
+
+' Matching/LLM como faixa inferior compacta.
+mm_MatchingService -[hidden]right-> mm_CompatDet
+mm_CompatDet -[hidden]right-> mm_LlmProvider
+mm_LlmProvider -[hidden]right-> mm_GroqClient
+mm_LlmProvider -[hidden]down-> mm_PromptBuilder
+mm_PromptBuilder -[hidden]right-> mm_LlmParser
+mm_GroqClient -[hidden]down-> mm_GroqProps
+mm_MatchingService -[hidden]up-> mm_SessaoService
+
+' Enums proximos das entidades que os usam, sem abrir demais a instancia.
+mm_Nivel -[hidden]right-> mm_Modalidade
+mm_Modalidade -[hidden]right-> mm_Periodo
+mm_Periodo -[hidden]right-> mm_StatusSessao
+mm_StatusSessao -[hidden]right-> mm_Criterio
+mm_Criterio -[hidden]right-> mm_AcaoModeracao
+mm_PerfilMentoria -[hidden]down-> mm_Nivel
+
+' =======================================================================
+'  HERANCAS / REALIZACOES  ->  ELO-CORE
+' =======================================================================
+' --- Mentor Match realiza/estende o dominio do framework ---
+mm_Participante --|> elo_Usuario
+mm_Aluno --|> mm_Participante
+mm_Mentor --|> mm_Participante
+mm_PerfilMentoria ..|> elo_Perfil
+mm_Sessao ..|> elo_Oferta
+mm_Solicitacao ..|> elo_Manifestacao
+mm_Denuncia ..|> elo_Denuncia
+mm_Criterio ..|> elo_CriterioDenuncia
+mm_AlunoService --|> elo_UsuarioService
+mm_MentorService --|> elo_UsuarioService
+mm_PerfilService --|> elo_PerfilService
+mm_SessaoService --|> elo_OfertaService
+mm_SolicitacaoService --|> elo_ManifestacaoService
+mm_DenunciaService --|> elo_DenunciaService
+mm_ModeracaoService --|> elo_ModeracaoService
+mm_MatchingService --|> elo_MatchingService
+mm_CompatDet ..|> elo_CompatStrategy
+mm_LlmProvider --|> elo_AbstractLlmProvider
+mm_GroqClient --|> elo_AbstractGroqClient
+mm_GroqProps ..|> elo_GroqProps
+mm_LlmParser --|> elo_JsonParser
+mm_PromptBuilder ..|> elo_PromptBuilder
+
+' --- Mentor Match estende a camada REST generica do framework ---
+mm_AlunoController --|> elo_UsuarioController
+mm_MentorController --|> elo_UsuarioController
+mm_AlunoPerfilController --|> elo_PerfilController
+mm_MentorPerfilController --|> elo_PerfilController
+mm_SessaoController --|> elo_OfertaController
+mm_SolicitacaoController --|> elo_ManifestacaoController
+mm_DenunciaController --|> elo_DenunciaController
+mm_ModeracaoController --|> elo_ModeracaoController
+mm_MatchingController --|> elo_MatchingController
+
+' =======================================================================
+'  ASSOCIACOES DE DOMINIO - MENTOR MATCH
+' =======================================================================
+mm_Participante "1" --> "0..1" mm_PerfilMentoria
+mm_Sessao "*" --> "1" mm_Mentor : publicador
+mm_Sessao --> mm_Nivel
+mm_Sessao --> mm_Modalidade
+mm_Sessao --> mm_Periodo
+mm_Sessao --> mm_StatusSessao
+mm_Solicitacao "*" --> "1" mm_Sessao
+mm_Solicitacao "*" --> "1" mm_Aluno : interessado
+mm_Solicitacao --> elo_StatusManifestacao
+mm_Denuncia "*" --> "1" mm_Participante : denunciante
+mm_Denuncia "*" --> "1" mm_Sessao
+mm_Denuncia --> mm_Criterio
+mm_Denuncia --> elo_StatusDenuncia
+mm_PerfilMentoria --> mm_Nivel
+mm_PerfilMentoria --> mm_Modalidade
+mm_PerfilMentoria --> mm_Periodo
+
+' ---- controllers Mentor Match delegam para os services ----
+mm_AlunoController ..> mm_AlunoService
+mm_MentorController ..> mm_MentorService
+mm_AlunoPerfilController ..> mm_PerfilService
+mm_MentorPerfilController ..> mm_PerfilService
+mm_SessaoController ..> mm_SessaoService
+mm_SolicitacaoController ..> mm_SolicitacaoService
+mm_DenunciaController ..> mm_DenunciaService
+mm_ModeracaoController ..> mm_ModeracaoService
+mm_MatchingController ..> mm_MatchingService
+
+' ---- colaboracoes entre services (Mentor Match) ----
+mm_ModeracaoService ..> mm_SolicitacaoService
+mm_ModeracaoService ..> mm_AcaoModeracao
+mm_MatchingService ..> mm_CompatDet
+mm_MatchingService ..> mm_LlmProvider
+mm_LlmProvider ..> mm_GroqClient
+mm_LlmProvider ..> mm_PromptBuilder
+mm_LlmProvider ..> mm_LlmParser
+mm_GroqClient ..> mm_GroqProps
+
+note top of mm_MatchingController
+  Mentor Match instancia o Elo Framework
+  com alunos, mentores, perfil de mentoria,
+  sessao de mentoria, solicitacao de mentoria,
+  denuncia/moderacao e matching por compatibilidade.
+end note
+
+legend right
+  <b>elo-framework (elo-core + mentor-match)</b>
+  elo-core = nucleo generico (Template Method + Strategy)
+  mentor-match = instancia que estende/realiza o nucleo
+  camada REST: controllers Mentor Match estendem os RestController genericos
+  --|>  heranca    ..|>  realizacao    -->  associacao    ..>  dependencia
+endlegend
+
+@enduml

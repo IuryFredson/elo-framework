@@ -1,0 +1,598 @@
+@startuml elo-framework-study-buddy
+title Elo Framework - Nucleo (elo-core) e Instancia Study Buddy (com camada REST)
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 40
+hide empty members
+
+' =======================================================================
+'  ELO-CORE  (framework / com.elo)
+' =======================================================================
+package "elo-core (com.elo)" #F4F8FF {
+
+    package "elo > oferta" {
+        interface "Oferta" as elo_Oferta {
+            + getId()
+            + getPublicadorId()
+            + tipoOferta()
+            + isAtiva()
+        }
+        abstract class "OfertaService<O,C,A,R,S>" as elo_OfertaService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + buscarEntidadePorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+    }
+
+    package "elo > usuario" {
+        abstract class "Usuario" as elo_Usuario {
+            - id : UUID
+            - nome : String
+            - email : String
+            - telefone : String
+            - ativo : boolean
+        }
+        abstract class "UsuarioService<T,C,A,R>" as elo_UsuarioService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + alterarStatus()
+            + ativar()
+            + inativar()
+            + deletar()
+        }
+    }
+
+    package "elo > perfil" {
+        interface "Perfil" as elo_Perfil {
+            + tipoPerfil()
+        }
+        abstract class "PerfilService<U,P,A,R>" as elo_PerfilService {
+            + buscarPerfil()
+            + atualizarPerfil()
+        }
+    }
+
+    package "elo > denuncia" {
+        interface "CriterioDenuncia" as elo_CriterioDenuncia {
+            + codigo()
+        }
+        interface "Denuncia" as elo_Denuncia {
+            + getId()
+            + getDenuncianteId()
+            + getOfertaId()
+            + getStatus()
+            + getCriterioCodigo()
+        }
+        abstract class "DenunciaService<D,O,U,C,R>" as elo_DenunciaService {
+            + listarTodas()
+            + criar()
+            + atualizarStatus()
+            + deletar()
+            + buscarPorId()
+            + buscarPorOfertaId()
+            + buscarPorUsuarioId()
+            + buscarPorStatus()
+        }
+        enum "StatusDenuncia" as elo_StatusDenuncia {
+            PENDENTE
+            EM_ANALISE
+            IMPROCEDENTE
+            PROCEDENTE
+            ARQUIVADA
+        }
+    }
+
+    package "elo > manifestacao" {
+        interface "ManifestacaoInteresse" as elo_Manifestacao {
+            + getId()
+            + getInteressadoId()
+            + getOfertaId()
+            + getStatus()
+        }
+        abstract class "ManifestacaoInteresseService<M,O,U,C,R,D>" as elo_ManifestacaoService {
+            + criar()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+            + buscarPorId()
+            + cancelarPendentesDaOferta()
+        }
+        enum "StatusManifestacaoInteresse" as elo_StatusManifestacao {
+            PENDENTE
+            ACEITA
+            RECUSADA
+            CANCELADA
+        }
+    }
+
+    package "elo > moderacao" {
+        enum "AcaoModeracaoOferta" as elo_AcaoModeracaoOferta {
+            NENHUMA
+            PAUSAR
+            ENCERRAR
+        }
+        abstract class "ModeracaoService<D,O,C,R>" as elo_ModeracaoService {
+            + moderar()
+        }
+    }
+
+    package "elo > compatibilidade" {
+        interface "CompatibilidadeStrategy<P>" as elo_CompatStrategy {
+            + calcular()
+        }
+        abstract class "MatchingService<U,P>" as elo_MatchingService {
+            + calcularMatches()
+        }
+        interface "ProvedorCompatibilidadeLlm<U,P>" as elo_ProvedorLlm {
+            + calcular()
+        }
+        enum "OrigemCompatibilidade" as elo_OrigemCompat {
+            LLM
+            FALLBACK_DETERMINISTICO
+        }
+        class "ResultadoCompatibilidade" as elo_ResultadoCompat <<record>> {
+            + candidatoId : UUID
+            + percentual : int
+            + justificativa : String
+            + criteriosAtendidos : List<String>
+            + origem : OrigemCompatibilidade
+        }
+        class "ResultadoMatching<C>" as elo_ResultadoMatching <<record>> {
+            + candidato : C
+            + compatibilidade : ResultadoCompatibilidade
+        }
+    }
+
+    package "elo > compatibilidade > llm" {
+        interface "ChatLlmClient" as elo_ChatLlmClient {
+            + completarChat()
+        }
+        interface "MatchingPromptBuilder<U>" as elo_PromptBuilder {
+            + montarSystemPrompt()
+            + montarUserPrompt()
+        }
+        interface "CompatibilidadeLlmParser" as elo_LlmParser {
+            + parse()
+        }
+        abstract class "JsonMatchesCompatibilidadeParser" as elo_JsonParser {
+            + parse()
+        }
+        abstract class "AbstractCompatibilidadeLlmProvider<U,P>" as elo_AbstractLlmProvider {
+            + calcular()
+        }
+    }
+
+    package "elo > compatibilidade > llm > groq" {
+        interface "GroqClientProperties" as elo_GroqProps {
+            + model()
+            + apiKey()
+        }
+        abstract class "AbstractGroqChatClient" as elo_AbstractGroqClient {
+            + completarChat()
+        }
+        class "GroqChatMessage" as elo_GroqMsg <<record>> {
+            + role : String
+            + content : String
+        }
+        class "GroqChatRequest" as elo_GroqReq <<record>> {
+            + model : String
+            + messages : List<GroqChatMessage>
+            + temperature : Double
+            + responseFormat : Map
+        }
+        class "GroqChatResponse" as elo_GroqResp <<record>>
+        class "Choice" as elo_GroqChoice <<record>>
+    }
+
+    package "elo > persistencia" {
+        interface "RepositorioBase<T,ID>" as elo_RepositorioBase
+    }
+    package "elo > web" {
+        abstract class "OfertaRestController<O,C,A,R,S>" as elo_OfertaController {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+        abstract class "UsuarioRestController<T,C,A,R>" as elo_UsuarioController {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + atualizar()
+            + alterarStatus()
+            + deletar()
+        }
+        abstract class "PerfilRestController<U,P,A,R>" as elo_PerfilController {
+            + buscarPerfil()
+            + atualizarPerfil()
+        }
+        abstract class "DenunciaRestController<D,O,U,C,R>" as elo_DenunciaController {
+            + criar()
+            + listarTodas()
+            + buscarPorId()
+            + buscarPorOferta()
+            + buscarPorUsuario()
+            + buscarPorStatus()
+            + atualizarStatus()
+            + deletar()
+        }
+        abstract class "ManifestacaoInteresseRestController<M,O,U,C,R,D>" as elo_ManifestacaoController {
+            + criar()
+            + buscarPorId()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+        }
+        abstract class "ModeracaoRestController<D,O,C,R>" as elo_ModeracaoController {
+            + moderar()
+        }
+        abstract class "MatchingRestController<R>" as elo_MatchingController {
+            + buscarMatches()
+        }
+    }
+}
+
+' ---- elo-core relacoes internas ----
+elo_Denuncia --> elo_StatusDenuncia
+elo_Manifestacao --> elo_StatusManifestacao
+elo_DenunciaService ..> elo_StatusDenuncia
+elo_ModeracaoService ..> elo_AcaoModeracaoOferta
+elo_MatchingService --> elo_CompatStrategy
+elo_MatchingService --> elo_ProvedorLlm
+elo_MatchingService ..> elo_ResultadoMatching
+elo_ResultadoMatching *--> elo_ResultadoCompat
+elo_ResultadoCompat --> elo_OrigemCompat
+elo_CompatStrategy ..> elo_ResultadoCompat
+elo_ProvedorLlm ..> elo_ResultadoCompat
+elo_AbstractLlmProvider ..|> elo_ProvedorLlm
+elo_AbstractLlmProvider --> elo_ChatLlmClient
+elo_AbstractLlmProvider --> elo_PromptBuilder
+elo_AbstractLlmProvider --> elo_LlmParser
+elo_JsonParser ..|> elo_LlmParser
+elo_AbstractGroqClient ..|> elo_ChatLlmClient
+elo_AbstractGroqClient --> elo_GroqProps
+elo_AbstractGroqClient ..> elo_GroqReq
+elo_AbstractGroqClient ..> elo_GroqResp
+elo_GroqReq --> elo_GroqMsg
+elo_GroqResp *--> elo_GroqChoice
+elo_GroqChoice --> elo_GroqMsg
+
+' ---- camada REST generica delega para os services ----
+elo_OfertaController ..> elo_OfertaService
+elo_UsuarioController ..> elo_UsuarioService
+elo_PerfilController ..> elo_PerfilService
+elo_DenunciaController ..> elo_DenunciaService
+elo_ManifestacaoController ..> elo_ManifestacaoService
+elo_ModeracaoController ..> elo_ModeracaoService
+
+' =======================================================================
+'  INSTANCIA - STUDY BUDDY  (com.studybuddy)
+' =======================================================================
+package "study-buddy (com.studybuddy)" #F4FFF4 {
+
+    package "studybuddy > entity" {
+        class "Estudante" as sb_Estudante {
+            - matricula : String
+            - instituicao : String
+        }
+        class "PerfilAcademico" as sb_PerfilAcademico {
+            - id : UUID
+            - curso : String
+            - disciplinasInteresse : Set<String>
+            - disponibilidade : Set<PeriodoDisponibilidade>
+            - objetivoEstudo : ObjetivoEstudo
+            - nivelConhecimento : NivelConhecimento
+            - modalidadePreferida : ModalidadeEstudo
+            - descricao : String
+            + tipoPerfil()
+        }
+        class "GrupoEstudo" as sb_Grupo {
+            - id : UUID
+            - titulo : String
+            - descricao : String
+            - disciplina : String
+            - quantidadeVagas : int
+            - modalidade : ModalidadeEstudo
+            - periodo : PeriodoDisponibilidade
+            - status : StatusGrupoEstudo
+            - dataPublicacao : LocalDate
+            + getPublicadorId()
+            + tipoOferta()
+            + isAtiva()
+        }
+        class "ManifestacaoInteresseGrupo" as sb_Manifestacao {
+            - id : UUID
+            - status : StatusManifestacaoInteresse
+            - mensagem : String
+            - dataManifestacao : LocalDateTime
+            - dataResposta : LocalDateTime
+            + getInteressadoId()
+            + getOfertaId()
+            + getStatus()
+        }
+        class "DenunciaGrupoEstudo" as sb_Denuncia {
+            - id : UUID
+            - titulo : String
+            - corpo : String
+            - criterio : CriterioDenunciaStudyBuddy
+            - statusDenuncia : StatusDenuncia
+            - criadoEm : LocalDateTime
+            - statusAtualizadoEm : LocalDateTime
+            + getDenuncianteId()
+            + getOfertaId()
+            + getStatus()
+            + getCriterioCodigo()
+        }
+    }
+
+    package "studybuddy > enums" {
+        enum "AcaoModeracaoGrupoEstudo" as sb_AcaoModeracao {
+            NENHUMA
+            PAUSAR_GRUPO
+            ENCERRAR_GRUPO
+        }
+        enum "CriterioDenunciaStudyBuddy" as sb_Criterio {
+            GRUPO_INADEQUADO
+            CONTEUDO_FORA_DO_TEMA
+            COMPORTAMENTO_INADEQUADO
+            USO_INDEVIDO
+            OUTRO
+            + codigo()
+        }
+        enum "ModalidadeEstudo" as sb_Modalidade {
+            PRESENCIAL
+            ONLINE
+            HIBRIDO
+        }
+        enum "NivelConhecimento" as sb_Nivel {
+            INICIANTE
+            INTERMEDIARIO
+            AVANCADO
+        }
+        enum "ObjetivoEstudo" as sb_Objetivo {
+            PROVA
+            TRABALHO
+            PROJETO
+            REFORCO
+            CONCURSO
+            PESQUISA
+        }
+        enum "PeriodoDisponibilidade" as sb_Periodo {
+            MANHA
+            TARDE
+            NOITE
+            FIM_DE_SEMANA
+            FLEXIVEL
+        }
+        enum "StatusGrupoEstudo" as sb_StatusGrupo {
+            ATIVO
+            PAUSADO
+            ENCERRADO
+        }
+    }
+
+    package "studybuddy > service" {
+        class "EstudanteService" as sb_EstudanteService {
+            + alterarStatus()
+        }
+        class "PerfilAcademicoService" as sb_PerfilService
+        class "GrupoEstudoService" as sb_GrupoService {
+            + criar()
+            + listarTodos()
+            + buscarPorId()
+            + buscarEntidadePorId()
+            + atualizar()
+            + atualizarStatus()
+            + deletar()
+        }
+        class "ManifestacaoInteresseGrupoService" as sb_ManifestacaoService {
+            + criar()
+            + aceitar()
+            + recusar()
+            + cancelar()
+            + listarPorOferta()
+            + listarPorInteressado()
+            + buscarPorId()
+            + cancelarPendentesDaOferta()
+        }
+        class "DenunciaGrupoEstudoService" as sb_DenunciaService
+        class "ModeracaoGrupoEstudoService" as sb_ModeracaoService
+    }
+
+    package "studybuddy > controller" {
+        class "EstudanteController" as sb_EstudanteController
+        class "PerfilAcademicoController" as sb_PerfilController
+        class "GrupoEstudoController" as sb_GrupoController
+        class "ManifestacaoInteresseGrupoController" as sb_ManifestacaoController
+        class "DenunciaGrupoEstudoController" as sb_DenunciaController
+        class "ModeracaoGrupoEstudoController" as sb_ModeracaoController
+        class "StudyBuddyMatchingController" as sb_MatchingController
+    }
+
+    package "studybuddy > matching" {
+        class "StudyBuddyMatchingService" as sb_MatchingService {
+            + buscarEstudantesCompativeis()
+        }
+        class "CompatibilidadeAcademicaCalculator" as sb_CompatDet {
+            + calcular()
+        }
+        class "StudyBuddyCompatibilidadeLlmProvider" as sb_LlmProvider {
+            + calcular()
+        }
+        class "StudyBuddyMatchingLlmParser" as sb_LlmParser {
+            + parse()
+        }
+        class "StudyBuddyMatchingPromptBuilder" as sb_PromptBuilder {
+            + montarSystemPrompt()
+            + montarUserPrompt()
+        }
+    }
+
+    package "studybuddy > integration" {
+        class "GroqClient" as sb_GroqClient {
+            + completarChat()
+        }
+        class "GroqProperties" as sb_GroqProps <<record>> {
+            + baseUrl : String
+            + model : String
+            + apiKey : String
+            + timeout : Duration
+        }
+    }
+}
+
+' =======================================================================
+'  LAYOUT - STUDY BUDDY
+'  Links ocultos: apenas organizam a visualizacao horizontal da instancia.
+' =======================================================================
+' Colunas principais: dominio -> servicos -> REST.
+sb_Estudante -[hidden]right-> sb_EstudanteService
+sb_EstudanteService -[hidden]right-> sb_EstudanteController
+sb_PerfilAcademico -[hidden]right-> sb_PerfilService
+sb_PerfilService -[hidden]right-> sb_PerfilController
+sb_Grupo -[hidden]right-> sb_GrupoService
+sb_GrupoService -[hidden]right-> sb_GrupoController
+sb_Manifestacao -[hidden]right-> sb_ManifestacaoService
+sb_ManifestacaoService -[hidden]right-> sb_ManifestacaoController
+sb_Denuncia -[hidden]right-> sb_DenunciaService
+sb_DenunciaService -[hidden]right-> sb_DenunciaController
+
+' Ordem vertical dentro das colunas da instancia.
+sb_Estudante -[hidden]down-> sb_PerfilAcademico
+sb_PerfilAcademico -[hidden]down-> sb_Grupo
+sb_Grupo -[hidden]down-> sb_Manifestacao
+sb_Manifestacao -[hidden]down-> sb_Denuncia
+sb_EstudanteService -[hidden]down-> sb_PerfilService
+sb_PerfilService -[hidden]down-> sb_GrupoService
+sb_GrupoService -[hidden]down-> sb_ManifestacaoService
+sb_ManifestacaoService -[hidden]down-> sb_DenunciaService
+sb_DenunciaService -[hidden]down-> sb_ModeracaoService
+sb_EstudanteController -[hidden]down-> sb_PerfilController
+sb_PerfilController -[hidden]down-> sb_GrupoController
+sb_GrupoController -[hidden]down-> sb_ManifestacaoController
+sb_ManifestacaoController -[hidden]down-> sb_DenunciaController
+sb_DenunciaController -[hidden]down-> sb_ModeracaoController
+sb_ModeracaoController -[hidden]down-> sb_MatchingController
+
+' Matching/LLM como faixa inferior compacta.
+sb_MatchingService -[hidden]right-> sb_CompatDet
+sb_CompatDet -[hidden]right-> sb_LlmProvider
+sb_LlmProvider -[hidden]right-> sb_GroqClient
+sb_LlmProvider -[hidden]down-> sb_PromptBuilder
+sb_PromptBuilder -[hidden]right-> sb_LlmParser
+sb_GroqClient -[hidden]down-> sb_GroqProps
+sb_MatchingService -[hidden]up-> sb_GrupoService
+
+' Enums proximos das entidades que os usam, sem abrir demais a instancia.
+sb_Modalidade -[hidden]right-> sb_Nivel
+sb_Nivel -[hidden]right-> sb_Objetivo
+sb_Objetivo -[hidden]right-> sb_Periodo
+sb_Periodo -[hidden]right-> sb_StatusGrupo
+sb_StatusGrupo -[hidden]right-> sb_Criterio
+sb_Criterio -[hidden]right-> sb_AcaoModeracao
+sb_PerfilAcademico -[hidden]down-> sb_Modalidade
+
+' =======================================================================
+'  HERANCAS / REALIZACOES  ->  ELO-CORE
+' =======================================================================
+' --- Study Buddy realiza/estende o dominio do framework ---
+sb_Estudante --|> elo_Usuario
+sb_PerfilAcademico ..|> elo_Perfil
+sb_Grupo ..|> elo_Oferta
+sb_Manifestacao ..|> elo_Manifestacao
+sb_Denuncia ..|> elo_Denuncia
+sb_Criterio ..|> elo_CriterioDenuncia
+sb_EstudanteService --|> elo_UsuarioService
+sb_PerfilService --|> elo_PerfilService
+sb_GrupoService --|> elo_OfertaService
+sb_ManifestacaoService --|> elo_ManifestacaoService
+sb_DenunciaService --|> elo_DenunciaService
+sb_ModeracaoService --|> elo_ModeracaoService
+sb_MatchingService --|> elo_MatchingService
+sb_CompatDet ..|> elo_CompatStrategy
+sb_LlmProvider --|> elo_AbstractLlmProvider
+sb_GroqClient --|> elo_AbstractGroqClient
+sb_GroqProps ..|> elo_GroqProps
+sb_LlmParser --|> elo_JsonParser
+sb_PromptBuilder ..|> elo_PromptBuilder
+
+' --- Study Buddy estende a camada REST generica do framework ---
+sb_EstudanteController --|> elo_UsuarioController
+sb_PerfilController --|> elo_PerfilController
+sb_GrupoController --|> elo_OfertaController
+sb_ManifestacaoController --|> elo_ManifestacaoController
+sb_DenunciaController --|> elo_DenunciaController
+sb_ModeracaoController --|> elo_ModeracaoController
+sb_MatchingController --|> elo_MatchingController
+
+' =======================================================================
+'  ASSOCIACOES DE DOMINIO - STUDY BUDDY
+' =======================================================================
+sb_Estudante "1" --> "0..1" sb_PerfilAcademico
+sb_Grupo "*" --> "1" sb_Estudante : publicador
+sb_Grupo --> sb_Modalidade
+sb_Grupo --> sb_Periodo
+sb_Grupo --> sb_StatusGrupo
+sb_Manifestacao "*" --> "1" sb_Grupo
+sb_Manifestacao "*" --> "1" sb_Estudante : interessado
+sb_Manifestacao --> elo_StatusManifestacao
+sb_Denuncia "*" --> "1" sb_Estudante : denunciante
+sb_Denuncia "*" --> "1" sb_Grupo
+sb_Denuncia --> sb_Criterio
+sb_Denuncia --> elo_StatusDenuncia
+sb_PerfilAcademico --> sb_Modalidade
+sb_PerfilAcademico --> sb_Nivel
+sb_PerfilAcademico --> sb_Objetivo
+sb_PerfilAcademico --> sb_Periodo
+
+' ---- controllers Study Buddy delegam para os services ----
+sb_EstudanteController ..> sb_EstudanteService
+sb_PerfilController ..> sb_PerfilService
+sb_GrupoController ..> sb_GrupoService
+sb_ManifestacaoController ..> sb_ManifestacaoService
+sb_DenunciaController ..> sb_DenunciaService
+sb_ModeracaoController ..> sb_ModeracaoService
+sb_MatchingController ..> sb_MatchingService
+
+' ---- colaboracoes entre services (Study Buddy) ----
+sb_ModeracaoService ..> sb_ManifestacaoService
+sb_ModeracaoService ..> sb_AcaoModeracao
+sb_MatchingService ..> sb_CompatDet
+sb_MatchingService ..> sb_LlmProvider
+sb_LlmProvider ..> sb_GroqClient
+sb_LlmProvider ..> sb_PromptBuilder
+sb_LlmProvider ..> sb_LlmParser
+sb_GroqClient ..> sb_GroqProps
+
+note top of sb_MatchingController
+  Study Buddy instancia o Elo Framework
+  com estudantes, perfil academico,
+  grupo de estudo, manifestacao de interesse,
+  denuncia/moderacao e matching academico.
+end note
+
+legend right
+  <b>elo-framework (elo-core + study-buddy)</b>
+  elo-core = nucleo generico (Template Method + Strategy)
+  study-buddy = instancia que estende/realiza o nucleo
+  camada REST: controllers Study Buddy estendem os RestController genericos
+  --|>  heranca    ..|>  realizacao    -->  associacao    ..>  dependencia
+endlegend
+
+@enduml
