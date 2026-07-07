@@ -1,10 +1,12 @@
-# Apto / Elo Framework
+# Elo Framework
 
-Projeto acadêmico da disciplina Projeto Detalhado de Software.
+Projeto academico da disciplina Projeto Detalhado de Software.
 
-A Fase 2 evolui a aplicação **Apto** para o **Elo Framework**, um framework Spring/JPA híbrido para plataformas baseadas em usuários, perfis, ofertas, Manifestação de Interesse e compatibilidade.
+O repositorio contem o **Elo Framework**, um nucleo Spring/JPA para plataformas baseadas em usuarios, perfis, ofertas, manifestacoes de interesse, denuncias, moderacao e matching. O framework e instanciado hoje por tres dominios:
 
-O núcleo reutilizável fica em `backend/elo-core`. A aplicação Apto fica em `backend/apto` e instancia o framework no domínio de moradias universitárias. A aplicação Study Buddy fica em `backend/study-buddy` e instancia o mesmo framework no domínio de grupos de estudo.
+- **Apto**: moradias universitarias e vagas em moradia.
+- **Study Buddy**: grupos de estudo.
+- **Mentor Match**: sessoes e solicitacoes de mentoria.
 
 ## Integrantes
 
@@ -16,213 +18,286 @@ O núcleo reutilizável fica em `backend/elo-core`. A aplicação Apto fica em `
 
 ```text
 .
-├── backend/
-│   ├── elo-core/       # Núcleo do Elo Framework
-│   ├── apto/           # Instância Apto e API Spring Boot
-│   └── study-buddy/    # Instância Study Buddy e API Spring Boot
-├── frontend/           # Aplicação web React/Vite do Apto
-├── specs/              # Especificações, contratos, modelo, tarefas e diagrama
-└── docker/             # Serviços auxiliares, como PostgreSQL
+|-- backend/
+|   |-- elo-core/       # Nucleo reutilizavel do Elo Framework
+|   |-- apto/           # Instancia Apto, API Spring Boot
+|   |-- study-buddy/    # Instancia Study Buddy, API Spring Boot
+|   `-- mentor-match/   # Instancia Mentor Match, API Spring Boot
+|-- frontend/           # Frontend React/Vite do Apto
+|-- frontend-study-buddy/
+|-- frontend-mentor-match/
+|-- docker/             # PostgreSQL local
+`-- specs/              # Especificacoes, planos, contratos e diagramas
 ```
+
+## Stack
+
+- Java 21
+- Spring Boot 4.0.4
+- Maven multi-module
+- Spring Web, Validation, Data JPA e RestClient
+- PostgreSQL 16 em desenvolvimento local
+- H2 nos testes de Apto e Study Buddy
+- React 19, Vite 8, TypeScript, React Router e Tailwind CSS 4 nos frontends
 
 ## Arquitetura
 
-A dependência é unidirecional:
+As instancias dependem do nucleo, e o nucleo nao depende das instancias:
 
 ```text
-apto -> elo-core
-study-buddy -> elo-core
+apto         -> elo-core
+study-buddy  -> elo-core
+mentor-match -> elo-core
 ```
 
-`elo-core` define contratos, estados, portas e Template Methods. Ele não referencia classes de `com.apto` ou `com.studybuddy`.
+O `elo-core` define contratos, templates e implementacoes reutilizaveis para os fluxos comuns. Cada instancia fornece entidades, DTOs, repositories, mappers, controllers, excecoes e regras especificas do seu dominio.
 
-Cada instância fornece entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
+Principais pontos do nucleo:
 
-## Núcleo do Framework
+- `Usuario` e `UsuarioService`
+- `Perfil` e `PerfilService`
+- `Oferta` e `OfertaService`
+- `ManifestacaoInteresse` e `ManifestacaoInteresseService`
+- `Denuncia`, `CriterioDenuncia` e `DenunciaService`
+- `ModeracaoService`
+- `CompatibilidadeStrategy` e `MatchingService`
+- `ProvedorCompatibilidadeLlm`
+- cliente base Groq em `com.elo.compatibilidade.llm.groq`
 
-O `elo-core` controla os fluxos fixos:
+## Instancias
 
-- gestão de usuários;
-- gestão de perfis;
-- publicação e gestão de ofertas;
-- Manifestação de Interesse;
-- denúncia;
-- moderação;
-- compatibilidade e matching.
+### Apto
 
-Contratos e templates principais:
+Dominio de moradias universitarias.
 
-- `Usuario` e `UsuarioService`;
-- `Perfil` e `PerfilService`;
-- `Oferta` e `OfertaService`;
-- `ManifestacaoInteresse` e `ManifestacaoInteresseService`;
-- `Denuncia`, `CriterioDenuncia` e `DenunciaService`;
-- `ModeracaoService`;
-- `CompatibilidadeStrategy`;
-- `MatchingService`;
-- `ProvedorCompatibilidadeLlm`.
+- Usuarios universitarios e locadores
+- Perfil de convivencia e perfil anunciante
+- Moradias e anuncios
+- Busca paginada e filtrada de ofertas
+- Manifestacoes de interesse
+- Denuncias e moderacao de anuncios
+- Avaliacoes e reputacao de anunciantes
+- Matching com Groq e fallback deterministico
+- Diagnostico Groq em `GET /diagnostico/groq`
 
-## Apto Como Instância
+Rotas principais:
 
-O Apto instancia os pontos flexíveis do framework:
+```text
+/usuarios/universitarios
+/usuarios/locadores
+/usuarios/{id}/perfil
+/perfis-anunciante
+/moradias
+/ofertas
+/ofertas/busca
+/manifestacoes
+/denuncias
+/moderacoes/denuncias
+/avaliacoes
+/reputacao
+/matching
+/diagnostico/groq
+```
 
-| Ponto flexível | Instância Apto |
-| --- | --- |
-| Dados do perfil | `PerfilConvivencia` |
-| Tipo de oferta publicada | `Anuncio` associado a `Moradia` |
-| Critérios de compatibilidade | `CompatibilidadeDeterministicaCalculator` |
-| Critério de denúncia | `CriterioDenunciaApto` |
-| Integração LLM | `AptoCompatibilidadeLlmProvider`, Groq, prompt e parser |
+### Study Buddy
 
-Manifestação de Interesse é ponto fixo. No Apto, ela representa interesse em um anúncio de moradia ou vaga.
+Dominio de grupos de estudo.
 
-## Study Buddy Como Instância
+- Estudantes
+- Perfil academico
+- Grupos de estudo como ofertas
+- Manifestacoes de interesse em grupos
+- Denuncias e moderacao de grupos
+- Matching academico com Groq e fallback deterministico
 
-O Study Buddy instancia os pontos flexíveis do framework:
+Rotas principais:
 
-| Ponto flexível | Instância Study Buddy |
-| --- | --- |
-| Dados do perfil | `PerfilAcademico` |
-| Tipo de oferta publicada | `GrupoEstudo` |
-| Critérios de compatibilidade | `CompatibilidadeAcademicaCalculator` |
-| Integração LLM | `StudyBuddyCompatibilidadeLlmProvider`, Groq, prompt e parser acadêmicos |
+```text
+/study-buddy/usuarios
+/study-buddy/ofertas
+/study-buddy/manifestacoes
+/study-buddy/denuncias
+/study-buddy/moderacoes/denuncias
+/study-buddy/matching
+```
 
-Manifestação de Interesse continua sendo ponto fixo. No Study Buddy, ela representa interesse em um grupo de estudo.
+### Mentor Match
 
-## Funcionalidades do Apto
+Dominio de mentorias.
 
-Backend:
+- Alunos e mentores
+- Perfis de mentoria
+- Sessoes de mentoria
+- Solicitacoes e participantes
+- Denuncias e moderacao de sessoes
+- Matching de mentores com Groq e fallback deterministico
 
-- cadastro e gestão de usuários universitários;
-- cadastro e gestão de locadores;
-- perfil de convivência;
-- perfil anunciante;
-- moradias;
-- anúncios;
-- busca paginada e filtrada de anúncios;
-- Manifestação de Interesse;
-- aceite, recusa e cancelamento de manifestações;
-- denúncia e moderação de anúncios;
-- avaliação e reputação de anunciantes;
-- matchmaking com LLM/Groq e fallback determinístico.
+Rotas principais:
 
-Frontend:
+```text
+/mentor-match/alunos
+/mentor-match/mentores
+/mentor-match/sessoes
+/mentor-match/sessoes/busca
+/mentor-match/solicitacoes
+/mentor-match/denuncias
+/mentor-match/moderacoes/denuncias
+/mentor-match/matching
+```
 
-- login/cadastro simplificados para contexto acadêmico;
-- sessão local em `localStorage`;
-- busca e detalhes de anúncios;
-- criação e gestão de anúncios;
-- manifestações de interesse;
-- matchmaking;
-- avaliação;
-- denúncias e moderação.
+## Frontends
 
-## Decisões de Projeto
+Cada instancia tem um frontend React/Vite separado:
 
-- Study Buddy foi implementado como segunda instância concreta do framework.
-- Mentor Match aparece apenas como exemplo futuro de extensibilidade.
-- Avaliação e reputação continuam específicas do Apto.
-- O mecanismo de Observer/Event Publisher foi removido.
-- Cancelamento de manifestações e recálculo de reputação agora são chamadas diretas entre services.
-- Autenticação real e deploy de produção estão fora do escopo.
+| Pasta | Dominio | Backend padrao |
+| --- | --- | --- |
+| `frontend` | Apto | `http://localhost:8080` |
+| `frontend-study-buddy` | Study Buddy | `http://localhost:8080` |
+| `frontend-mentor-match` | Mentor Match | `http://localhost:8082` |
 
-## Documentação
+Todos aceitam `VITE_API_URL` para apontar para outro backend.
 
-Arquivos principais:
+## Configuracao Local
 
-- `specs/elo-framework/spec.md`
-- `specs/elo-framework/contracts.md`
-- `specs/elo-framework/data-model.md`
-- `specs/elo-framework/plan.md`
-- `specs/elo-framework/tasks.md`
-- `specs/elo-framework/traceability.md`
-- `specs/elo-framework/diagrams/elo-framework-apto-class-diagram.puml`
+### Banco de dados
 
-## Como Rodar
+Suba o PostgreSQL local:
 
-### Banco de Dados
-
-```bash
+```powershell
 cd docker
 docker compose up -d
 ```
 
-Configuração padrão:
-
-- Database: `apto`
-- User: `apto`
-- Password: `apto`
-- Porta: `5432`
-
-### Backend
-
-```bash
-cd backend
-./mvnw -pl apto spring-boot:run
-```
-
-API:
+Configuracao padrao do container:
 
 ```text
-http://localhost:8080
+Database: apto
+User: apto
+Password: apto
+Porta: 5432
 ```
 
-Study Buddy:
+### Groq
 
-```bash
-cd backend
-./mvnw -pl study-buddy spring-boot:run
+As integracoes LLM usam a API Groq no formato OpenAI-compatible. Configure a chave por variavel de ambiente:
+
+```powershell
+$env:GROQ_API_KEY="sua_chave_aqui"
 ```
 
-Rotas da instância:
-
-```text
-/study-buddy
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-URL local padrão do Vite:
-
-```text
-http://localhost:5173
-```
-
-## Configuração Groq
-
-A integração com Groq é opcional nas instâncias Apto e Study Buddy:
+No Linux/macOS:
 
 ```bash
 export GROQ_API_KEY=sua_chave_aqui
 ```
 
-Sem chave ou em caso de falha, o matching de cada instância usa seu fallback determinístico.
+Sem chave, ou em caso de falha na chamada externa, os fluxos de matching usam fallback deterministico quando aplicavel. No Apto, tambem existe a rota de diagnostico `GET /diagnostico/groq`.
 
-## Testes
+## Como Rodar
 
-Backend:
+Execute os comandos a partir de `backend`.
 
-```bash
+### Apto
+
+```powershell
 cd backend
-mvn test
+.\mvnw.cmd -pl apto spring-boot:run
 ```
 
-Frontend:
+API padrao:
 
-```bash
+```text
+http://localhost:8080
+```
+
+### Study Buddy
+
+Por padrao tambem sobe na porta `8080`. Se for rodar junto com Apto, informe outra porta. Como o `application.properties` principal do Study Buddy declara apenas as propriedades da Groq, informe tambem o datasource se ele nao vier de outro profile:
+
+```powershell
+cd backend
+.\mvnw.cmd -pl study-buddy -Dspring-boot.run.arguments="--server.port=8081 --spring.datasource.url=jdbc:postgresql://localhost:5432/apto --spring.datasource.username=apto --spring.datasource.password=apto --spring.datasource.driver-class-name=org.postgresql.Driver --spring.jpa.hibernate.ddl-auto=update" spring-boot:run
+```
+
+API com o comando acima:
+
+```text
+http://localhost:8081/study-buddy
+```
+
+### Mentor Match
+
+```powershell
+cd backend
+.\mvnw.cmd -pl mentor-match spring-boot:run
+```
+
+API padrao:
+
+```text
+http://localhost:8082/mentor-match
+```
+
+### Frontend Apto
+
+```powershell
 cd frontend
+npm install
+npm run dev
+```
+
+### Frontend Study Buddy
+
+```powershell
+cd frontend-study-buddy
+npm install
+npm run dev
+```
+
+Se o backend estiver em outra porta:
+
+```powershell
+$env:VITE_API_URL="http://localhost:8081"
+npm run dev
+```
+
+### Frontend Mentor Match
+
+```powershell
+cd frontend-mentor-match
+npm install
+npm run dev
+```
+
+## Build e Testes
+
+Backend completo:
+
+```powershell
+cd backend
+.\mvnw.cmd clean install
+```
+
+Modulo especifico com dependencias:
+
+```powershell
+cd backend
+.\mvnw.cmd clean install -pl elo-core,apto -am
+```
+
+Testes:
+
+```powershell
+cd backend
+.\mvnw.cmd test
+```
+
+Frontends:
+
+```powershell
 npm run lint
+npm run typecheck
 npm run build
 ```
 
-## Status
-
-Apto e Study Buddy estão instanciados no Elo Framework.
-
-As etapas 1 a 9 do plano de evolução do framework e do plano Study Buddy foram executadas. A Etapa 09 atualiza documentação e valida a arquitetura final.
+Rode esses comandos dentro de `frontend`, `frontend-study-buddy` ou `frontend-mentor-match`.
