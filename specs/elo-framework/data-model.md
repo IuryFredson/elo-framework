@@ -1,10 +1,10 @@
-# Data Model: Elo Framework
+﻿# Data Model: Elo Framework
 
 ## Objetivo
 
-Descrever o modelo final do Elo Framework e como Apto e Study Buddy instanciam esse modelo.
+Descrever o modelo final do Elo Framework e como Apto, Study Buddy e Mentor Match instanciam esse modelo.
 
-Este documento não define todas as tabelas do banco. Ele descreve os conceitos do framework, os contratos do core e as entidades concretas das instâncias.
+Este documento nao define todas as tabelas do banco. Ele descreve os conceitos do framework, os contratos do core e as entidades concretas das instancias.
 
 ## Modelo Conceitual do Framework
 
@@ -42,64 +42,49 @@ Atributos no core:
 - telefone;
 - ativo.
 
-No Apto:
+Instancias:
 
-- `UsuarioUniversitario`;
-- `Locador`.
-
-No Study Buddy:
-
-- `Estudante`.
+- Apto: `UsuarioUniversitario`, `Locador`.
+- Study Buddy: `Estudante`.
+- Mentor Match: `Aluno`, `Mentor`.
 
 ### Perfil
 
-Representa dados da instância usados por busca, recomendação ou compatibilidade.
+Representa dados da instancia usados por busca, recomendacao ou compatibilidade.
 
 Contrato no core:
 
 - `Perfil`.
 
-No Apto:
+Instancias:
 
-- `PerfilConvivencia`.
+- Apto: `PerfilConvivencia`.
+- Study Buddy: `PerfilAcademico`.
+- Mentor Match: `PerfilMentoria`.
 
-No Study Buddy:
-
-- `PerfilAcademico`.
-
-Ponto flexível:
+Ponto flexivel:
 
 - dados do perfil.
 
 ### Oferta
 
-Representa algo publicado por um usuário.
+Representa algo publicado por um usuario.
 
 Contrato no core:
 
 - `Oferta`.
 
-No Apto:
+Instancias:
 
-- `Anuncio`.
+- Apto: `Anuncio`, associado a `Moradia`.
+- Study Buddy: `GrupoEstudo`, publicado por `Estudante`.
+- Mentor Match: `SessaoMentoria`, publicada no dominio de mentorias.
 
-A oferta concreta do Apto usa:
-
-- `PerfilAnunciante` como publicador;
-- `Moradia` como dados específicos da moradia;
-- `TipoAnuncio`;
-- `StatusAnuncio`;
-- valor mensal e data de publicação.
-
-Ponto flexível:
+Ponto flexivel:
 
 - tipo de oferta publicada.
 
-No Study Buddy:
-
-- `GrupoEstudo`, publicado por `Estudante`.
-
-### Manifestação de Interesse
+### Manifestacao de Interesse
 
 Representa o mecanismo fixo de interesse em uma oferta.
 
@@ -114,21 +99,19 @@ Estados no core:
 - `RECUSADA`;
 - `CANCELADA`.
 
-No Apto:
+Instancias:
 
-- `ManifestacaoInteresse` entre `UsuarioUniversitario` interessado e `Anuncio`.
-
-No Study Buddy:
-
-- `ManifestacaoInteresseGrupo` entre `Estudante` interessado e `GrupoEstudo`.
+- Apto: `ManifestacaoInteresse` entre `UsuarioUniversitario` interessado e `Anuncio`.
+- Study Buddy: `ManifestacaoInteresseGrupo` entre `Estudante` interessado e `GrupoEstudo`.
+- Mentor Match: solicitacoes e participantes aplicam o mecanismo de interesse/participacao no dominio de mentoria.
 
 Ponto fixo:
 
-- Manifestação de Interesse não varia como mecanismo.
+- Manifestacao de Interesse nao varia como mecanismo.
 
-### Denúncia
+### Denuncia
 
-Representa denúncia de uma oferta.
+Representa denuncia de uma oferta.
 
 Contrato no core:
 
@@ -142,14 +125,15 @@ Estados no core:
 - `IMPROCEDENTE`;
 - `ARQUIVADA`.
 
-No Apto:
+Instancias:
 
-- `Denuncia` associada a `Anuncio` e `Usuario` denunciante.
-- `CriterioDenunciaApto` define critérios específicos.
+- Apto: `Denuncia` associada a `Anuncio`, com `CriterioDenunciaApto`.
+- Study Buddy: `DenunciaGrupoEstudo` associada a `GrupoEstudo`, com `CriterioDenunciaStudyBuddy`.
+- Mentor Match: `DenunciaSessaoMentoria` associada a `SessaoMentoria`, com `CriterioDenunciaMentorMatch`.
 
 ### Compatibilidade e Matching
 
-Representa comparação entre perfis e ordenação de candidatos.
+Representa comparacao entre perfis e ordenacao de candidatos.
 
 Contratos no core:
 
@@ -159,194 +143,112 @@ Contratos no core:
 - `ResultadoCompatibilidade`;
 - `ResultadoMatching`.
 
-No Apto:
+Instancias:
 
-- `CompatibilidadeDeterministicaCalculator` calcula compatibilidade por convivência;
-- `AptoCompatibilidadeLlmProvider` integra Groq, prompt e parser;
-- `MatchmakingService` mapeia o resultado para DTOs públicos.
-
-No Study Buddy:
-
-- `CompatibilidadeAcademicaCalculator` calcula compatibilidade por disciplina, disponibilidade, objetivo, nível e modalidade;
-- `StudyBuddyCompatibilidadeLlmProvider` mantém a porta LLM opcional sem tornar LLM obrigatória;
-- `StudyBuddyMatchingService` mapeia o resultado para DTOs públicos da instância.
+- Apto: compatibilidade por convivencia.
+- Study Buddy: compatibilidade por disciplina, disponibilidade, objetivo, nivel e modalidade.
+- Mentor Match: compatibilidade por area, objetivo, experiencia, disponibilidade e modalidade de mentoria.
 
 ## Modelo Atual do Apto
 
-### Usuários
+### Usuarios
 
-`Usuario` está no core como entidade abstrata JPA.
-
-Especializações no Apto:
+Especializacoes:
 
 - `UsuarioUniversitario`;
 - `Locador`.
 
-### Perfil de Convivência
+### Perfil de Convivencia
 
-`PerfilConvivencia` implementa `Perfil` e contém:
-
-- horário de sono;
-- nível de barulho aceitável;
-- frequência de visitas;
-- nível de organização;
-- rotina de estudos;
-- consumo de álcool;
-- fumante;
-- aceita animais;
-- preferência de gênero;
-- descrição livre.
+`PerfilConvivencia` implementa `Perfil` e contem dados como horario de sono, nivel de barulho, visitas, organizacao, rotina de estudos, alcool, fumante, animais, preferencia de genero e descricao.
 
 ### Perfil Anunciante
 
-`PerfilAnunciante` é específico do Apto.
+`PerfilAnunciante` e especifico do Apto e representa o papel de publicador de anuncios.
 
-Responsabilidade:
-
-- representar o papel de publicador de anúncios;
-- permitir que `Locador` e `UsuarioUniversitario` publiquem anúncios.
-
-Esse conceito não é parte obrigatória do core.
-
-### Anúncio e Moradia
+### Anuncio e Moradia
 
 `Anuncio` implementa `Oferta`.
 
-`Moradia` contém os dados específicos do domínio:
+`Moradia` contem dados especificos do dominio: tipo, bairro, endereco resumido, mobiliado, aceita animais, quantidade de vagas e regras.
 
-- tipo;
-- bairro;
-- endereço resumido;
-- mobiliado;
-- aceita animais;
-- quantidade de vagas;
-- regras.
+### Manifestacao, Denuncia, Avaliacao e Reputacao
 
-### Manifestação de Interesse
-
-`ManifestacaoInteresse` implementa o contrato fixo do core.
-
-Ela possui:
-
-- anúncio;
-- interessado;
-- status;
-- mensagem;
-- data de manifestação;
-- data de resposta.
-
-### Denúncia e Moderação
-
-`Denuncia` implementa `Denuncia` do core.
-
-`CriterioDenunciaApto` implementa `CriterioDenuncia` com:
-
-- `ANUNCIO_ENGANOSO`;
-- `PRECO_ABUSIVO`;
-- `IMOVEL_INEXISTENTE`;
-- `CONTEUDO_INAPROPRIADO`;
-- `OUTRO`.
-
-`ModeracaoService` aplica decisões sobre denúncia e pode pausar ou encerrar o anúncio.
-
-### Avaliação e Reputação
-
-Avaliação e reputação são específicas do Apto.
-
-Entidades:
-
-- `Avaliacao`;
-- `ReputacaoAnunciante`.
-
-Essas entidades não são contratos do framework.
+- `ManifestacaoInteresse` implementa o contrato fixo do core.
+- `Denuncia` implementa `Denuncia` do core.
+- `CriterioDenunciaApto` define criterios especificos.
+- `Avaliacao` e `ReputacaoAnunciante` sao especificas do Apto e nao viraram contratos do framework.
 
 ## Modelo Atual do Study Buddy
 
 ### Estudante
 
-`Estudante` estende `Usuario` e contém:
+`Estudante` estende `Usuario` e contem matricula e instituicao.
 
-- matrícula;
-- instituição.
+### Perfil Academico
 
-### Perfil Acadêmico
-
-`PerfilAcademico` implementa `Perfil` e contém:
-
-- curso;
-- disciplinas de interesse;
-- disponibilidade;
-- objetivo de estudo;
-- nível de conhecimento;
-- modalidade preferida;
-- descrição.
+`PerfilAcademico` implementa `Perfil` e contem curso, disciplinas de interesse, disponibilidade, objetivo de estudo, nivel de conhecimento, modalidade preferida e descricao.
 
 ### Grupo de Estudo
 
-`GrupoEstudo` implementa `Oferta` e contém:
+`GrupoEstudo` implementa `Oferta` e contem titulo, descricao, disciplina, publicador, quantidade de vagas, modalidade, periodo, status e data de publicacao.
 
-- título;
-- descrição;
-- disciplina;
-- publicador;
-- quantidade de vagas;
-- modalidade;
-- período;
-- status;
-- data de publicação.
+### Manifestacao, Denuncia e Moderacao
 
-### Manifestação de Interesse em Grupo
+- `ManifestacaoInteresseGrupo` implementa o contrato fixo do core.
+- `DenunciaGrupoEstudo` implementa `Denuncia` do core.
+- `CriterioDenunciaStudyBuddy` define criterios especificos para grupos.
+- `ModeracaoGrupoEstudoService` aplica decisoes sobre grupos denunciados.
 
-`ManifestacaoInteresseGrupo` implementa o contrato fixo do core.
-
-Ela possui:
-
-- grupo;
-- interessado;
-- status;
-- mensagem;
-- data de manifestação;
-- data de resposta.
-
-### Compatibilidade Acadêmica
+### Compatibilidade Academica
 
 `CompatibilidadeAcademicaCalculator` implementa `CompatibilidadeStrategy<PerfilAcademico>`.
 
-Os critérios mínimos são:
+Criterios minimos:
 
 - disciplinas em comum;
-- disponibilidade compatível;
+- disponibilidade compativel;
 - objetivo de estudo igual ou complementar;
-- nível de conhecimento próximo;
-- modalidade compatível.
+- nivel de conhecimento proximo;
+- modalidade compativel.
 
-### Notificações e Observers
+## Modelo Atual do Mentor Match
 
-O mecanismo de Observer/Event Publisher e as notificações de anúncio indisponível foram removidos.
+### Participantes
 
-Cancelamentos e recálculos passaram a ser chamadas diretas:
+Mentor Match possui participantes como alunos e mentores, com services, repositories, DTOs e mappers proprios.
 
-- `AnuncioService` e `ModeracaoService` cancelam manifestações pendentes;
-- `AvaliacaoService` recalcula reputação diretamente.
+### Perfil de Mentoria
 
-## Exemplo Futuro Fora do Escopo
+`PerfilMentoria` representa os dados de interesse, conhecimento, area, objetivo e disponibilidade usados no matching da instancia.
 
-Uma futura instância Mentor Match poderia usar:
+### Sessao de Mentoria
 
-- perfil de mentoria;
-- oferta de sessão ou programa de mentoria;
-- compatibilidade por área, objetivo, experiência e disponibilidade.
+`SessaoMentoria` representa a oferta concreta do dominio de mentoria.
 
-Esses exemplos não possuem implementação nesta entrega.
+### Solicitacoes e Participantes
 
-## Persistência
+`SolicitacaoMentoria` e `ParticipanteMentoria` representam o fluxo especifico de solicitacao e participacao em sessoes.
 
-A persistência concreta pertence a cada instância.
+### Denuncia e Moderacao
 
-No Apto:
+`DenunciaSessaoMentoria` e `CriterioDenunciaMentorMatch` instanciam denuncia/moderacao no dominio de mentoria.
 
-- repositories concretos ficam em `com.apto.repository`;
-- entidades específicas ficam em `com.apto.model.entity`;
-- o core usa `RepositorioBase` como porta mínima para templates.
+### Compatibilidade de Mentoria
 
-O core não define tabelas específicas de moradia, avaliação, reputação ou notificação.
+`CompatibilidadeMentoriaCalculator` implementa criterios de compatibilidade da instancia, considerando area, objetivo, nivel de conhecimento, disponibilidade e modalidade.
+
+## Notificacoes e Observers
+
+O mecanismo de Observer/Event Publisher e as notificacoes de anuncio indisponivel foram removidos.
+
+Cancelamentos e recalculos passaram a ser chamadas diretas:
+
+- services de oferta/moderacao cancelam manifestacoes pendentes quando necessario;
+- `AvaliacaoService` recalcula reputacao diretamente no Apto.
+
+## Persistencia
+
+A persistencia concreta pertence a cada instancia.
+
+O core usa `RepositorioBase` como porta minima para templates e nao define tabelas especificas de moradia, avaliacao, reputacao, grupos de estudo ou mentorias.

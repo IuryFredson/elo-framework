@@ -1,22 +1,25 @@
-# Research: Elo Framework
+﻿# Research: Elo Framework
 
 ## Objetivo
 
-Registrar investigações, decisões e alternativas avaliadas durante a evolução do Apto para o Elo Framework.
+Registrar investigacoes, decisoes e alternativas avaliadas durante a evolucao do Apto para o Elo Framework.
 
 ## Estado Final do Projeto
 
 Estrutura principal:
 
-- `backend/elo-core`: núcleo reutilizável do framework.
-- `backend/apto`: instância Apto e API Spring Boot.
-- `backend/study-buddy`: instância Study Buddy e API Spring Boot.
-- `frontend`: aplicação React/Vite do Apto.
-- `specs`: documentação SDD, contratos, modelo, tarefas, rastreabilidade e diagrama.
+- `backend/elo-core`: nucleo reutilizavel do framework.
+- `backend/apto`: instancia Apto e API Spring Boot.
+- `backend/study-buddy`: instancia Study Buddy e API Spring Boot.
+- `backend/mentor-match`: instancia Mentor Match e API Spring Boot.
+- `frontend`: aplicacao React/Vite do Apto.
+- `frontend-study-buddy`: aplicacao React/Vite do Study Buddy.
+- `frontend-mentor-match`: aplicacao React/Vite do Mentor Match.
+- `specs`: documentacao SDD, contratos, modelo, tarefas, rastreabilidade e diagramas.
 
 ## Elementos do Apto que Instanciam o Framework
 
-### Usuários
+### Usuarios
 
 O core possui `Usuario` e `UsuarioService`.
 
@@ -41,15 +44,15 @@ O Apto instancia:
 
 - `Anuncio`, associado a `Moradia`.
 
-### Manifestação de Interesse
+### Manifestacao de Interesse
 
 O core possui `ManifestacaoInteresse`, `StatusManifestacaoInteresse` e `ManifestacaoInteresseService`.
 
 O Apto instancia:
 
-- `ManifestacaoInteresse` entre interessado e anúncio.
+- `ManifestacaoInteresse` entre interessado e anuncio.
 
-### Denúncia e Moderação
+### Denuncia e Moderacao
 
 O core possui `Denuncia`, `StatusDenuncia`, `CriterioDenuncia`, `DenunciaService` e `ModeracaoService`.
 
@@ -57,7 +60,7 @@ O Apto instancia:
 
 - `Denuncia`;
 - `CriterioDenunciaApto`;
-- `ModeracaoService` concreto.
+- moderacao de anuncios.
 
 ### Compatibilidade
 
@@ -71,129 +74,178 @@ O Apto instancia:
 
 ## Elementos do Study Buddy que Instanciam o Framework
 
-### Usuários
+### Usuarios e Perfis
 
-O Study Buddy instancia:
+Study Buddy instancia:
 
 - `Estudante`;
-- `EstudanteService`.
-
-### Perfis
-
-O Study Buddy instancia:
-
+- `EstudanteService`;
 - `PerfilAcademico`;
 - `PerfilAcademicoService`.
 
-### Ofertas
+### Ofertas e Manifestacoes
 
-O Study Buddy instancia:
+Study Buddy instancia:
 
 - `GrupoEstudo`;
-- `GrupoEstudoService`.
-
-### Manifestação de Interesse
-
-O Study Buddy instancia:
-
+- `GrupoEstudoService`;
 - `ManifestacaoInteresseGrupo`;
 - `ManifestacaoInteresseGrupoService`.
 
-### Compatibilidade
+### Denuncia, Moderacao e Compatibilidade
 
-O Study Buddy instancia:
+Study Buddy instancia:
 
+- `DenunciaGrupoEstudo`;
+- `CriterioDenunciaStudyBuddy`;
+- `DenunciaGrupoEstudoService`;
+- `ModeracaoGrupoEstudoService`;
 - `CompatibilidadeAcademicaCalculator`;
 - `StudyBuddyCompatibilidadeLlmProvider`;
 - `StudyBuddyMatchingService`.
 
-## Decisões
+## Elementos do Mentor Match que Instanciam o Framework
 
-### Decisão 1: Preservar o Apto como instância original
+### Participantes e Perfis
+
+Mentor Match instancia:
+
+- `Aluno`;
+- `Mentor`;
+- `PerfilMentoria`;
+- services, repositories, mappers e controllers especificos.
+
+### Ofertas, Solicitacoes e Participantes
+
+Mentor Match instancia:
+
+- `SessaoMentoria` como oferta concreta;
+- `SolicitacaoMentoria`;
+- `ParticipanteMentoria`.
+
+### Denuncia, Moderacao e Compatibilidade
+
+Mentor Match instancia:
+
+- `DenunciaSessaoMentoria`;
+- `CriterioDenunciaMentorMatch`;
+- moderacao de sessoes;
+- `CompatibilidadeMentoriaCalculator`;
+- `MentorMatchCompatibilidadeLlmProvider`;
+- `MentorMatchingService`.
+
+## Decisoes
+
+### Decisao 1: Preservar o Apto como instancia original
 
 Motivo:
 
-- O Apto é o produto da Fase 1.
-- A Fase 2 deve demonstrar evolução, não substituição.
-- Os endpoints e fluxos públicos precisavam continuar funcionando.
+- O Apto e o produto da Fase 1.
+- A Fase 2 deve demonstrar evolucao, nao substituicao.
+- Os endpoints e fluxos publicos precisavam continuar funcionando.
 
-Consequência:
+Consequencia:
 
-- Refatorações foram incrementais.
+- Refatoracoes foram incrementais.
 - DTOs, controllers, mappers e repositories concretos permaneceram no Apto.
 
-### Decisão 2: Usar Template Method no core
+### Decisao 2: Usar Template Method no core
 
 Motivo:
 
 - O framework deve controlar fluxos fixos.
-- A instância deve fornecer hooks específicos.
+- A instancia deve fornecer hooks especificos.
 - Evita que o algoritmo comum continue espalhado no Apto.
 
-Consequência:
+Consequencia:
 
-- Services do Apto passaram a estender templates do core.
-- Testes do core usam implementações falsas para provar independência.
+- Services das instancias passaram a estender templates do core.
+- Testes do core usam implementacoes falsas para provar independencia.
 
-### Decisão 3: Manifestação de Interesse é ponto fixo
-
-Motivo:
-
-- A orientação conceitual do projeto define Manifestação de Interesse como mecanismo comum.
-- O que muda é o tipo de oferta alvo.
-
-Consequência:
-
-- Manifestação de Interesse não virou ponto flexível.
-- O core controla transições, autorização, duplicidade e cancelamento de pendentes.
-
-### Decisão 4: Study Buddy como segunda instância concreta
+### Decisao 3: Manifestacao de Interesse e ponto fixo
 
 Motivo:
 
-- Após o Apto estar instanciado, Study Buddy foi escolhido para demonstrar reutilização real do framework em outro domínio.
-- A instância precisava ficar separada do Apto e depender apenas de `elo-core`.
+- A orientacao conceitual do projeto define Manifestacao de Interesse como mecanismo comum.
+- O que muda e o tipo de oferta alvo.
 
-Consequência:
+Consequencia:
+
+- Manifestacao de Interesse nao virou ponto flexivel.
+- O core controla transicoes, autorizacao, duplicidade e cancelamento de pendentes.
+
+### Decisao 4: Study Buddy como segunda instancia concreta
+
+Motivo:
+
+- Demonstrar reutilizacao real do framework em outro dominio.
+- Manter a instancia separada do Apto e dependente apenas de `elo-core`.
+
+Consequencia:
 
 - Study Buddy foi implementado em `backend/study-buddy`.
-- O core não depende de `com.studybuddy`.
-- Mentor Match permanece como exemplo conceitual de extensibilidade futura.
+- Frontend dedicado foi criado em `frontend-study-buddy`.
+- O core nao depende de `com.studybuddy`.
 
-### Decisão 5: Remover Observer/Event Publisher
+### Decisao 5: Mentor Match como terceira instancia concreta
 
 Motivo:
 
-- O mecanismo adicionava indireção sem ser parte essencial do framework.
+- Demonstrar extensibilidade adicional do framework em um terceiro dominio.
+- Reutilizar os mesmos contratos para usuarios, perfis, ofertas, denuncia/moderacao e matching.
+
+Consequencia:
+
+- Mentor Match foi implementado em `backend/mentor-match`.
+- Frontend dedicado foi criado em `frontend-mentor-match`.
+- O core nao depende de `com.mentormatch`.
+
+### Decisao 6: Remover Observer/Event Publisher
+
+Motivo:
+
+- O mecanismo adicionava indirecao sem ser parte essencial do framework.
 - A Etapa 08 exigiu isolamento de funcionalidades do Apto.
 
-Consequência:
+Consequencia:
 
-- Cancelamento de manifestações passou a ser chamada direta.
-- Reputação passou a ser recalculada diretamente.
-- Notificações de anúncio indisponível foram removidas.
+- Cancelamento de manifestacoes passou a ser chamada direta.
+- Reputacao passou a ser recalculada diretamente.
+- Notificacoes de anuncio indisponivel foram removidas.
+
+### Decisao 7: Generalizar apenas a base Groq
+
+Motivo:
+
+- As tres instancias usam Groq, mas cada uma tem excecoes, propriedades, prompt e parser proprios.
+
+Consequencia:
+
+- `AbstractGroqChatClient` ficou no core.
+- `GroqClient` concreto permaneceu em cada instancia.
 
 ## Alternativas Rejeitadas
 
-### Generalizar avaliação e reputação
+### Generalizar avaliacao e reputacao
 
-Rejeitada porque avaliação e reputação são específicas do Apto nesta entrega.
+Rejeitada porque avaliacao e reputacao sao especificas do Apto nesta entrega.
 
-### Implementar Mentor Match agora
+### Criar um frontend multi-instancia unico
 
-Rejeitada porque Study Buddy já demonstra reutilização concreta do framework em uma segunda instância.
+Rejeitada porque os frontends separados mantem o escopo mais claro e reduzem acoplamento entre dominios.
 
 ### Usar adapters para tudo
 
-Rejeitada quando a implementação direta do contrato era natural. Exemplo: `PerfilConvivencia` implementando `Perfil` e `Anuncio` implementando `Oferta`.
+Rejeitada quando a implementacao direta do contrato era natural. Exemplo: perfis e ofertas implementando contratos do core diretamente.
 
-## Recomendações Futuras
+## Recomendacoes Futuras
 
 Trabalhos futuros podem:
 
-- implementar Mentor Match como nova instância;
 - publicar `elo-core` como biblioteca independente;
-- criar autenticação real;
-- criar frontend multi-instância.
+- criar autenticacao real;
+- criar frontend multi-instancia;
+- preparar deploy de producao;
+- avaliar se reputacao deve virar ponto opcional do framework.
 
-Essas recomendações não fazem parte da entrega atual.
+Essas recomendacoes nao fazem parte da entrega atual.

@@ -1,12 +1,12 @@
-# Contracts: Elo Framework
+﻿# Contracts: Elo Framework
 
 ## Objetivo
 
-Registrar os contratos públicos e templates do Elo Framework após a instanciação do Apto e do Study Buddy.
+Registrar os contratos publicos e templates do Elo Framework apos a instanciacao de Apto, Study Buddy e Mentor Match.
 
-O core fica em `backend/elo-core` e não referencia `com.apto` nem `com.studybuddy`. As instâncias Apto e Study Buddy fornecem entidades, DTOs, repositories, mappers, controllers, exceções e regras específicas.
+O core fica em `backend/elo-core` e nao referencia `com.apto`, `com.studybuddy` ou `com.mentormatch`. As instancias fornecem entidades, DTOs, repositories, mappers, controllers, excecoes e regras especificas.
 
-## Contratos de Domínio
+## Contratos de Dominio
 
 ### `Usuario`
 
@@ -16,18 +16,15 @@ Local:
 
 Responsabilidade:
 
-- representar o usuário base do framework;
+- representar o usuario base do framework;
 - manter `id`, `nome`, `email`, `telefone` e `ativo`;
-- permitir especializações por instância.
+- permitir especializacoes por instancia.
 
-No Apto:
+Instancias:
 
-- `UsuarioUniversitario`;
-- `Locador`.
-
-No Study Buddy:
-
-- `Estudante`.
+- Apto: `UsuarioUniversitario`, `Locador`.
+- Study Buddy: `Estudante`.
+- Mentor Match: `Aluno`, `Mentor`.
 
 ### `Perfil`
 
@@ -37,18 +34,16 @@ Local:
 
 Responsabilidade:
 
-- representar dados usados por busca, recomendação ou compatibilidade;
+- representar dados usados por busca, recomendacao ou compatibilidade;
 - expor `tipoPerfil()`.
 
-No Apto:
+Instancias:
 
-- `PerfilConvivencia`.
+- Apto: `PerfilConvivencia`.
+- Study Buddy: `PerfilAcademico`.
+- Mentor Match: `PerfilMentoria`.
 
-No Study Buddy:
-
-- `PerfilAcademico`.
-
-Ponto flexível:
+Ponto flexivel:
 
 - dados do perfil.
 
@@ -63,15 +58,13 @@ Responsabilidade:
 - representar uma oferta publicada;
 - expor `getId()`, `getPublicadorId()`, `tipoOferta()` e `isAtiva()`.
 
-No Apto:
+Instancias:
 
-- `Anuncio`, associado a `Moradia` e `PerfilAnunciante`.
+- Apto: `Anuncio`, associado a `Moradia` e `PerfilAnunciante`.
+- Study Buddy: `GrupoEstudo`, associado ao `Estudante` publicador.
+- Mentor Match: `SessaoMentoria`, associada a mentorias.
 
-No Study Buddy:
-
-- `GrupoEstudo`, associado ao `Estudante` publicador.
-
-Ponto flexível:
+Ponto flexivel:
 
 - tipo de oferta publicada.
 
@@ -87,17 +80,15 @@ Responsabilidade:
 - representar o mecanismo fixo de interesse em uma oferta;
 - expor interessado, oferta e status.
 
-No Apto:
+Instancias:
 
-- `ManifestacaoInteresse`.
-
-No Study Buddy:
-
-- `ManifestacaoInteresseGrupo`.
+- Apto: `ManifestacaoInteresse`.
+- Study Buddy: `ManifestacaoInteresseGrupo`.
+- Mentor Match: fluxo de solicitacoes/participantes associado a sessoes de mentoria.
 
 Ponto fixo:
 
-- Manifestação de Interesse não é variação principal do framework.
+- Manifestacao de Interesse nao e variacao principal do framework.
 
 ### `Denuncia`
 
@@ -109,17 +100,18 @@ Local:
 
 Responsabilidade:
 
-- representar denúncia de uma oferta;
-- expor denunciante, oferta, status e critério.
+- representar denuncia de uma oferta;
+- expor denunciante, oferta, status e criterio.
 
-No Apto:
+Instancias:
 
-- `Denuncia`;
-- `CriterioDenunciaApto`.
+- Apto: `Denuncia`, `CriterioDenunciaApto`.
+- Study Buddy: `DenunciaGrupoEstudo`, `CriterioDenunciaStudyBuddy`.
+- Mentor Match: `DenunciaSessaoMentoria`, `CriterioDenunciaMentorMatch`.
 
-Ponto flexível secundário:
+Ponto flexivel secundario:
 
-- critério de denúncia.
+- criterio de denuncia.
 
 ## Templates do Core
 
@@ -134,28 +126,28 @@ Fluxo fixo:
 - ativar/inativar;
 - excluir.
 
-Hooks da instância:
+Hooks da instancia:
 
 - construir entidade;
-- aplicar atualização;
-- validar regras específicas;
+- aplicar atualizacao;
+- validar regras especificas;
 - persistir;
 - mapear resposta;
-- executar pós-criação.
+- executar pos-criacao.
 
 ### `PerfilService`
 
 Fluxo fixo:
 
-- buscar perfil por usuário;
+- buscar perfil por usuario;
 - criar ou atualizar perfil.
 
-Hooks da instância:
+Hooks da instancia:
 
-- buscar usuário;
+- buscar usuario;
 - buscar perfil existente;
 - construir perfil;
-- aplicar dados específicos;
+- aplicar dados especificos;
 - mapear resposta.
 
 ### `OfertaService`
@@ -167,42 +159,42 @@ Fluxo fixo:
 - buscar;
 - atualizar;
 - alterar status;
-- excluir física ou logicamente.
+- excluir fisica ou logicamente.
 
-Hooks da instância:
+Hooks da instancia:
 
 - construir oferta;
 - validar publicador;
-- aplicar atualização;
+- aplicar atualizacao;
 - obter/aplicar status;
-- decidir exclusão física;
-- executar ação após indisponibilização.
+- decidir exclusao fisica;
+- executar acao apos indisponibilizacao.
 
 ### `ManifestacaoInteresseService`
 
 Fluxo fixo:
 
-- criar manifestação;
+- criar manifestacao;
 - validar oferta ativa;
-- impedir interesse próprio;
+- impedir interesse proprio;
 - impedir duplicidade ativa;
 - aceitar;
 - recusar;
 - cancelar;
 - listar por oferta;
 - listar por interessado;
-- buscar com autorização;
+- buscar com autorizacao;
 - cancelar pendentes da oferta.
 
-Hooks da instância:
+Hooks da instancia:
 
 - buscar oferta;
 - buscar interessado;
-- construir manifestação;
-- aplicar criação e resposta;
+- construir manifestacao;
+- aplicar criacao e resposta;
 - consultar duplicidade;
 - mapear respostas;
-- fornecer exceções específicas.
+- fornecer excecoes especificas.
 
 ### `DenunciaService`
 
@@ -212,38 +204,38 @@ Fluxo fixo:
 - criar;
 - aplicar status inicial;
 - atualizar status;
-- validar máquina de estados;
+- validar maquina de estados;
 - excluir;
 - buscar por id, oferta, denunciante e status.
 
-Hooks da instância:
+Hooks da instancia:
 
 - buscar denunciante;
 - buscar oferta;
-- construir denúncia;
-- aplicar dados específicos;
+- construir denuncia;
+- aplicar dados especificos;
 - mapear resposta;
-- fornecer exceções específicas.
+- fornecer excecoes especificas.
 
 ### `ModeracaoService`
 
 Fluxo fixo:
 
-- buscar denúncia;
+- buscar denuncia;
 - obter oferta denunciada;
-- validar decisão;
-- aplicar status da denúncia;
-- aplicar ação na oferta;
-- salvar denúncia e oferta;
+- validar decisao;
+- aplicar status da denuncia;
+- aplicar acao na oferta;
+- salvar denuncia e oferta;
 - mapear resposta.
 
-Hooks da instância:
+Hooks da instancia:
 
-- converter ação da instância para ação do core;
+- converter acao da instancia para acao do core;
 - pausar oferta;
 - encerrar oferta;
 - mapear resposta;
-- fornecer exceções específicas.
+- fornecer excecoes especificas.
 
 ### `MatchingService<U extends Usuario, P extends Perfil>`
 
@@ -253,14 +245,14 @@ Fluxo fixo:
 - buscar solicitante;
 - validar perfil do solicitante;
 - buscar candidatos;
-- filtrar elegíveis;
+- filtrar elegiveis;
 - tentar resultados LLM;
-- aplicar fallback determinístico quando a LLM falha ou omite candidato;
+- aplicar fallback deterministico quando a LLM falha ou omite candidato;
 - associar resultado diretamente ao candidato;
 - ordenar por percentual;
 - limitar por `topN`.
 
-Hooks da instância:
+Hooks da instancia:
 
 - buscar solicitante;
 - buscar candidatos;
@@ -270,51 +262,55 @@ Hooks da instância:
 - prover LLM;
 - mapear resposta final.
 
-## Estratégias e Portas
+## Estrategias e Portas
 
 ### `CompatibilidadeStrategy<P extends Perfil>`
 
-Ponto flexível principal para critérios de compatibilidade.
+Ponto flexivel principal para criterios de compatibilidade.
 
-No Apto:
+Instancias:
 
-- `CompatibilidadeDeterministicaCalculator`.
-
-No Study Buddy:
-
-- `CompatibilidadeAcademicaCalculator`.
+- Apto: `CompatibilidadeDeterministicaCalculator`.
+- Study Buddy: `CompatibilidadeAcademicaCalculator`.
+- Mentor Match: `CompatibilidadeMentoriaCalculator`.
 
 ### `ProvedorCompatibilidadeLlm<U, P>`
 
 Porta opcional para compatibilidade assistida por LLM.
 
-No Apto:
+Instancias:
 
-- `AptoCompatibilidadeLlmProvider`;
-- `GroqClient`;
-- `MatchmakingPromptBuilder`;
-- `MatchmakingLlmParser`.
+- Apto: `AptoCompatibilidadeLlmProvider`, `GroqClient`, `MatchmakingPromptBuilder`, `MatchmakingLlmParser`.
+- Study Buddy: `StudyBuddyCompatibilidadeLlmProvider`, `GroqClient`, `StudyBuddyMatchingPromptBuilder`, `StudyBuddyMatchingLlmParser`.
+- Mentor Match: `MentorMatchCompatibilidadeLlmProvider`, `GroqClient`, `MentorMatchPromptBuilder`, `MentorMatchLlmParser`.
 
-No Study Buddy:
+### `AbstractGroqChatClient`
 
-- `StudyBuddyCompatibilidadeLlmProvider`, sem integração obrigatória com LLM.
+Cliente base OpenAI-compatible para Groq.
+
+Responsabilidade:
+
+- montar request de chat completion;
+- validar chave;
+- chamar `/chat/completions`;
+- interpretar `choices`;
+- delegar erros especificos para cada instancia.
 
 ### `RepositorioBase<T, ID>`
 
-Porta de persistência usada pelos templates do core para evitar dependência direta de repositories do Apto.
+Porta de persistencia usada pelos templates do core para evitar dependencia direta de repositories das instancias.
 
 ## Anti-Contratos
 
-Não fazem parte do núcleo reutilizável nesta entrega:
+Nao fazem parte do nucleo reutilizavel nesta entrega:
 
-- autenticação real;
-- frontend;
+- autenticacao real;
+- frontend generico multi-instancia;
 - deploy;
-- avaliação genérica;
-- reputação genérica;
-- moradia genérica;
-- notificação genérica;
-- observer/event publisher;
-- Mentor Match implementado.
+- avaliacao generica;
+- reputacao generica;
+- moradia generica;
+- notificacao generica;
+- observer/event publisher.
 
-Avaliação e reputação continuam exclusivas do Apto.
+Avaliacao e reputacao continuam exclusivas do Apto.

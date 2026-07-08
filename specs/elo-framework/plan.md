@@ -1,42 +1,48 @@
-# Plan: Elo Framework
+﻿# Plan: Elo Framework
 
 ## Estado Final
 
-O Elo Framework foi implementado como um framework Spring/JPA híbrido.
+O Elo Framework foi implementado como um framework Spring/JPA hibrido.
 
-A arquitetura final é:
+A arquitetura final e:
 
-- `backend/elo-core`: núcleo reutilizável com contratos, estados, portas e templates.
-- `backend/apto`: instância concreta do framework para moradias universitárias.
-- `frontend`: aplicação web do Apto, sem alteração estrutural para múltiplas instâncias.
+- `backend/elo-core`: nucleo reutilizavel com contratos, estados, portas e templates.
+- `backend/apto`: instancia concreta para moradias universitarias.
+- `backend/study-buddy`: instancia concreta para grupos de estudo.
+- `backend/mentor-match`: instancia concreta para mentorias.
+- `frontend`, `frontend-study-buddy` e `frontend-mentor-match`: frontends separados para as instancias.
 
-A dependência permanece unidirecional:
+A dependencia permanece unidirecional:
 
 ```text
-apto -> elo-core
+apto         -> elo-core
+study-buddy  -> elo-core
+mentor-match -> elo-core
 ```
 
-`elo-core` não referencia `com.apto`.
+`elo-core` nao referencia `com.apto`, `com.studybuddy` ou `com.mentormatch`.
 
-## Estratégia Executada
+## Estrategia Executada
 
-A evolução foi incremental para preservar o Apto e evitar reescrita completa.
+A evolucao foi incremental para preservar o Apto e evitar reescrita completa.
 
 Ordem executada:
 
 1. Estabilizar fronteira do core.
-2. Migrar `Usuario` e criar template de usuário.
+2. Migrar `Usuario` e criar template de usuario.
 3. Extrair fluxo de perfil.
-4. Extrair publicação e gestão de ofertas.
-5. Extrair Manifestação de Interesse.
-6. Extrair denúncia e moderação.
+4. Extrair publicacao e gestao de ofertas.
+5. Extrair Manifestacao de Interesse.
+6. Extrair denuncia e moderacao.
 7. Completar compatibilidade e matching.
-8. Remover Observer e isolar funcionalidades do Apto.
-9. Atualizar documentação e validar instanciação.
+8. Remover Observer e isolar funcionalidades especificas do Apto.
+9. Implementar Study Buddy como segunda instancia.
+10. Implementar Mentor Match como terceira instancia.
+11. Atualizar documentacao, diagramas e validacao final.
 
 ## Arquitetura Final
 
-### Núcleo do Framework
+### Nucleo do Framework
 
 O core controla os fluxos fixos por Template Method:
 
@@ -48,7 +54,7 @@ O core controla os fluxos fixos por Template Method:
 - `ModeracaoService`
 - `MatchingService`
 
-O core também define contratos:
+O core tambem define contratos:
 
 - `Usuario`
 - `Perfil`
@@ -60,81 +66,94 @@ O core também define contratos:
 - `ProvedorCompatibilidadeLlm`
 - `RepositorioBase`
 
-### Instância Apto
+O cliente base da Groq foi generalizado em `com.elo.compatibilidade.llm.groq`, enquanto cada instancia mantem suas excecoes, propriedades, prompt e parser.
 
-O Apto instancia os pontos flexíveis:
+### Instancia Apto
+
+O Apto instancia os pontos flexiveis:
 
 - dados do perfil: `PerfilConvivencia`;
 - tipo de oferta publicada: `Anuncio` associado a `Moradia`;
-- critérios de compatibilidade: `CompatibilidadeDeterministicaCalculator`;
-- critério de denúncia: `CriterioDenunciaApto`;
-- integração LLM: `AptoCompatibilidadeLlmProvider`, `GroqClient`, prompt e parser.
+- criterios de compatibilidade: `CompatibilidadeDeterministicaCalculator`;
+- criterio de denuncia: `CriterioDenunciaApto`;
+- integracao LLM: `AptoCompatibilidadeLlmProvider`, `GroqClient`, prompt e parser.
 
-O Apto mantém como específicos:
+O Apto mantem como especificos:
 
-- DTOs;
-- controllers;
-- mappers;
-- repositories;
-- exceções;
-- avaliação;
-- reputação;
+- DTOs, controllers, mappers, repositories e excecoes;
+- avaliacao;
+- reputacao;
 - moradia;
 - perfil anunciante.
 
-## Decisões Finais
+### Instancia Study Buddy
 
-### Manifestação de Interesse
+Study Buddy instancia os pontos flexiveis:
 
-Manifestação de Interesse é ponto fixo.
+- dados do perfil: `PerfilAcademico`;
+- tipo de oferta publicada: `GrupoEstudo`;
+- criterios de compatibilidade: `CompatibilidadeAcademicaCalculator`;
+- criterio de denuncia: `CriterioDenunciaStudyBuddy`;
+- integracao LLM: `StudyBuddyCompatibilidadeLlmProvider`, `GroqClient`, prompt e parser.
 
-A instância não muda o mecanismo. Ela muda apenas a oferta na qual o usuário manifesta interesse.
+A instancia possui backend em `backend/study-buddy` e frontend em `frontend-study-buddy`.
 
-### Study Buddy e Mentor Match
+### Instancia Mentor Match
 
-Study Buddy foi implementado como segunda instância concreta do Elo Framework em `backend/study-buddy`.
+Mentor Match instancia os pontos flexiveis:
 
-Ele demonstra:
+- dados do perfil: `PerfilMentoria`;
+- tipo de oferta publicada: `SessaoMentoria`;
+- criterios de compatibilidade: `CompatibilidadeMentoriaCalculator`;
+- criterio de denuncia: `CriterioDenunciaMentorMatch`;
+- integracao LLM: `MentorMatchCompatibilidadeLlmProvider`, `GroqClient`, prompt e parser.
 
-- perfil acadêmico como dados de perfil;
-- grupo de estudo como oferta publicada;
-- manifestação de interesse em grupo como uso do mecanismo fixo;
-- compatibilidade acadêmica como critério variável.
+A instancia possui backend em `backend/mentor-match` e frontend em `frontend-mentor-match`.
 
-Mentor Match permanece como exemplo conceitual de futura instância, podendo variar perfil de mentoria, sessão de mentoria e compatibilidade de mentoria.
+## Decisoes Finais
+
+### Manifestacao de Interesse
+
+Manifestacao de Interesse e ponto fixo.
+
+A instancia nao muda o mecanismo. Ela muda apenas a oferta na qual o usuario manifesta interesse ou o fluxo especifico associado a essa oferta.
 
 ### Observer
 
 O mecanismo de Observer/Event Publisher foi removido.
 
-Substituições:
+Substituicoes:
 
-- cancelamento de manifestações: chamada direta em `AnuncioService` e `ModeracaoService`;
-- recálculo de reputação: chamada direta em `AvaliacaoService`.
+- cancelamento de manifestacoes: chamada direta em services de oferta/moderacao;
+- recalculo de reputacao no Apto: chamada direta em `AvaliacaoService`.
 
-### Avaliação e Reputação
+### Avaliacao e Reputacao
 
-Avaliação e reputação continuam exclusivas do Apto.
+Avaliacao e reputacao continuam exclusivas do Apto.
 
-Elas não viraram contratos do framework.
+Elas nao viraram contratos do framework.
 
-## Hooks Obrigatórios para Futura Instância
+### Frontends
 
-Uma futura instância deve implementar ou fornecer:
+A entrega final possui tres frontends separados, um por instancia. Nao foi criado um frontend multi-instancia unico.
 
-- usuário concreto, quando precisar especializar `Usuario`;
+## Hooks Obrigatorios para Futura Instancia
+
+Uma futura instancia deve implementar ou fornecer:
+
+- usuario concreto, quando precisar especializar `Usuario`;
 - perfil concreto implementando `Perfil`;
 - oferta concreta implementando `Oferta`;
-- manifestação concreta implementando `ManifestacaoInteresse`;
-- denúncia concreta implementando `Denuncia`, se usar denúncia;
-- critério de denúncia implementando `CriterioDenuncia`, se usar denúncia;
-- estratégia de compatibilidade implementando `CompatibilidadeStrategy<P>`;
+- manifestacao concreta implementando `ManifestacaoInteresse`, se usar manifestacao;
+- denuncia concreta implementando `Denuncia`, se usar denuncia;
+- criterio de denuncia implementando `CriterioDenuncia`, se usar denuncia;
+- estrategia de compatibilidade implementando `CompatibilidadeStrategy<P>`;
 - provedor LLM implementando `ProvedorCompatibilidadeLlm<U, P>`, se usar LLM;
 - services concretos que estendem templates do core;
-- repositories compatíveis com `RepositorioBase`;
-- DTOs, mappers, controllers e exceções da instância.
+- repositories compativeis com `RepositorioBase`;
+- DTOs, mappers, controllers e excecoes da instancia.
 
-## Validação Técnica
+## Validacao Tecnica
 
 Comando principal:
 
@@ -143,20 +162,21 @@ cd backend
 mvn test
 ```
 
-Validações esperadas:
+Validacoes esperadas:
 
 - testes do `elo-core` passando;
-- testes do `apto-api` passando;
+- testes do `apto` passando;
 - testes do `study-buddy` passando;
-- teste arquitetural garantindo independência do core;
-- inicialização JPA do Apto e do Study Buddy funcionando.
+- testes do `mentor-match`, quando presentes, passando;
+- teste arquitetural garantindo independencia do core;
+- inicializacao JPA das instancias funcionando conforme configuracao local.
 
-## Próximos Passos Fora do Plano Atual
+## Proximos Passos Fora do Plano Atual
 
-As atividades abaixo não fazem parte desta entrega:
+As atividades abaixo nao fazem parte desta entrega:
 
-- implementar Mentor Match;
-- criar frontend multi-instância;
+- criar autenticacao real;
+- criar frontend multi-instancia unico;
 - empacotar/publicar o `elo-core` como biblioteca externa;
-- adicionar autenticação real;
-- preparar deploy de produção.
+- preparar deploy de producao;
+- generalizar avaliacao/reputacao para o core.

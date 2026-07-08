@@ -1,121 +1,120 @@
-# Tasks: Elo Framework
+﻿# Tasks: Elo Framework
 
 ## Objetivo
 
-Registrar o estado final das tarefas da evolução do Apto para o Elo Framework e da instanciação do Study Buddy.
+Registrar o estado final das tarefas da evolucao do Apto para o Elo Framework e da instanciacao de Study Buddy e Mentor Match.
 
-As tarefas abaixo refletem a implementação concluída até a Etapa 09. Apto e Study Buddy são instâncias concretas; Mentor Match permanece fora da implementação atual.
+As tarefas abaixo refletem a implementacao concluida no projeto final. Apto, Study Buddy e Mentor Match sao instancias concretas do mesmo framework.
 
-## Tarefas Concluídas
+## Tarefas Concluidas do Core e Apto
 
 ### TASK-BE-001: Estabilizar fronteira do core
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
-- `elo-core` recebeu dependências necessárias para JPA, Validation e transações.
-- Contratos, estados e portas independentes do Apto foram definidos.
-- Teste arquitetural garante que `elo-core` não referencia `com.apto`.
+- `elo-core` recebeu dependencias necessarias para JPA, Validation e transacoes.
+- Contratos, estados e portas independentes das instancias foram definidos.
+- Teste arquitetural garante que `elo-core` nao referencia as instancias.
 
-### TASK-BE-002: Migrar usuário e criar Template Method
+### TASK-BE-002: Migrar usuario e criar Template Method
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `Usuario` foi movido para `com.elo.usuario`.
-- `UsuarioService` controla o fluxo fixo de gestão de usuários.
-- `LocadorService` e `UsuarioUniversitarioService` instanciam o template.
+- `UsuarioService` controla o fluxo fixo de gestao de usuarios.
+- Services concretos das instancias reutilizam o template.
 
 ### TASK-BE-003: Extrair fluxo de perfil
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `Perfil` virou contrato do core.
-- `PerfilService` controla busca e criação/atualização de perfil.
-- `PerfilConvivencia` instancia o ponto flexível de dados do perfil no Apto.
+- `PerfilService` controla busca e criacao/atualizacao de perfil.
+- Cada instancia fornece seu perfil concreto.
 
-### TASK-BE-004: Extrair publicação e gestão de ofertas
+### TASK-BE-004: Extrair publicacao e gestao de ofertas
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `Oferta` virou contrato do core.
-- `OfertaService` controla criação, consulta, atualização, status e remoção.
-- `Anuncio` instancia o ponto flexível de oferta publicada no Apto.
+- `OfertaService` controla criacao, consulta, atualizacao, status e remocao.
+- Cada instancia fornece sua oferta concreta.
 
-### TASK-BE-005: Extrair Manifestação de Interesse
+### TASK-BE-005: Extrair Manifestacao de Interesse
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `StatusManifestacaoInteresse` foi movido para o core.
 - `ManifestacaoInteresseService` controla as regras fixas.
-- Apto fornece hooks, repository, mapper e exceções.
-- Operação comum `cancelarPendentesDaOferta` foi adicionada.
+- Operacao comum `cancelarPendentesDaOferta` foi adicionada.
 
-### TASK-BE-006: Extrair denúncia e moderação
+### TASK-BE-006: Extrair denuncia e moderacao
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
-- `StatusDenuncia` e máquina de estados foram movidos para o core.
-- `DenunciaService` controla criação, consultas, transições e exclusão.
-- `ModeracaoService` controla validação fixa da decisão.
-- `CriterioDenunciaApto` instancia o critério de denúncia do Apto.
+- `StatusDenuncia` e maquina de estados foram movidos para o core.
+- `DenunciaService` controla criacao, consultas, transicoes e exclusao.
+- `ModeracaoService` controla validacao fixa da decisao.
+- Instancias fornecem criterios de denuncia especificos.
 
 ### TASK-BE-007: Completar compatibilidade e matching
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
-- `MatchingService` controla elegibilidade, LLM, fallback, ordenação e `topN`.
+- `MatchingService` controla elegibilidade, LLM, fallback, ordenacao e `topN`.
 - `ResultadoMatching` associa resultado diretamente ao candidato.
-- `AptoCompatibilidadeLlmProvider` fornece a porta LLM do Apto.
-- `CompatibilidadeDeterministicaCalculator` mantém os critérios de convivência.
+- Cada instancia fornece estrategia deterministica, provider LLM, prompt, parser e mapper.
 
-### TASK-BE-008: Remover Observer e isolar funcionalidades do Apto
+### TASK-BE-008: Remover Observer e isolar funcionalidades especificas
 
-Status: concluída.
-
-Resultado:
-
-- Eventos, observers, publisher, notificações e testes correspondentes foram removidos.
-- `AnuncioService` e `ModeracaoService` cancelam manifestações diretamente.
-- `AvaliacaoService` recalcula reputação diretamente.
-- Avaliação e reputação permanecem exclusivas do Apto.
-
-### TASK-DOC-009: Atualizar documentação e validar instanciação
-
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
-- `spec.md`, `contracts.md`, `data-model.md`, `tasks.md`, `traceability.md`, diagrama e `README.md` alinhados à arquitetura final.
-- Study Buddy registrado como segunda instância concreta do framework.
-- Hooks obrigatórios para novas instâncias documentados.
-- Testes executados com sucesso.
+- Eventos, observers, publisher, notificacoes e testes correspondentes foram removidos.
+- Services passaram a chamar diretamente os fluxos necessarios.
+- Avaliacao e reputacao permanecem exclusivas do Apto.
 
-### TASK-SB-001: Criar módulo Study Buddy
+### TASK-APTO-009: Consolidar Apto como instancia do framework
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
-- `backend/study-buddy` criado como módulo Maven separado.
-- O módulo depende de `elo-core`.
-- `elo-core` e `apto` não dependem de `study-buddy`.
+- `backend/apto` permanece como instancia funcional.
+- `frontend` permanece como frontend do Apto.
+- Apto instancia usuarios, perfil de convivencia, anuncios, manifestacoes, denuncias, moderacao, avaliacao/reputacao e matching.
+- Diagnostico da Groq exposto em `GET /diagnostico/groq`.
 
-### TASK-SB-002: Instanciar usuário da aplicação
+## Tarefas Concluidas do Study Buddy
 
-Status: concluída.
+### TASK-SB-001: Criar modulo Study Buddy
+
+Status: concluida.
+
+Resultado:
+
+- `backend/study-buddy` criado como modulo Maven separado.
+- O modulo depende de `elo-core`.
+- `elo-core` e `apto` nao dependem de `study-buddy`.
+
+### TASK-SB-002: Instanciar usuario da aplicacao
+
+Status: concluida.
 
 Resultado:
 
@@ -123,86 +122,142 @@ Resultado:
 - `EstudanteService` estende `UsuarioService`.
 - DTOs, mapper, repository e testes de estudante criados.
 
-### TASK-SB-003: Instanciar perfil acadêmico
+### TASK-SB-003: Instanciar perfil academico
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `PerfilAcademico` implementa `Perfil`.
 - `PerfilAcademicoService` estende `PerfilService`.
-- Dados acadêmicos representam o ponto flexível de perfil.
+- Dados academicos representam o ponto flexivel de perfil.
 
 ### TASK-SB-004: Instanciar grupo de estudo como oferta
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `GrupoEstudo` implementa `Oferta`.
 - `GrupoEstudoService` estende `OfertaService`.
-- Grupo de estudo representa o ponto flexível de oferta publicada.
+- Grupo de estudo representa o ponto flexivel de oferta publicada.
 
-### TASK-SB-005: Instanciar Manifestação de Interesse em grupo
+### TASK-SB-005: Instanciar Manifestacao de Interesse em grupo
 
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
 - `ManifestacaoInteresseGrupo` implementa `ManifestacaoInteresse`.
 - `ManifestacaoInteresseGrupoService` estende `ManifestacaoInteresseService`.
-- Manifestação de Interesse permanece mecanismo fixo.
+- Manifestacao de Interesse permanece mecanismo fixo.
 
-### TASK-SB-006: Instanciar compatibilidade acadêmica e matching
+### TASK-SB-006: Instanciar denuncia e moderacao de grupos
 
-Status: concluída.
+Status: concluida.
+
+Resultado:
+
+- `DenunciaGrupoEstudo` implementa `Denuncia`.
+- `CriterioDenunciaStudyBuddy` implementa `CriterioDenuncia`.
+- `DenunciaGrupoEstudoService` e `ModeracaoGrupoEstudoService` reutilizam os fluxos do core.
+
+### TASK-SB-007: Instanciar compatibilidade academica e matching
+
+Status: concluida.
 
 Resultado:
 
 - `CompatibilidadeAcademicaCalculator` implementa `CompatibilidadeStrategy<PerfilAcademico>`.
 - `StudyBuddyMatchingService` estende `MatchingService`.
 - Matching ordena candidatos e respeita `topN`.
+- Provider LLM da instancia usa Groq e fallback deterministico.
 
-### TASK-SB-007: Expor controllers REST mínimos
+### TASK-SB-008: Expor controllers REST e frontend
 
-Status: concluída.
-
-Resultado:
-
-- Controllers finos criados sob `/study-buddy`.
-- DTOs e controllers permanecem na instância, não no core.
-
-### TASK-SB-008: Validar instância completa
-
-Status: concluída.
+Status: concluida.
 
 Resultado:
 
-- Testes de service e controller da instância passando.
-- Reactor Maven completo validado com `mvn test`.
+- Controllers criados sob `/study-buddy`.
+- Frontend criado em `frontend-study-buddy`.
+- DTOs e controllers permanecem na instancia, nao no core.
 
-## Validações
+## Tarefas Concluidas do Mentor Match
 
-Comando de validação principal:
+### TASK-MM-001: Criar modulo Mentor Match
+
+Status: concluida.
+
+Resultado:
+
+- `backend/mentor-match` criado como modulo Maven separado.
+- O modulo depende de `elo-core`.
+- O core nao depende de `com.mentormatch`.
+
+### TASK-MM-002: Instanciar usuarios e perfis de mentoria
+
+Status: concluida.
+
+Resultado:
+
+- Alunos e mentores representam participantes da instancia.
+- `PerfilMentoria` representa dados de mentoria.
+- Services, repositories, mappers e controllers especificos foram criados.
+
+### TASK-MM-003: Instanciar sessoes, solicitacoes e participantes
+
+Status: concluida.
+
+Resultado:
+
+- `SessaoMentoria` representa a oferta concreta de mentoria.
+- `SolicitacaoMentoria` e `ParticipanteMentoria` representam o fluxo especifico da instancia.
+- Endpoints da instancia ficam sob `/mentor-match`.
+
+### TASK-MM-004: Instanciar denuncia, moderacao e matching
+
+Status: concluida.
+
+Resultado:
+
+- `DenunciaSessaoMentoria` e `CriterioDenunciaMentorMatch` representam denuncia/moderacao.
+- `CompatibilidadeMentoriaCalculator` implementa criterios de mentoria.
+- `MentorMatchingService` reutiliza o fluxo de matching do core.
+- Provider LLM da instancia usa Groq e fallback deterministico.
+
+### TASK-MM-005: Criar frontend Mentor Match
+
+Status: concluida.
+
+Resultado:
+
+- Frontend criado em `frontend-mentor-match`.
+- O frontend usa `http://localhost:8082` como backend padrao e aceita `VITE_API_URL`.
+
+## Validacoes
+
+Comando de validacao principal:
 
 ```bash
 cd backend
 mvn test
 ```
 
-Critérios:
+Criterios:
 
 - `elo-core` deve passar nos testes.
-- `apto-api` deve passar nos testes.
+- `apto` deve passar nos testes.
 - `study-buddy` deve passar nos testes.
-- `elo-core` deve permanecer independente de `com.apto`.
-- `elo-core` deve permanecer independente de `com.studybuddy`.
+- `mentor-match` deve compilar e seus testes devem passar quando presentes.
+- `elo-core` deve permanecer independente de `com.apto`, `com.studybuddy` e `com.mentormatch`.
 
 ## Tarefas Futuras Fora da Entrega
 
-As ideias abaixo podem ser usadas em trabalhos futuros, mas não compõem a entrega atual:
+As ideias abaixo podem ser usadas em trabalhos futuros, mas nao compoem a entrega atual:
 
-- implementar Mentor Match;
-- criar frontend para múltiplas instâncias;
+- autenticar usuarios de forma real;
+- criar frontend multi-instancia unico;
 - empacotar `elo-core` como artefato publicado;
-- substituir permissões simplificadas por autenticação real.
+- preparar deploy de producao;
+- generalizar avaliacao/reputacao.
