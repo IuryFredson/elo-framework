@@ -22,9 +22,9 @@ import type {
 const BASE_PATH = "/study-buddy";
 const USUARIOS_PATH = `${BASE_PATH}/usuarios`;
 const OFERTAS_PATH = `${BASE_PATH}/ofertas`;
-const MANIFESTACOES_PATH = `/manifestacoes`;
-const DENUNCIAS_PATH = `/denuncias`;
-const MODERACOES_PATH = `/moderacoes/denuncias`;
+const MANIFESTACOES_PATH = `${BASE_PATH}/manifestacoes`;
+const DENUNCIAS_PATH = `${BASE_PATH}/denuncias`;
+const MODERACOES_PATH = `${BASE_PATH}/moderacoes/denuncias`;
 
 export const estudantesApi = {
   listar: () => api.get<EstudanteResponse[]>(USUARIOS_PATH),

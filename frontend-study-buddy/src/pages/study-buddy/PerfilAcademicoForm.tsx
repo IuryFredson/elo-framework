@@ -40,12 +40,12 @@ export default function PerfilAcademicoForm() {
     perfilAcademicoApi
       .obter(sessao.id)
       .then((perfil) => {
-        setCurso(perfil.curso);
+        setCurso(perfil.curso ?? "");
         setDisciplinasTexto((perfil.disciplinasInteresse ?? []).join(", "));
         setDisponibilidade(perfil.disponibilidade ?? []);
-        setObjetivoEstudo(perfil.objetivoEstudo);
-        setNivelConhecimento(perfil.nivelConhecimento);
-        setModalidadePreferida(perfil.modalidadePreferida);
+        setObjetivoEstudo(perfil.objetivoEstudo ?? "PROVA");
+        setNivelConhecimento(perfil.nivelConhecimento ?? "INICIANTE");
+        setModalidadePreferida(perfil.modalidadePreferida ?? "HIBRIDO");
         setDescricao(perfil.descricao ?? "");
       })
       .catch((error: unknown) => {
